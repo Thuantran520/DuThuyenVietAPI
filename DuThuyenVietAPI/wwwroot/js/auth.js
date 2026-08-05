@@ -435,24 +435,28 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (res.ok) {
                     const json = await res.json();
                     const cruises = json.data;
-                    const tbody = document.getElementById('cruises-table-body');
-                    if (!tbody) return;
-                    tbody.innerHTML = '';
+                    const grid = document.getElementById('cruises-grid-container');
+                    if (!grid) return;
+                    grid.innerHTML = '';
                     
                     cruises.forEach(c => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><img src="${c.thumbnailUrl}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;"></td>
-                            <td style="font-weight: 500;">${c.name}</td>
-                            <td>${c.destinationName}</td>
-                            <td>${c.reviewCount} lượt đánh giá</td>
-                            <td><span style="color: #f59e0b;">★</span> ${c.averageRating}</td>
-                            <td style="text-align: right;">
-                                <button class="btn-sm btn-outline" style="margin-right:8px;" onclick="window.editCruise(${c.cruiseId})">Sửa</button>
-                                <button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="window.deleteCruise(${c.cruiseId})">Xóa</button>
-                            </td>
+                        const div = document.createElement('div');
+                        div.className = 'cruise-card';
+                        div.innerHTML = `
+                            <img src="${c.thumbnailUrl || '/images/default-cruise.jpg'}" alt="${c.name}" class="cruise-img" onerror="this.src='/images/default-cruise.jpg'">
+                            <div class="cruise-card-body">
+                                <h3 class="cruise-title"><a href="/cruise-detail.html?id=${c.cruiseId}">${c.name}</a></h3>
+                                <div class="cruise-meta mb-3">
+                                    <span class="rating">⭐ ${c.averageRating} (${c.reviewCount})</span>
+                                    <span class="destination">📍 ${c.destinationName}</span>
+                                </div>
+                                <div class="cruise-footer" style="display: flex; gap: 8px;">
+                                    <button class="btn-primary" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: none; font-size: 14px; cursor: pointer; background-color: var(--primary); color: white;" onclick="window.editCruise(${c.cruiseId})">Sửa</button>
+                                    <button class="btn-outline" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: 1px solid #ef4444; color: #ef4444; background: transparent; font-size: 14px; cursor: pointer;" onclick="window.deleteCruise(${c.cruiseId})">Xóa</button>
+                                </div>
+                            </div>
                         `;
-                        tbody.appendChild(tr);
+                        grid.appendChild(div);
                     });
                 }
             } catch (err) {
