@@ -2,6 +2,7 @@ namespace DuThuyenVietAPI.DTOs;
 
 public class LoginDTO
 {
-    public string Email { get; set; }
+    public string UsernameOrEmail { get; set; }
     public string Password { get; set; }
+    public bool LoginAsAdmin { get; set; }
 }

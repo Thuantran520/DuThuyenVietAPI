@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Quản Lý - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script>
+        // Instant check to prevent layout flash
+        if (!localStorage.getItem('auth_token')) { window.location.replace('/login.html'); }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease;">
+            <div class="logo">Du Thuyền Việt</div>
+            <button class="btn-logout" id="btnLogout">Đăng xuất</button>
+        </div>
+
+        <div id="loader">
+            <img src="/images/loading.gif" style="width: 48px; height: 48px; margin: 0 auto; display: block;" alt="Loading...">
+            <p style="margin-top: 16px; color: #6b7280; font-style: italic;">Đang chuẩn bị hành trình...</p>
+        </div>
+
+        <div id="main-content" style="display: none;">
+            <div class="tabs">
+                <div class="tab active" data-target="tab-profile">Hồ sơ Cá nhân</div>
+                <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
+            </div>
+
+            <!-- TAB: HỒ SƠ -->
+            <div class="tab-content active" id="tab-profile">
+                <div class="card profile-layout">
+                    <div class="avatar-section">
+                        <label for="avatarUpload" class="avatar" id="avatarDisplay">
+                            <span id="avatarLetter">U</span>
+                            <img id="avatarImage" src="" alt="Avatar">
+                        </label>
+                        <input type="file" id="avatarUpload" accept="image/*">
+                        <div style="font-size: 13px; color: #6b7280; margin-top: 8px;" id="avatarStatus">Nhấn để thay ảnh</div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="card-title">Thông tin cơ bản</div>
+                        <div class="info-row">
+                            <div class="info-label">Họ và tên</div>
+                            <div class="info-value">
+                                <span id="val-fullname">Chưa cập nhật</span>
+                                <div class="form-group" id="form-fullname">
+                                    <input type="text" id="input-fullname" placeholder="Nhập họ tên">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Tên đăng nhập</div>
+                            <div class="info-value"><span id="val-username">Đang tải...</span></div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Email</div>
+                            <div class="info-value"><span id="val-email">email@domain.com</span></div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Số điện thoại</div>
+                            <div class="info-value">
+                                <span id="val-phone">Chưa cập nhật</span>
+                                <div class="form-group" id="form-phone">
+                                    <input type="text" id="input-phone" placeholder="Nhập số điện thoại">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Chức vụ</div>
+                            <div class="info-value" id="val-roles">
+                                <!-- Roles -->
+                            </div>
+                        </div>
+
+                        <div class="actions" id="view-actions">
+                            <button class="btn btn-primary" id="btnEditProfile">Chỉnh sửa hồ sơ</button>
+                        </div>
+                        <div class="actions" id="edit-actions" style="display: none;">
+                            <button class="btn btn-outline" id="btnCancelEdit">Hủy</button>
+                            <button class="btn btn-primary" id="btnSaveProfile">Lưu thay đổi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: ADMIN QUẢN LÝ NHÂN SỰ -->
+            <div class="tab-content" id="tab-admin">
+                <div class="card">
+                    <div class="card-title">Hệ thống Nhân sự & Phân quyền</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Tại đây Quản trị viên có thể quản lý nhân viên và cấp quyền Quản lý hệ thống đặt Du Thuyền.</div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID Người dùng</th>
+                                    <th>Họ Tên / Username</th>
+                                    <th>Email</th>
+                                    <th>Quyền hiện tại</th>
+                                    <th style="text-align: right;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body">
+                                <!-- Users populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/popup.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>

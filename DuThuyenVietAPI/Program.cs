@@ -55,6 +55,10 @@ builder.Services.AddAuthentication(options =>
     });
 
 var app = builder.Build();
+
+// Xử lý trang 404 tự động cho các route tĩnh không tìm thấy
+app.UseStatusCodePagesWithReExecute("/404.html");
+
 // Configure the HTTP request pipeline.                                                                                                                                      
 
 if (app.Environment.IsDevelopment())
@@ -73,5 +77,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Tự động tạo các quyền (Roles) nếu chưa có trong Database
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    string[] roles = { "Admin", "Manager", "Staff", "Customer" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}
 
 app.Run();

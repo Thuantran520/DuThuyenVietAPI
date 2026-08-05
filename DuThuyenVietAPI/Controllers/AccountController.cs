@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace DuThuyenVietAPI.Controllers;
 
@@ -28,22 +29,35 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO request)
     {
-        var userExists = await _userManager.FindByEmailAsync(request.Email);
-        if (userExists != null)
-            return StatusCode(StatusCodes.Status500InternalServerError, "User already exists!");
+        var emailExists = await _userManager.FindByEmailAsync(request.Email);
+        if (emailExists != null)
+            return StatusCode(StatusCodes.Status400BadRequest, new { message = "Email này đã được đăng ký!" });
+
+        var usernameExists = await _userManager.FindByNameAsync(request.Username);
+        if (usernameExists != null)
+            return StatusCode(StatusCodes.Status400BadRequest, new { message = "Tên đăng nhập đã có người sử dụng!" });
+
+        if (!string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            var phoneExists = await _userManager.Users.AnyAsync(u => u.PhoneNumber == request.PhoneNumber);
+            if (phoneExists)
+                return StatusCode(StatusCodes.Status400BadRequest, new { message = "Số điện thoại này đã được đăng ký!" });
+        }
 
         ApplicationUser user = new ApplicationUser()
         {
             Email = request.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = request.Email // Assuming Email as username
+            UserName = !string.IsNullOrWhiteSpace(request.Username) ? request.Username : request.Email,
+            FullName = request.FullName,
+            PhoneNumber = request.PhoneNumber
         };
         var result = await _userManager.CreateAsync(user, request.Password);
         
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"User creation failed! {errors}" });
+            return StatusCode(StatusCodes.Status400BadRequest, new { message = $"Đăng ký thất bại! {errors}" });
         }
 
         // Automatically assign Customer role
@@ -58,10 +72,21 @@ public class AccountController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email); // Using email instead of username
+        var user = await _userManager.FindByEmailAsync(request.UsernameOrEmail ?? "");
+        if (user == null)
+        {
+            user = await _userManager.FindByNameAsync(request.UsernameOrEmail ?? "");
+        }
+
         if (user != null && await _userManager.CheckPasswordAsync(user, request.Password))
         {
             var userRoles = await _userManager.GetRolesAsync(user);
+
+            // Nếu không chọn đăng nhập dưới quyền Admin, ép token chỉ có quyền Customer
+            if (!request.LoginAsAdmin)
+            {
+                userRoles = new List<string> { "Customer" };
+            }
 
             var authClaims = new List<Claim>
             {
