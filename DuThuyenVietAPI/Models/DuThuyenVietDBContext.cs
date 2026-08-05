@@ -46,6 +46,12 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ScheduleCabinInventory>()
             .HasKey(e => e.ScheduleCabinId);
 
+        // Map join table for Many-to-Many relationship (Cruises <-> Amenities)
+        modelBuilder.Entity<Cruise>()
+            .HasMany(c => c.Amenities)
+            .WithMany(a => a.Cruises)
+            .UsingEntity(j => j.ToTable("CruiseAmenities"));
+
         // Fix decimal warnings
         modelBuilder.Entity<Booking>().Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
         modelBuilder.Entity<CabinType>().Property(e => e.BasePrice).HasColumnType("decimal(18,2)");
