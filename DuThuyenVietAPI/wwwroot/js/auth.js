@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <td>${b.cruiseName}<br><small class="text-muted">${b.items.length} loại phòng</small></td>
                             <td style="font-weight: 600; color: #ef4444;">${formatPrice(b.totalPrice)}</td>
                             <td>${statusHtml}</td>
-                            <td style="text-align: right;">${actionsHtml}</td>
+                            <td style="text-align: right; white-space: nowrap;">${actionsHtml}</td>
                         `;
                         tbody.appendChild(tr);
                     });
