@@ -120,30 +120,21 @@ async function loadCruiseDetail() {
         if (!response.ok) throw new Error('Not found');
         const cruise = await response.json();
         
-        let imagesHtml = '';
-        if (cruise.images && cruise.images.length > 0) {
-            imagesHtml = cruise.images.map(img => `<img src="${img}" alt="${cruise.name}" class="gallery-img">`).join('');
-        } else {
-            imagesHtml = `<img src="/images/default-cruise.jpg" alt="${cruise.name}" class="gallery-img">`;
-        }
-
-        let amenitiesHtml = '';
-        if (cruise.amenities && cruise.amenities.length > 0) {
-            amenitiesHtml = cruise.amenities.map(a => `<span class="amenity-item">${a.iconClass || '✨'} ${a.name}</span>`).join('');
-        } else {
-            amenitiesHtml = '<p>Không có tiện nghi nào.</p>';
-        }
 
         let cabinsHtml = '';
         if (cruise.cabins && cruise.cabins.length > 0) {
             cabinsHtml = cruise.cabins.map(cabin => `
-                <div class="cabin-card">
-                    <img src="${cabin.imageUrl || '/images/default-cabin.jpg'}" alt="${cabin.name}" class="cabin-img">
-                    <div class="cabin-info">
-                        <h4>${cabin.name}</h4>
-                        <p>Sức chứa: ${cabin.maxOccupancy} người</p>
-                        <p class="price">${formatPrice(cabin.basePrice)} / đêm</p>
-                        <button class="btn-primary w-100 mt-2">Đặt Phòng</button>
+                <div class="cabin-card luxury-card mb-4" style="display: flex; gap: 20px; padding: 20px;">
+                    <img src="${cabin.imageUrl || '/images/default-cabin.jpg'}" alt="${cabin.name}" class="cabin-img" style="width: 250px; height: 180px; object-fit: cover; border-radius: 12px; box-shadow: var(--shadow);">
+                    <div class="cabin-info" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h4 style="font-size: 1.3rem; margin-bottom: 10px;">${cabin.name}</h4>
+                            <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người</p>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ đêm</span></div>
+                            <button class="btn-primary" style="padding: 12px 25px; border-radius: 8px; font-weight: 600;" onclick="window.bookCabin(${cabin.cabinTypeId})">Đặt Phòng</button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -154,9 +145,9 @@ async function loadCruiseDetail() {
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
             schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item mb-2 p-3 border rounded">
+                <div class="schedule-item mb-2 p-3 border rounded" id="schedule-box-${s.scheduleId}" style="transition: all 0.2s;">
                     <strong>${new Date(s.departureDate).toLocaleDateString('vi-VN')}</strong> - ${s.durationLabel}
-                    <button class="btn-primary float-right" style="padding: 5px 10px; font-size: 14px;">Chọn lịch này</button>
+                    <button class="btn-secondary float-right" id="btn-schedule-${s.scheduleId}" onclick="window.selectSchedule(${s.scheduleId})" style="padding: 5px 10px; font-size: 14px;">Chọn lịch này</button>
                 </div>
             `).join('');
         } else {
@@ -176,52 +167,76 @@ async function loadCruiseDetail() {
             reviewsHtml = '<p>Chưa có đánh giá nào.</p>';
         }
 
+        let heroImage = cruise.images && cruise.images.length > 0 ? cruise.images[0] : '/images/default-cruise.jpg';
+        
+        // Modal logic cho ảnh có thể để sau, tạm làm nút mở popup báo
+        let galleryButton = `<button class="btn-secondary" style="position: absolute; bottom: 20px; right: 20px; background: white; color: black; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);" onclick="window.Popup.show('Thư viện ảnh', 'Chức năng xem tất cả ảnh đang được cập nhật!', 'info')"><i class="icon-camera"></i> Xem tất cả ảnh</button>`;
+
+        let amenitiesHtml = '';
+        if (cruise.amenities && cruise.amenities.length > 0) {
+            amenitiesHtml = cruise.amenities.map(a => `
+                <div class="amenity-card" style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-light);">
+                    <span style="font-size: 1.5rem; color: var(--primary);">${a.iconClass || '✨'}</span>
+                    <span style="font-weight: 500; font-size: 1.1rem;">${a.name}</span>
+                </div>
+            `).join('');
+        } else {
+            amenitiesHtml = '<p>Không có tiện nghi nào.</p>';
+        }
+
         container.innerHTML = `
-            <div class="cruise-detail-header mb-4">
-                <h1 class="cruise-title" style="font-size: 2.5rem;">${cruise.name}</h1>
-                <div class="cruise-meta" style="font-size: 1.1rem; justify-content: flex-start; gap: 20px;">
-                    <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount} đánh giá)</span>
+            <div class="cruise-detail-header mb-4 text-center">
+                <h1 class="cruise-title" style="font-size: 3rem; font-family: var(--font-heading); color: var(--text-dark); margin-bottom: 15px;">${cruise.name}</h1>
+                <div class="cruise-meta d-flex justify-content-center align-items-center" style="font-size: 1.1rem; gap: 20px; color: #555;">
+                    <span class="rating">⭐ <strong>${cruise.averageRating}</strong> (${cruise.reviewCount} đánh giá)</span>
+                    <span>•</span>
                     <span class="destination">📍 ${cruise.destinationName}</span>
                 </div>
             </div>
             
-            <div class="image-gallery mb-4">
-                ${imagesHtml}
+            <div class="hero-image-wrapper mb-5" style="position: relative; width: 100%; height: 500px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow);">
+                <img src="${heroImage}" alt="${cruise.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                ${galleryButton}
             </div>
 
-            <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+            <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 60px;">
                 <div class="main-content">
-                    <div class="cruise-description mb-4">
-                        <h3>Về Du Thuyền</h3>
-                        <p>${cruise.description || cruise.shortDescription || 'Chưa có mô tả'}</p>
+                    <div class="cruise-section mb-5">
+                        <h3 class="section-heading mb-3" style="font-size: 1.8rem; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Về Du Thuyền</h3>
+                        <p style="font-size: 1.1rem; line-height: 1.8; color: #444;">${cruise.description || cruise.shortDescription || 'Chưa có mô tả'}</p>
                     </div>
 
-                    <div class="cruise-amenities mb-4">
-                        <h3>Tiện Nghi</h3>
-                        <div class="amenities-list">
+                    <div class="cruise-section mb-5">
+                        <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Tiện Nghi Nổi Bật</h3>
+                        <div class="amenities-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
                             ${amenitiesHtml}
                         </div>
                     </div>
 
-                    <div class="cruise-cabins mb-4">
-                        <h3>Các Loại Phòng</h3>
-                        <div class="cabin-grid">
+                    <div class="cruise-section mb-5">
+                        <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Các Loại Phòng</h3>
+                        <div class="cabin-list">
                             ${cabinsHtml}
                         </div>
                     </div>
 
-                    <div class="cruise-reviews mb-4">
-                        <h3>Đánh giá gần đây</h3>
-                        <div class="reviews-list mt-3">
+                    <div class="cruise-section mb-5">
+                        <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Đánh giá từ khách hàng</h3>
+                        <div class="reviews-list">
                             ${reviewsHtml}
                         </div>
                     </div>
                 </div>
                 
                 <div class="sidebar">
-                    <div class="booking-widget p-4 border rounded" style="background: var(--white); position: sticky; top: 100px;">
-                        <h3 class="mb-3">Lịch Khởi Hành</h3>
-                        ${schedulesHtml}
+                    <div class="booking-widget luxury-card" style="position: sticky; top: 120px; padding: 30px; background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.08);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">
+                            Từ ${formatPrice(cruise.cabins && cruise.cabins.length > 0 ? cruise.cabins[0].basePrice : 0)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ đêm</span>
+                        </div>
+                        <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600;">Chọn Lịch Khởi Hành</h4>
+                        <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                            ${schedulesHtml}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -229,9 +244,50 @@ async function loadCruiseDetail() {
 
     } catch (error) {
         console.error('Error loading details:', error);
-        container.innerHTML = '<p class="text-center" style="color: red;">Du thuyền không tồn tại hoặc có lỗi xảy ra.</p>';
+        container.innerHTML = `<p class="text-center" style="color: red;">Du thuyền không tồn tại hoặc có lỗi xảy ra.</p>`;
     }
 }
+
+window.selectedScheduleId = null;
+
+window.selectSchedule = function(scheduleId) {
+    window.selectedScheduleId = scheduleId;
+    
+    // Reset all
+    document.querySelectorAll('.schedule-item').forEach(el => {
+        el.style.borderColor = 'var(--border)';
+        el.style.background = 'transparent';
+    });
+    document.querySelectorAll('.schedule-item button').forEach(el => {
+        el.className = 'btn-secondary float-right';
+        el.innerText = 'Chọn lịch này';
+    });
+
+    // Highlight selected
+    const box = document.getElementById(`schedule-box-${scheduleId}`);
+    const btn = document.getElementById(`btn-schedule-${scheduleId}`);
+    if(box && btn) {
+        box.style.borderColor = 'var(--primary)';
+        box.style.background = 'var(--bg-light)';
+        btn.className = 'btn-primary float-right';
+        btn.innerText = 'Đã chọn ✓';
+    }
+};
+
+window.bookCabin = function(cabinTypeId) {
+    if (!window.selectedScheduleId) {
+        if(window.Popup) {
+            window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành trước khi đặt phòng.', 'warning');
+        } else {
+            alert('Vui lòng chọn Lịch Khởi Hành trước khi đặt phòng.');
+        }
+        return;
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const cruiseId = urlParams.get('id');
+    window.location.href = `/booking.html?cruiseId=${cruiseId}&scheduleId=${window.selectedScheduleId}&cabinTypeId=${cabinTypeId}`;
+};
 
 function renderCruiseCard(cruise) {
     return `

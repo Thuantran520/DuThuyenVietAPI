@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Sử Đặt Vé - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .history-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-Pending { background: #fef08a; color: #854d0e; }
+        .status-Confirmed { background: #bbf7d0; color: #166534; }
+        .status-Cancelled { background: #fecaca; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <a href="/index.html" class="logo">DuThuyenViet</a>
+            <nav>
+                <a href="/search.html">Tìm Du Thuyền</a>
+                <a href="/profile.html">Cá nhân</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container py-5">
+        <h1 class="mb-4">Lịch Sử Đặt Vé Của Bạn</h1>
+        <div id="historyList">
+            <p>Đang tải dữ liệu...</p>
+        </div>
+    </div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/booking.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initHistoryPage();
+        });
+    </script>
+</body>
+</html>

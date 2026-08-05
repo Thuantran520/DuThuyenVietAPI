@@ -27,6 +27,7 @@ public class CruisesController : ControllerBase
             var query = _context.Cruises
                 .Include(c => c.Destination)
                 .Include(c => c.CabinTypes)
+                .Include(c => c.CruiseImages)
                 .Where(c => c.IsActive)
                 .AsQueryable();
 
@@ -55,7 +56,7 @@ public class CruisesController : ControllerBase
                     c.AverageRating,
                     c.ReviewCount,
                     DestinationName = c.Destination.Name,
-                    c.ThumbnailUrl,
+                    ThumbnailUrl = c.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).FirstOrDefault() ?? c.ThumbnailUrl,
                     c.ShortDescription,
                     StartingPrice = c.CabinTypes.Any() ? c.CabinTypes.Min(cb => cb.BasePrice) : 0
                 })
@@ -102,7 +103,9 @@ public class CruisesController : ControllerBase
                 cruise.ReviewCount,
                 cruise.Description,
                 DestinationName = cruise.Destination.Name,
-                Images = cruise.CruiseImages.Select(img => img.ImageUrl).ToList(),
+                Images = cruise.CruiseImages.Any() 
+                    ? cruise.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).ToList() 
+                    : (!string.IsNullOrEmpty(cruise.ThumbnailUrl) ? new List<string> { cruise.ThumbnailUrl } : new List<string>()),
                 Amenities = cruise.Amenities.Select(a => new { a.Name, IconClass = a.IconClass }).ToList(),
                 Cabins = cruise.CabinTypes.Select(cb => new
                 {
