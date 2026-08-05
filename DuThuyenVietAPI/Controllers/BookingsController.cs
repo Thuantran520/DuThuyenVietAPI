@@ -126,9 +126,11 @@ public class BookingsController : ControllerBase
 
             if (booking == null) return NotFound("Không tìm thấy đơn đặt vé.");
 
-            // Chỉ người đặt vé hoặc Admin mới được xem
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (booking.UserId != userId && role != "Admin")
+            // Check if user is staff/admin
+            bool isStaff = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+
+            // Chỉ người đặt vé hoặc Staff/Admin mới được xem
+            if (booking.UserId != userId && !isStaff)
             {
                 return Forbid("Bạn không có quyền xem đơn này.");
             }
@@ -157,6 +159,78 @@ public class BookingsController : ControllerBase
                     p.PaidAt
                 })
             });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Lỗi server: " + ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpGet("All")]
+    public async Task<IActionResult> GetAllBookings()
+    {
+        try
+        {
+            var bookings = await _context.Bookings
+                .Include(b => b.Schedule)
+                .ThenInclude(s => s.Cruise)
+                .Include(b => b.CabinType)
+                .OrderByDescending(b => b.CreatedAt)
+                .Select(b => new
+                {
+                    b.BookingId,
+                    b.BookingCode,
+                    b.ContactName,
+                    b.ContactPhone,
+                    CruiseName = b.Schedule.Cruise.Name,
+                    CabinName = b.CabinType.Name,
+                    b.Schedule.DepartureDate,
+                    b.NumberOfRooms,
+                    b.TotalPrice,
+                    b.Status,
+                    b.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(bookings);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Lỗi server: " + ex.Message);
+        }
+    }
+
+    public class UpdateBookingStatusDTO
+    {
+        public string Status { get; set; } = null!;
+    }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPut("{id}/Status")]
+    public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusDTO dto)
+    {
+        try
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null) return NotFound("Không tìm thấy đơn hàng");
+
+            booking.Status = dto.Status;
+            booking.UpdatedAt = DateTime.Now;
+
+            // Also update payment status if confirmed
+            if (dto.Status == "Confirmed")
+            {
+                var payment = await _context.Payments.FirstOrDefaultAsync(p => p.BookingId == id);
+                if (payment != null && payment.Status == "Pending")
+                {
+                    payment.Status = "Success";
+                    payment.PaidAt = DateTime.Now;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Đã cập nhật trạng thái đơn hàng." });
         }
         catch (Exception ex)
         {

@@ -216,6 +216,12 @@ document.addEventListener('DOMContentLoaded', async function () {
                         tabAdminNav.style.display = 'block';
                         loadAdminUsers();
                     }
+                    
+                    const tabBookingsNav = document.getElementById('tab-bookings-nav');
+                    if (tabBookingsNav && (isAdmin || isManager || isStaff)) {
+                        tabBookingsNav.style.display = 'block';
+                        loadAdminBookings();
+                    }
 
                     loader.style.display = 'none';
                     mainContent.style.display = 'block';
@@ -344,6 +350,75 @@ document.addEventListener('DOMContentLoaded', async function () {
                 avatarStatus.innerText = "Lỗi kết nối.";
             }
         });
+
+        // --- Fetch Admin Bookings Data ---
+        async function loadAdminBookings() {
+            try {
+                const response = await fetch('/api/Bookings/All', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const bookings = await response.json();
+                    const tbody = document.getElementById('bookings-table-body');
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+
+                    const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+                    
+                    bookings.forEach(b => {
+                        let statusHtml = '';
+                        if (b.status === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
+                        else if (b.status === 'AwaitingConfirmation') statusHtml = '<span class="role-badge" style="background:#e0e7ff; color:#4338ca;">Chờ xác nhận</span>';
+                        else if (b.status === 'Confirmed') statusHtml = '<span class="role-badge" style="background:#dcfce3; color:#16a34a;">Thành công</span>';
+                        else if (b.status === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
+                        else statusHtml = b.status;
+
+                        let actionsHtml = '';
+                        if (b.status === 'AwaitingConfirmation' || b.status === 'Pending') {
+                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981; margin-right:8px;" onclick="updateBookingStatus(${b.bookingId}, 'Confirmed')">Xác nhận</button>`;
+                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingStatus(${b.bookingId}, 'Cancelled')">Hủy</button>`;
+                        }
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="font-weight: 500;">${b.bookingCode}</td>
+                            <td>${b.contactName}<br><small class="text-muted">${b.contactPhone}</small></td>
+                            <td>${b.cruiseName}<br><small class="text-muted">${b.cabinName} (x${b.numberOfRooms})</small></td>
+                            <td style="font-weight: 600; color: #ef4444;">${formatPrice(b.totalPrice)}</td>
+                            <td>${statusHtml}</td>
+                            <td style="text-align: right;">${actionsHtml}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi lấy danh sách booking:", err);
+            }
+        }
+        
+        window.updateBookingStatus = async function(bookingId, status) {
+            let msg = status === 'Confirmed' ? 'Xác nhận đơn đặt phòng này?' : 'Bạn chắc chắn muốn hủy đơn này?';
+            Popup.confirm('Xác nhận', msg, async () => {
+                try {
+                    const res = await fetch(`/api/Bookings/${bookingId}/Status`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: status })
+                    });
+                    if (res.ok) { 
+                        Popup.show('Thành công', 'Cập nhật trạng thái thành công!', 'success'); 
+                        loadAdminBookings(); 
+                    }
+                    else { 
+                        Popup.show('Lỗi', 'Cập nhật thất bại.', 'error'); 
+                    }
+                } catch(e) {
+                    Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+                }
+            });
+        }
 
         // --- Fetch Admin Data (Staff Management) ---
         async function loadAdminUsers() {

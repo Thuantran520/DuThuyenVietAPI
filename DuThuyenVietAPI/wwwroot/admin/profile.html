@@ -27,6 +27,7 @@
         <div id="main-content" style="display: none;">
             <div class="tabs">
                 <div class="tab active" data-target="tab-profile">Hồ sơ Cá nhân</div>
+                <div class="tab" id="tab-bookings-nav" data-target="tab-bookings" style="display: none;">Quản lý Đặt Phòng</div>
                 <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
             </div>
 
@@ -84,6 +85,32 @@
                             <button class="btn btn-outline" id="btnCancelEdit">Hủy</button>
                             <button class="btn btn-primary" id="btnSaveProfile">Lưu thay đổi</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: BOOKINGS QUẢN LÝ ĐẶT PHÒNG -->
+            <div class="tab-content" id="tab-bookings">
+                <div class="card">
+                    <div class="card-title">Quản lý Yêu cầu Đặt Phòng</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Duyệt hoặc từ chối các yêu cầu thanh toán chuyển khoản/tiền mặt từ khách hàng.</div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Du thuyền & Phòng</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th style="text-align: right;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table-body">
+                                <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

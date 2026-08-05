@@ -36,27 +36,29 @@ public class PaymentsController : ControllerBase
             if (booking.UserId != userId) return Forbid();
             if (booking.Status != "Pending") return BadRequest("Đơn hàng không ở trạng thái chờ thanh toán");
 
-            // Mock thanh toán luôn thành công cho mục đích đồ án
+            bool isImmediate = request.PaymentMethod != "Cash" && request.PaymentMethod != "BankTransfer";
+
             var payment = new Payment
             {
                 BookingId = booking.BookingId,
                 Amount = booking.TotalPrice,
                 PaymentMethod = request.PaymentMethod,
                 TransactionCode = "TXN" + DateTime.Now.Ticks.ToString(),
-                Status = "Success",
-                PaidAt = DateTime.Now,
+                Status = isImmediate ? "Success" : "Pending",
+                PaidAt = isImmediate ? DateTime.Now : null,
                 CreatedAt = DateTime.Now
             };
 
             _context.Payments.Add(payment);
 
             // Cập nhật trạng thái Booking
-            booking.Status = "Confirmed";
+            booking.Status = isImmediate ? "Confirmed" : "AwaitingConfirmation";
             booking.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Thanh toán thành công!", TransactionCode = payment.TransactionCode });
+            string msg = isImmediate ? "Thanh toán thành công!" : "Đã ghi nhận yêu cầu. Vui lòng chờ nhân viên xác nhận!";
+            return Ok(new { Message = msg, TransactionCode = payment.TransactionCode, BookingStatus = booking.Status });
         }
         catch (Exception ex)
         {
