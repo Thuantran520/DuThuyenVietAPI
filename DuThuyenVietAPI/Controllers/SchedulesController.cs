@@ -56,7 +56,7 @@ public class SchedulesController : ControllerBase
         };
         _context.Schedules.Add(schedule);
         await _context.SaveChangesAsync();
-        return Ok(schedule);
+        return Ok(new { schedule.ScheduleId, schedule.CruiseId, DepartureDate = schedule.DepartureDate.ToString("yyyy-MM-dd"), ReturnDate = schedule.ReturnDate.ToString("yyyy-MM-dd"), schedule.DurationLabel, schedule.Status });
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]
@@ -72,7 +72,7 @@ public class SchedulesController : ControllerBase
         schedule.Status = dto.Status;
 
         await _context.SaveChangesAsync();
-        return Ok(schedule);
+        return Ok(new { schedule.ScheduleId, schedule.CruiseId, DepartureDate = schedule.DepartureDate.ToString("yyyy-MM-dd"), ReturnDate = schedule.ReturnDate.ToString("yyyy-MM-dd"), schedule.DurationLabel, schedule.Status });
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]

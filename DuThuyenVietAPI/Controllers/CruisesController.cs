@@ -173,7 +173,7 @@ public class CruisesController : ControllerBase
         };
         _context.Cruises.Add(cruise);
         await _context.SaveChangesAsync();
-        return Ok(cruise);
+        return Ok(new { cruise.CruiseId, cruise.Name, cruise.Slug, cruise.ThumbnailUrl, cruise.IsActive });
     }
     
     [Authorize(Roles = "Admin,Manager,Staff")]
@@ -211,7 +211,7 @@ public class CruisesController : ControllerBase
         }
         
         await _context.SaveChangesAsync();
-        return Ok(cruise);
+        return Ok(new { cruise.CruiseId, cruise.Name, cruise.Slug, cruise.ThumbnailUrl, cruise.UpdatedAt });
     }
     
     [Authorize(Roles = "Admin,Manager,Staff")]

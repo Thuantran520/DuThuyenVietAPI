@@ -60,7 +60,7 @@ public class CabinTypesController : ControllerBase
         };
         _context.CabinTypes.Add(cabin);
         await _context.SaveChangesAsync();
-        return Ok(cabin);
+        return Ok(new { cabin.CabinTypeId, cabin.CruiseId, cabin.Name, cabin.Description, cabin.MaxOccupancy, cabin.BasePrice, cabin.TotalRooms, cabin.ImageUrl });
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]
@@ -78,7 +78,7 @@ public class CabinTypesController : ControllerBase
         cabin.ImageUrl = dto.ImageUrl;
 
         await _context.SaveChangesAsync();
-        return Ok(cabin);
+        return Ok(new { cabin.CabinTypeId, cabin.CruiseId, cabin.Name, cabin.Description, cabin.MaxOccupancy, cabin.BasePrice, cabin.TotalRooms, cabin.ImageUrl });
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]
