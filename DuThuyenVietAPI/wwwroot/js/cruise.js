@@ -173,7 +173,7 @@ async function loadCruiseDetail() {
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
             schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item mb-3 p-3" id="schedule-box-${s.scheduleId}" style="transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.selectSchedule(${s.scheduleId})">
+                <div class="schedule-item mb-3 p-3" id="schedule-box-${s.scheduleId}" style="margin-bottom: 16px; transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.selectSchedule(${s.scheduleId})">
                     <div>
                         <div style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 4px;">📅 ${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
                         <div style="color: #64748b; font-size: 0.95rem;">⏱️ ${s.durationLabel}</div>
