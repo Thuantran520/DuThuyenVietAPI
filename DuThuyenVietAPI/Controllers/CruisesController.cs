@@ -86,7 +86,7 @@ public class CruisesController : ControllerBase
                 .Include(c => c.Destination)
                 .Include(c => c.CruiseImages)
                 .Include(c => c.CabinTypes)
-                .Include(c => c.Schedules.Where(s => s.DepartureDate >= DateTime.Now && s.Status == "Open"))
+                .Include(c => c.Schedules.OrderByDescending(s => s.DepartureDate))
                 .Include(c => c.Reviews.OrderByDescending(r => r.CreatedAt).Take(5))
                 .Include(c => c.Amenities)
                 .FirstOrDefaultAsync(c => c.CruiseId == id && c.IsActive);
