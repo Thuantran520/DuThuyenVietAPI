@@ -99,13 +99,14 @@
 
             // Checkout page logic
             const urlParams = new URLSearchParams(window.location.search);
-            const bookingId = urlParams.get('bookingId');
-            if (!bookingId) {
+            const bookingCode = urlParams.get('bookingCode');
+            if (!bookingCode) {
                 window.location.href = '/history.html';
                 return;
             }
 
             let selectedMethod = 'BankTransfer';
+            let firstBookingId = null;
 
             document.querySelectorAll('.payment-method').forEach(el => {
                 el.addEventListener('click', (e) => {
@@ -116,7 +117,7 @@
             });
 
             try {
-                const res = await fetch(`${API_URL}/Bookings/${bookingId}`, {
+                const res = await fetch(`${API_URL}/Bookings/MyBookings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -125,30 +126,43 @@
                     return;
                 }
 
-                const booking = await res.json();
+                const allBookings = await res.json();
+                const groupItems = allBookings.filter(b => b.bookingCode === bookingCode);
                 
-                if (booking.status !== 'Pending') {
+                if (groupItems.length === 0) {
+                    window.location.href = '/history.html';
+                    return;
+                }
+
+                const firstBooking = groupItems[0];
+                firstBookingId = firstBooking.bookingId;
+
+                if (firstBooking.status !== 'Pending') {
                     window.Popup.show('Thông báo', 'Đơn hàng này không ở trạng thái chờ thanh toán.', 'info');
                     setTimeout(() => window.location.href = '/history.html', 2000);
                     return;
                 }
 
-                document.getElementById('checkoutBookingCode').innerText = `Mã đơn: ${booking.bookingCode}`;
-                document.getElementById('checkoutTotal').innerText = formatPrice(booking.totalPrice);
+                const totalGroupPrice = groupItems.reduce((sum, b) => sum + b.totalPrice, 0);
+
+                document.getElementById('checkoutBookingCode').innerText = `Mã đơn: ${bookingCode}`;
+                document.getElementById('checkoutTotal').innerText = formatPrice(totalGroupPrice);
                 
+                const roomsDetail = groupItems.map(b => `${b.cabinName} (x${b.numberOfRooms})`).join(', ');
+
                 document.getElementById('checkoutDetails').innerHTML = `
-                    <p><strong>Du thuyền:</strong> ${booking.cruiseName}</p>
-                    <p><strong>Loại phòng:</strong> ${booking.cabinName} (x${booking.numberOfRooms})</p>
-                    <p><strong>Ngày đi:</strong> ${new Date(booking.departureDate).toLocaleDateString('vi-VN')}</p>
-                    <p><strong>Khách hàng:</strong> ${booking.contactName} - ${booking.contactPhone}</p>
+                    <p><strong>Du thuyền:</strong> ${firstBooking.cruiseName}</p>
+                    <p><strong>Loại phòng:</strong> ${roomsDetail}</p>
+                    <p><strong>Ngày đi:</strong> ${new Date(firstBooking.departureDate).toLocaleDateString('vi-VN')}</p>
+                    <p><strong>Khách hàng:</strong> ${firstBooking.contactName} - ${firstBooking.contactPhone}</p>
                 `;
 
                 const updateInstructions = () => {
                     const instructions = document.getElementById('paymentInstructions');
                     instructions.style.display = 'block';
                     const btn = document.getElementById('btnPay');
-                    const bCode = booking.bookingCode;
-                    const bTotal = formatPrice(booking.totalPrice);
+                    const bCode = bookingCode;
+                    const bTotal = formatPrice(totalGroupPrice);
                     
                     if (selectedMethod === 'BankTransfer') {
                         instructions.innerHTML = `
@@ -211,23 +225,34 @@
                     btn.innerText = 'Đang xử lý...';
 
                     try {
-                        const payRes = await fetch(`${API_URL}/Payments/Process`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({ bookingId: parseInt(bookingId), paymentMethod: selectedMethod })
-                        });
+                        let successCount = 0;
+                        let lastPayData = null;
+                        
+                        for (const b of groupItems) {
+                            const payRes = await fetch(`${API_URL}/Payments/Process`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ bookingId: b.bookingId, paymentMethod: selectedMethod })
+                            });
+                            
+                            const payData = await payRes.json();
+                            if (payRes.ok) {
+                                successCount++;
+                                lastPayData = payData;
+                            } else {
+                                window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại cho phòng ' + b.cabinName, 'error');
+                                btn.disabled = false;
+                                updateInstructions();
+                                return;
+                            }
+                        }
 
-                        const payData = await payRes.json();
-                        if (payRes.ok) {
-                            window.Popup.show('Thành công', payData.message + (payData.transactionCode ? ' (Mã GD: ' + payData.transactionCode + ')' : ''), 'success');
+                        if (successCount === groupItems.length) {
+                            window.Popup.show('Thành công', lastPayData.message + (lastPayData.transactionCode ? ' (Mã GD: ' + lastPayData.transactionCode + ')' : ''), 'success');
                             setTimeout(() => window.location.href = '/history.html', 3000);
-                        } else {
-                            window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại', 'error');
-                            btn.disabled = false;
-                            updateInstructions();
                         }
                     } catch (error) {
                         window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ', 'error');

@@ -282,12 +282,7 @@
                     }
                     
                     if (!hasError) {
-                        if (selectedCabins.length === 1 && firstBookingId) {
-                            window.location.href = `/checkout.html?bookingId=${firstBookingId}`;
-                        } else {
-                            window.Popup.show('Thành công', 'Đã tạo các đơn đặt phòng thành công.', 'success');
-                            setTimeout(() => window.location.href = `/history.html`, 1500);
-                        }
+                        window.location.href = `/checkout.html?bookingCode=${orderBookingCode}`;
                     }
                 } catch (error) {
                     window.Popup.show('Lỗi', 'Không thể kết nối máy chủ.', 'error');

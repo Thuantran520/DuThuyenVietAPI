@@ -595,8 +595,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     document.getElementById('cruiseModalTitle').innerText = 'Cập nhật Du Thuyền';
                     document.getElementById('cruise-id-input').value = c.cruiseId;
                     document.getElementById('cruise-name-input').value = c.name;
-                    // c.destinationId is not returned in detail currently, just use a default or fetch if needed
-                    document.getElementById('cruise-dest-input').value = '1'; 
+                    document.getElementById('cruise-dest-input').value = c.destinationId || '1'; 
                     document.getElementById('cruise-cabins-input').value = '20';
                     document.getElementById('cruise-shortdesc-input').value = c.shortDescription || '';
                     document.getElementById('cruise-desc-input').value = c.description || '';

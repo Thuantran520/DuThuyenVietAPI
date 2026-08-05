@@ -103,6 +103,7 @@ public class CruisesController : ControllerBase
                 cruise.ReviewCount,
                 cruise.ShortDescription,
                 cruise.Description,
+                DestinationId = cruise.DestinationId,
                 DestinationName = cruise.Destination != null ? cruise.Destination.Name : "Đang cập nhật",
                 Images = cruise.CruiseImages.Any() 
                     ? cruise.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).ToList() 
