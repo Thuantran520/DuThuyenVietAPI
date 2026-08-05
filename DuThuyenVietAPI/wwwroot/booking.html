@@ -28,16 +28,34 @@
             border-radius: 8px;
             border: 1px solid var(--border);
         }
+        .booking-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 992px) {
+            .booking-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 576px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
     <header class="main-header">
         <div class="container">
             <a href="/index.html" class="logo">DuThuyenViet</a>
-            <nav>
+            <nav id="topNav">
                 <a href="/search.html">Tìm Du Thuyền</a>
-                <a href="/history.html">Lịch sử đặt vé</a>
-                <a href="/profile.html">Cá nhân</a>
             </nav>
         </div>
     </header>
@@ -98,10 +116,117 @@
     </div>
 
     <script src="/js/popup.js"></script>
-    <script src="/js/booking.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            initBookingPage();
+        const API_URL = '/api';
+        const getToken = () => localStorage.getItem('auth_token');
+        const formatPrice = (price) => {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+        };
+        const checkAuth = () => {
+            if (!getToken()) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Header logic
+            const token = getToken();
+            const nav = document.getElementById('topNav');
+            if (token) {
+                nav.innerHTML += `
+                    <a href="/history.html">Lịch sử đặt vé</a>
+                    <a href="/profile.html">Cá nhân</a>
+                    <a href="#" id="btnLogoutBtn">Đăng xuất</a>
+                `;
+                document.getElementById('btnLogoutBtn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login.html';
+                });
+            } else {
+                nav.innerHTML += `
+                    <a href="/login.html">Đăng nhập</a>
+                    <a href="/register.html">Đăng ký</a>
+                `;
+            }
+
+            if (!checkAuth()) return;
+
+            // Booking page logic
+            const urlParams = new URLSearchParams(window.location.search);
+            const scheduleId = urlParams.get('scheduleId');
+            const cabinTypeId = urlParams.get('cabinTypeId');
+            const cruiseId = urlParams.get('cruiseId');
+
+            if (!scheduleId || !cabinTypeId) {
+                window.Popup.show('Lỗi', 'Thông tin không hợp lệ.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/Cruises/${cruiseId}`);
+                const cruise = await response.json();
+                const schedule = cruise.schedules.find(s => s.scheduleId == scheduleId);
+                const cabin = cruise.cabins.find(c => c.cabinTypeId == cabinTypeId);
+
+                if (!schedule || !cabin) throw new Error('Data mismatch');
+
+                const updateSummary = () => {
+                    const rooms = parseInt(document.getElementById('b_rooms').value) || 1;
+                    const total = cabin.basePrice * rooms;
+                    const summaryHtml = `
+                        <h4 class="mb-2">${cruise.name}</h4>
+                        <p><strong>Loại phòng:</strong> ${cabin.name}</p>
+                        <p><strong>Khởi hành:</strong> ${new Date(schedule.departureDate).toLocaleDateString('vi-VN')}</p>
+                        <p><strong>Thời gian:</strong> ${schedule.durationLabel}</p>
+                        <hr class="my-3">
+                        <p><strong>Đơn giá:</strong> <span class="text-danger">${formatPrice(cabin.basePrice)}</span> / phòng</p>
+                        <p><strong>Số lượng phòng:</strong> ${rooms}</p>
+                        <h4 class="mt-3">Tổng cộng: <span class="text-danger">${formatPrice(total)}</span></h4>
+                    `;
+                    document.getElementById('bookingSummary').innerHTML = summaryHtml;
+                };
+
+                updateSummary();
+                document.getElementById('b_rooms').addEventListener('input', updateSummary);
+            } catch (e) {
+                document.getElementById('bookingSummary').innerHTML = '<p class="text-danger">Không thể tải thông tin chuyến đi.</p>';
+            }
+
+            document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    scheduleId: parseInt(scheduleId),
+                    cabinTypeId: parseInt(cabinTypeId),
+                    numberOfRooms: parseInt(document.getElementById('b_rooms').value),
+                    numberOfGuests: parseInt(document.getElementById('b_guests').value),
+                    contactName: document.getElementById('b_name').value,
+                    contactPhone: document.getElementById('b_phone').value,
+                    contactEmail: document.getElementById('b_email').value,
+                    note: document.getElementById('b_note').value
+                };
+
+                try {
+                    const res = await fetch(`${API_URL}/Bookings`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        window.location.href = `/checkout.html?bookingId=${data.bookingId}`;
+                    } else {
+                        window.Popup.show('Lỗi', data.message || 'Lỗi đặt phòng', 'error');
+                    }
+                } catch (error) {
+                    window.Popup.show('Lỗi', 'Không thể kết nối máy chủ.', 'error');
+                }
+            });
         });
     </script>
 </body>

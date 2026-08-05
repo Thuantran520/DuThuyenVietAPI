@@ -353,25 +353,3 @@ a:hover { color: var(--primary-hover); }
 .gallery-grid img:hover {
     transform: scale(1.03);
 }
-
-/* Booking Layout */
-.booking-layout {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 40px;
-}
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-@media (max-width: 992px) {
-    .booking-layout {
-        grid-template-columns: 1fr;
-    }
-}
-@media (max-width: 576px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}

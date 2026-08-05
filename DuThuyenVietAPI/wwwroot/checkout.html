@@ -46,8 +46,8 @@
     <header class="main-header">
         <div class="container">
             <a href="/index.html" class="logo">DuThuyenViet</a>
-            <nav>
-                <a href="/history.html">Lịch sử đặt vé</a>
+            <nav id="topNav">
+                <a href="/search.html">Tìm Du Thuyền</a>
             </nav>
         </div>
     </header>
@@ -76,10 +76,124 @@
     </div>
 
     <script src="/js/popup.js"></script>
-    <script src="/js/booking.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            initCheckoutPage();
+        const API_URL = '/api';
+        const getToken = () => localStorage.getItem('auth_token');
+        const formatPrice = (price) => {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+        };
+        const checkAuth = () => {
+            if (!getToken()) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Header logic
+            const token = getToken();
+            const nav = document.getElementById('topNav');
+            if (token) {
+                nav.innerHTML += `
+                    <a href="/history.html">Lịch sử đặt vé</a>
+                    <a href="/profile.html">Cá nhân</a>
+                    <a href="#" id="btnLogoutBtn">Đăng xuất</a>
+                `;
+                document.getElementById('btnLogoutBtn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login.html';
+                });
+            } else {
+                nav.innerHTML += `
+                    <a href="/login.html">Đăng nhập</a>
+                    <a href="/register.html">Đăng ký</a>
+                `;
+            }
+
+            if (!checkAuth()) return;
+
+            // Checkout page logic
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('bookingId');
+            if (!bookingId) {
+                window.location.href = '/history.html';
+                return;
+            }
+
+            let selectedMethod = 'BankTransfer';
+
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    document.querySelectorAll('.payment-method').forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    selectedMethod = e.target.getAttribute('data-method');
+                });
+            });
+
+            try {
+                const res = await fetch(`${API_URL}/Bookings/${bookingId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) {
+                    window.location.href = '/history.html';
+                    return;
+                }
+
+                const booking = await res.json();
+                
+                if (booking.status !== 'Pending') {
+                    window.Popup.show('Thông báo', 'Đơn hàng này không ở trạng thái chờ thanh toán.', 'info');
+                    setTimeout(() => window.location.href = '/history.html', 2000);
+                    return;
+                }
+
+                document.getElementById('checkoutBookingCode').innerText = `Mã đơn: ${booking.bookingCode}`;
+                document.getElementById('checkoutTotal').innerText = formatPrice(booking.totalPrice);
+                
+                document.getElementById('checkoutDetails').innerHTML = `
+                    <p><strong>Du thuyền:</strong> ${booking.cruiseName}</p>
+                    <p><strong>Loại phòng:</strong> ${booking.cabinName} (x${booking.numberOfRooms})</p>
+                    <p><strong>Ngày đi:</strong> ${new Date(booking.departureDate).toLocaleDateString('vi-VN')}</p>
+                    <p><strong>Khách hàng:</strong> ${booking.contactName} - ${booking.contactPhone}</p>
+                `;
+
+                document.getElementById('btnPay').addEventListener('click', async () => {
+                    const btn = document.getElementById('btnPay');
+                    btn.disabled = true;
+                    btn.innerText = 'Đang xử lý...';
+
+                    try {
+                        const payRes = await fetch(`${API_URL}/Payments/Process`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ bookingId: parseInt(bookingId), paymentMethod: selectedMethod })
+                        });
+
+                        const payData = await payRes.json();
+                        if (payRes.ok) {
+                            window.Popup.show('Thành công', 'Thanh toán thành công! Mã GD: ' + payData.transactionCode, 'success');
+                            setTimeout(() => window.location.href = '/history.html', 3000);
+                        } else {
+                            window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại', 'error');
+                            btn.disabled = false;
+                            btn.innerText = 'Thanh Toán Ngay';
+                        }
+                    } catch (error) {
+                        window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ', 'error');
+                        btn.disabled = false;
+                        btn.innerText = 'Thanh Toán Ngay';
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+            }
         });
     </script>
 </body>

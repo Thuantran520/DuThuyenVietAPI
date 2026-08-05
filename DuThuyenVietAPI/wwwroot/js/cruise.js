@@ -132,7 +132,7 @@ async function loadCruiseDetail() {
                             <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người</p>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ đêm</span></div>
+                            <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ người</span></div>
                             <button class="btn-primary" style="padding: 12px 25px; border-radius: 8px; font-weight: 600;" onclick="window.bookCabin(${cabin.cabinTypeId})">Đặt Phòng</button>
                         </div>
                     </div>
@@ -230,7 +230,7 @@ async function loadCruiseDetail() {
                 <div class="sidebar">
                     <div class="booking-widget luxury-card" style="position: sticky; top: 120px; padding: 30px; background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.08);">
                         <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">
-                            Từ ${formatPrice(cruise.cabins && cruise.cabins.length > 0 ? cruise.cabins[0].basePrice : 0)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ đêm</span>
+                            Từ ${formatPrice(cruise.cabins && cruise.cabins.length > 0 ? cruise.cabins[0].basePrice : 0)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ người</span>
                         </div>
                         <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600;">Chọn Lịch Khởi Hành</h4>
                         <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
