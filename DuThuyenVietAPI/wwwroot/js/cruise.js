@@ -168,10 +168,9 @@ async function loadCruiseDetail() {
         }
 
         let heroImage = cruise.images && cruise.images.length > 0 ? cruise.images[0] : '/images/default-cruise.jpg';
-        
-        // Modal logic cho ảnh có thể để sau, tạm làm nút mở popup báo
-        let galleryButton = `<button class="btn-secondary" style="position: absolute; bottom: 20px; right: 20px; background: white; color: black; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);" onclick="window.Popup.show('Thư viện ảnh', 'Chức năng xem tất cả ảnh đang được cập nhật!', 'info')"><i class="icon-camera"></i> Xem tất cả ảnh</button>`;
-
+        // Logic mở thư viện ảnh
+        const imagesJson = JSON.stringify(cruise.images || [heroImage]).replace(/"/g, '&quot;');
+        let galleryButton = `<button class="btn-secondary" style="position: absolute; bottom: 20px; right: 20px; background: white; color: black; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);" onclick="window.Popup.gallery('Thư viện ảnh', JSON.parse('${imagesJson}'))"><i class="icon-camera"></i> Xem tất cả ảnh</button>`;
         let amenitiesHtml = '';
         if (cruise.amenities && cruise.amenities.length > 0) {
             amenitiesHtml = cruise.amenities.map(a => `

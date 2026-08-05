@@ -124,6 +124,39 @@ window.Popup = (function() {
 
             modalOverlay.classList.add('show');
             setTimeout(() => input.focus(), 100);
+        },
+
+        gallery: function(title, imagesArray) {
+            if(!modalOverlay) init();
+            document.getElementById('modal-title').innerText = title;
+            
+            const card = modalOverlay.querySelector('.modal-card');
+            card.classList.add('gallery-modal');
+
+            const body = document.getElementById('modal-body');
+            let imagesHtml = imagesArray.map(img => `<img src="${img}" alt="Gallery Image" loading="lazy">`).join('');
+            body.innerHTML = `<div class="gallery-grid">${imagesHtml}</div>`;
+            
+            document.getElementById('modal-input').style.display = 'none';
+            
+            const btnConfirm = document.getElementById('modal-confirm');
+            btnConfirm.style.display = 'none'; // Hide confirm btn for gallery
+            
+            const btnCancel = document.getElementById('modal-cancel');
+            btnCancel.innerText = 'Đóng';
+            
+            const newBtn = btnCancel.cloneNode(true);
+            btnCancel.parentNode.replaceChild(newBtn, btnCancel);
+            
+            newBtn.addEventListener('click', () => {
+                close();
+                setTimeout(() => {
+                    card.classList.remove('gallery-modal');
+                    btnConfirm.style.display = 'inline-block';
+                }, 300);
+            });
+
+            modalOverlay.classList.add('show');
         }
     };
 })();
