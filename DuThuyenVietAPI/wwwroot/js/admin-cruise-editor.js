@@ -9,18 +9,104 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatPrice = p => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
 
     // ==========================================
-    // 1. CRUISE INFO (thông tin cơ bản)
+    // 0. LOAD DESTINATIONS (dynamic)
     // ==========================================
-    if (isEdit) {
-        document.getElementById('editor-title').innerText = 'Chỉnh sửa Du Thuyền';
-        loadCruise(cruiseId);
-        document.getElementById('section-cabins').style.display = 'block';
-        document.getElementById('section-schedules').style.display = 'block';
-        loadCabins();
-        loadSchedules();
+    let currentUserRoles = [];
+
+    async function initPage() {
+        // Get user roles from token
+        try {
+            const res = await fetch('/api/account/profile', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+                const profile = await res.json();
+                currentUserRoles = profile.roles || profile.Roles || [];
+            }
+        } catch {}
+
+        const isAdminOrManager = currentUserRoles.some(r => r === 'Admin' || r === 'Manager');
+
+        // Show "+ Thêm khu vực" button only for Admin/Manager
+        if (isAdminOrManager) {
+            document.getElementById('btn-add-dest').style.display = 'inline-block';
+        }
+
+        // Load destinations from API
+        await loadDestinations();
+
+        // Then load cruise data and sections
+        if (isEdit) {
+            document.getElementById('editor-title').innerText = 'Chỉnh sửa Du Thuyền';
+            await loadCruise(cruiseId);
+            document.getElementById('section-cabins').style.display = 'block';
+            document.getElementById('section-schedules').style.display = 'block';
+            loadCabins();
+            loadSchedules();
+        }
     }
 
+    async function loadDestinations(selectedId = null) {
+        try {
+            const res = await fetch('/api/Destinations');
+            if (!res.ok) return;
+            const dests = await res.json();
+            const select = document.getElementById('edit-dest');
+            select.innerHTML = dests.map(d =>
+                `<option value="${d.destinationId}">${d.name}</option>`
+            ).join('');
+            if (selectedId) select.value = selectedId;
+        } catch {
+            // fallback hardcode nếu API lỗi
+            document.getElementById('edit-dest').innerHTML = `
+                <option value="1">Vịnh Hạ Long</option>
+                <option value="2">Vịnh Lan Hạ</option>
+            `;
+        }
+    }
+
+    // "+ Thêm khu vực" button → open modal
+    document.getElementById('btn-add-dest').addEventListener('click', () => {
+        document.getElementById('dest-name').value = '';
+        document.getElementById('dest-desc').value = '';
+        document.getElementById('dest-modal').classList.add('active');
+    });
+
+    // Save new destination
+    document.getElementById('btn-save-dest').addEventListener('click', async () => {
+        const name = document.getElementById('dest-name').value.trim();
+        if (!name) { Popup.show('Thiếu thông tin', 'Vui lòng nhập tên khu vực.', 'error'); return; }
+
+        const btn = document.getElementById('btn-save-dest');
+        btn.innerText = 'Đang lưu...'; btn.disabled = true;
+        try {
+            const res = await fetch('/api/Destinations', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description: document.getElementById('dest-desc').value.trim(), imageUrl: '' })
+            });
+            if (res.ok) {
+                const newDest = await res.json();
+                document.getElementById('dest-modal').classList.remove('active');
+                Popup.show('Thành công', `Đã tạo khu vực "${newDest.name}"!`, 'success');
+                await loadDestinations(newDest.destinationId); // reload & auto-select new
+            } else {
+                let msg = 'Lỗi tạo khu vực.';
+                try { const e = await res.json(); msg = e.message || msg; } catch {}
+                Popup.show('Lỗi', msg, 'error');
+            }
+        } catch { Popup.show('Lỗi', 'Lỗi kết nối.', 'error'); }
+        finally { btn.innerText = '💾 Tạo Khu Vực'; btn.disabled = false; }
+    });
+
+    // Close dest modal on overlay click
+    document.getElementById('dest-modal').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+
     document.getElementById('btn-save-cruise').addEventListener('click', saveCruise);
+
+    // Start init
+    initPage();
+
 
     async function loadCruise(id) {
         try {

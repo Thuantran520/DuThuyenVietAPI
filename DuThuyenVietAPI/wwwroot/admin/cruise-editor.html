@@ -166,10 +166,12 @@
                     <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 160px;">
                             <label class="form-label" style="font-size: 0.8rem;">📍 KHU VỰC</label>
-                            <select id="edit-dest" class="editable-field" style="width: 100%;">
-                                <option value="1">Vịnh Hạ Long</option>
-                                <option value="2">Vịnh Lan Hạ</option>
-                            </select>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="edit-dest" class="editable-field" style="width: 100%;">
+                                    <option value="">Đang tải...</option>
+                                </select>
+                                <button id="btn-add-dest" title="Thêm khu vực mới" style="display:none; padding: 8px 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">+ Thêm</button>
+                            </div>
                         </div>
                         <div style="flex: 1; min-width: 120px;">
                             <label class="form-label" style="font-size: 0.8rem;">🛏️ TỔNG SỐ PHÒNG</label>
@@ -244,6 +246,25 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- ===== MODAL: ADD DESTINATION ===== -->
+    <div class="inline-modal-overlay" id="dest-modal">
+        <div class="inline-modal" style="max-width: 420px;">
+            <div class="modal-title">➕ Thêm Khu Vực Mới</div>
+            <div class="form-group-modal">
+                <label class="form-label">Tên khu vực</label>
+                <input type="text" id="dest-name" class="form-input" placeholder="VD: Vịnh Bái Tử Long">
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Mô tả (tuỳ chọn)</label>
+                <textarea id="dest-desc" class="form-input" rows="2" placeholder="Mô tả ngắn về khu vực..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="document.getElementById('dest-modal').classList.remove('active')">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-dest">💾 Tạo Khu Vực</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== MODAL: CABIN TYPE ===== -->
