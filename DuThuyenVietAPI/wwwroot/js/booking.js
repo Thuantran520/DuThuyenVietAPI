@@ -39,15 +39,24 @@ async function initBookingPage() {
 
         if (!schedule || !cabin) throw new Error('Data mismatch');
 
-        const summaryHtml = `
-            <h4 class="mb-2">${cruise.name}</h4>
-            <p><strong>Loại phòng:</strong> ${cabin.name}</p>
-            <p><strong>Khởi hành:</strong> ${new Date(schedule.departureDate).toLocaleDateString('vi-VN')}</p>
-            <p><strong>Thời gian:</strong> ${schedule.durationLabel}</p>
-            <hr class="my-3">
-            <p><strong>Đơn giá:</strong> <span class="text-danger">${formatPrice(cabin.basePrice)}</span> / phòng</p>
-        `;
-        document.getElementById('bookingSummary').innerHTML = summaryHtml;
+        const updateSummary = () => {
+            const rooms = parseInt(document.getElementById('b_rooms').value) || 1;
+            const total = cabin.basePrice * rooms;
+            const summaryHtml = `
+                <h4 class="mb-2">${cruise.name}</h4>
+                <p><strong>Loại phòng:</strong> ${cabin.name}</p>
+                <p><strong>Khởi hành:</strong> ${new Date(schedule.departureDate).toLocaleDateString('vi-VN')}</p>
+                <p><strong>Thời gian:</strong> ${schedule.durationLabel}</p>
+                <hr class="my-3">
+                <p><strong>Đơn giá:</strong> <span class="text-danger">${formatPrice(cabin.basePrice)}</span> / phòng</p>
+                <p><strong>Số lượng phòng:</strong> ${rooms}</p>
+                <h4 class="mt-3">Tổng cộng: <span class="text-danger">${formatPrice(total)}</span></h4>
+            `;
+            document.getElementById('bookingSummary').innerHTML = summaryHtml;
+        };
+
+        updateSummary();
+        document.getElementById('b_rooms').addEventListener('input', updateSummary);
     } catch (e) {
         document.getElementById('bookingSummary').innerHTML = '<p class="text-danger">Không thể tải thông tin chuyến đi.</p>';
     }

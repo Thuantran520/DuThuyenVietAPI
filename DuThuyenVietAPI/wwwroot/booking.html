@@ -45,7 +45,7 @@
     <div class="container py-5">
         <h1 class="text-center mb-4">Thông Tin Đặt Phòng</h1>
         
-        <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+        <div class="booking-layout">
             <div class="main-content">
                 <form id="bookingForm" class="booking-form">
                     <h3 class="mb-4">Thông tin liên hệ</h3>
@@ -54,7 +54,7 @@
                         <label>Họ và tên người đặt *</label>
                         <input type="text" id="b_name" required>
                     </div>
-                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group form-row">
                         <div>
                             <label>Số điện thoại *</label>
                             <input type="tel" id="b_phone" required>
@@ -66,7 +66,7 @@
                     </div>
                     
                     <h3 class="mb-4 mt-4">Thông tin chuyến đi</h3>
-                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group form-row">
                         <div>
                             <label>Số lượng phòng *</label>
                             <input type="number" id="b_rooms" min="1" max="10" value="1" required>
