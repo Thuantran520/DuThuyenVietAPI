@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const usernameOrEmail = document.getElementById('usernameOrEmail').value;
-            const password = document.getElementById('password').value;
+            const usernameOrEmail = document.getElementById('usernameOrEmail').value.trim();
+            const password = document.getElementById('password').value.trim();
 
             const btn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
