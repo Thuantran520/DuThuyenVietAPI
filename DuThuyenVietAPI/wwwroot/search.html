@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm Kiếm Du Thuyền - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <a href="/index.html" class="logo">DuThuyenViet</a>
+            <nav>
+                <a href="/search.html">Tìm Du Thuyền</a>
+                <a href="/login.html">Đăng nhập</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container py-5 search-layout">
+        <aside class="sidebar-filter">
+            <h3 class="mb-4">Lọc Kết Quả</h3>
+            <form id="filterForm">
+                <div class="filter-group">
+                    <label>Điểm đến</label>
+                    <select name="destinationId" id="filterDestination">
+                        <option value="">Tất cả vịnh</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tên du thuyền</label>
+                    <input type="text" name="keyword" id="filterKeyword" placeholder="Nhập tên...">
+                </div>
+                <button type="submit" class="btn-primary w-100">Áp dụng lọc</button>
+            </form>
+        </aside>
+        
+        <main class="search-results">
+            <h2 class="section-title mb-4">Kết Quả Tìm Kiếm</h2>
+            <div id="searchResultsList" class="cruise-grid">
+                <!-- Data will be loaded here -->
+            </div>
+            <div id="pagination" class="pagination-container mt-4">
+                <!-- Pagination -->
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/cruise.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDestinations('filterDestination');
+            initSearchPage();
+        });
+    </script>
+</body>
+</html>

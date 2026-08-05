@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Chủ - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <a href="/index.html" class="logo">DuThuyenViet</a>
+            <nav>
+                <a href="/search.html">Tìm Du Thuyền</a>
+                <a href="/login.html">Đăng nhập</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1>Khám Phá Vẻ Đẹp Vịnh Hạ Long</h1>
+            <p>Trải nghiệm nghỉ dưỡng đẳng cấp trên những du thuyền sang trọng bậc nhất.</p>
+            <form action="/search.html" method="GET" class="search-form">
+                <input type="text" name="keyword" placeholder="Nhập tên du thuyền...">
+                <select name="destinationId" id="destinationSelectHome">
+                    <option value="">Tất cả vịnh</option>
+                </select>
+                <button type="submit" class="btn-primary">Tìm Kiếm</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="top-cruises-section py-5">
+        <div class="container">
+            <h2 class="section-title text-center mb-4">Du Thuyền Nổi Bật</h2>
+            <div id="topCruisesList" class="cruise-grid">
+                <!-- Data will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <script src="/js/cruise.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDestinations('destinationSelectHome');
+            loadTopCruises();
+        });
+    </script>
+</body>
+</html>
