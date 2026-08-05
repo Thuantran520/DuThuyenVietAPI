@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Không Tìm Thấy Trang</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #f3f4f6; color: #111827; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .error-container { text-align: center; background: white; padding: 60px 40px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); max-width: 500px; width: 90%; }
+        .error-code { font-family: 'Playfair Display', serif; font-size: 100px; font-weight: 700; color: #0d9488; line-height: 1; margin-bottom: 16px; }
+        .error-title { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+        .error-message { font-size: 15px; color: #6b7280; margin-bottom: 32px; line-height: 1.6; }
+        .btn-home { display: inline-block; background: #0d9488; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .btn-home:hover { background: #0f766e; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <div class="error-title">Trang không tồn tại hoặc bị từ chối truy cập</div>
+        <div class="error-message">Hệ thống không tìm thấy đường dẫn này hoặc bạn không có đủ thẩm quyền để truy cập vào khu vực Quản trị. Vui lòng quay lại.</div>
+        <a href="/index.html" class="btn-home">Quay về Trang Chủ</a>
+    </div>
+</body>
+</html>
