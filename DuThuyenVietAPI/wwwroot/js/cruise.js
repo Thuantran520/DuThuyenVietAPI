@@ -199,17 +199,20 @@ async function loadCruiseDetail() {
         // Logic mở thư viện ảnh
         const imagesJson = JSON.stringify(cruise.images || [heroImage]).replace(/"/g, '&quot;');
         let galleryButton = `<button class="btn-secondary" style="position: absolute; bottom: 20px; right: 20px; background: white; color: black; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);" onclick="window.Popup.gallery('Thư viện ảnh', JSON.parse('${imagesJson}'))"><i class="icon-camera"></i> Xem tất cả ảnh</button>`;
-        let amenitiesHtml = '';
-        if (cruise.amenities && cruise.amenities.length > 0) {
-            amenitiesHtml = cruise.amenities.map(a => `
-                <div class="amenity-card" style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-light);">
+        let amenities = cruise.amenities && cruise.amenities.length > 0 ? cruise.amenities : [
+            { iconClass: '✨', name: 'Wifi miễn phí' },
+            { iconClass: '🍽️', name: 'Nhà hàng 5 sao' },
+            { iconClass: '🏊', name: 'Bể bơi vô cực' },
+            { iconClass: '💆', name: 'Spa & Massage' },
+            { iconClass: '🍸', name: 'Quầy Bar' },
+            { iconClass: '🌅', name: 'Boong tắm nắng' }
+        ];
+        let amenitiesHtml = amenities.map(a => `
+                <div class="amenity-card" style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-light); transition: transform 0.2s;">
                     <span style="font-size: 1.5rem; color: var(--primary);">${a.iconClass || '✨'}</span>
                     <span style="font-weight: 500; font-size: 1.1rem;">${a.name}</span>
                 </div>
             `).join('');
-        } else {
-            amenitiesHtml = '<p>Không có tiện nghi nào.</p>';
-        }
 
         container.innerHTML = `
             <div class="cruise-detail-header mb-4 text-center">
@@ -218,6 +221,9 @@ async function loadCruiseDetail() {
                     <span class="rating">⭐ <strong>${cruise.averageRating}</strong> (${cruise.reviewCount} đánh giá)</span>
                     <span>•</span>
                     <span class="destination">📍 ${cruise.destinationName}</span>
+                </div>
+                <div class="cruise-itinerary mt-3" style="font-size: 1.15rem; color: var(--primary); font-weight: 500;">
+                    ⚓ Hành trình: ${cruise.itinerary || 'Vịnh Lan Hạ - Bãi tắm Ba Trái Đào - Hang Sáng Tối'}
                 </div>
             </div>
             
@@ -256,13 +262,39 @@ async function loadCruiseDetail() {
                 </div>
                 
                 <div class="sidebar">
-                    <div class="booking-widget luxury-card" style="position: sticky; top: 120px; padding: 30px; background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.08);">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">
-                            Từ ${formatPrice(cruise.cabins && cruise.cabins.length > 0 ? cruise.cabins[0].basePrice : 0)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ người</span>
+                    <div class="booking-widget luxury-card" style="position: sticky; top: 120px; padding: 30px; background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 15px 50px rgba(0,0,0,0.1);">
+                        <div class="price-tag text-center mb-4" style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                            <p style="color: #666; margin-bottom: 5px; text-transform: uppercase; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px;">Giá tham khảo</p>
+                            <div style="font-size: 2.2rem; font-weight: 700; color: var(--primary);">
+                                ${formatPrice(cruise.cabins && cruise.cabins.length > 0 ? cruise.cabins[0].basePrice : 0)}
+                            </div>
+                            <span style="font-size: 1rem; color: #888; font-weight: 400;">/ Khách</span>
                         </div>
-                        <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600;">Chọn Lịch Khởi Hành</h4>
-                        <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
-                            ${schedulesHtml}
+                        
+                        <div class="booking-benefits mb-4" style="font-size: 0.95rem; color: #555;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Hủy phòng miễn phí
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Không thu phí đặt chỗ
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Hỗ trợ 24/7
+                            </div>
+                        </div>
+
+                        <div class="schedule-section">
+                            <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                📅 Chọn Lịch Khởi Hành
+                            </h4>
+                            <div class="schedule-list" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                                ${schedulesHtml}
+                            </div>
+                        </div>
+                        
+                        <div class="help-box mt-4 p-3 text-center" style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                            <p style="margin-bottom: 5px; font-weight: 500; color: #334155;">Cần hỗ trợ?</p>
+                            <a href="tel:19001234" style="color: var(--primary); font-weight: 700; font-size: 1.2rem; text-decoration: none;">📞 1900 1234</a>
                         </div>
                     </div>
                 </div>
@@ -382,7 +414,10 @@ function renderCruiseCard(cruise) {
                     <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount})</span>
                     <span class="destination">📍 ${cruise.destinationName}</span>
                 </div>
-                <p class="cruise-desc">${cruise.shortDescription || ''}</p>
+                <div class="cruise-itinerary mt-2 text-muted" style="font-size: 0.9rem;">
+                    <strong>Hành trình:</strong> ${cruise.itinerary || 'Vịnh Lan Hạ - Bãi tắm Ba Trái Đào - Hang Sáng Tối'}
+                </div>
+                <p class="cruise-desc mt-2">${cruise.shortDescription || ''}</p>
                 <div class="cruise-footer">
                     <span class="price">Từ ${formatPrice(cruise.startingPrice)}</span>
                     <a href="/cruise-detail.html?id=${cruise.cruiseId}" class="btn-secondary">Xem Chi Tiết</a>
