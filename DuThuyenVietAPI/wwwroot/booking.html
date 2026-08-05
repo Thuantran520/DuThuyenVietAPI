@@ -135,6 +135,23 @@
             const token = getToken();
             if (!checkAuth()) return;
 
+            // Auto-fill user profile
+            try {
+                const profileRes = await fetch('/api/account/profile', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (profileRes.ok) {
+                    const profileData = await profileRes.json();
+                    document.getElementById('b_email').value = profileData.email || profileData.Email || '';
+                    const fName = profileData.fullName || profileData.FullName || profileData.userName || profileData.UserName || '';
+                    if(fName !== 'Chưa cập nhật') document.getElementById('b_name').value = fName;
+                    const pPhone = profileData.phoneNumber || profileData.PhoneNumber || '';
+                    if(pPhone !== 'Chưa cập nhật') document.getElementById('b_phone').value = pPhone;
+                }
+            } catch (err) {
+                console.error('Lỗi lấy profile:', err);
+            }
+
             // Booking page logic
             const urlParams = new URLSearchParams(window.location.search);
             const scheduleId = urlParams.get('scheduleId');
