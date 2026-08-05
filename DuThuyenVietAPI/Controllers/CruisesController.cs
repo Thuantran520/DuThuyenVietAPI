@@ -101,6 +101,7 @@ public class CruisesController : ControllerBase
                 cruise.Slug,
                 cruise.AverageRating,
                 cruise.ReviewCount,
+                cruise.ShortDescription,
                 cruise.Description,
                 DestinationName = cruise.Destination.Name,
                 Images = cruise.CruiseImages.Any() 

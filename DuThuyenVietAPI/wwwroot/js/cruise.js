@@ -199,20 +199,6 @@ async function loadCruiseDetail() {
         // Logic mở thư viện ảnh
         const imagesJson = JSON.stringify(cruise.images || [heroImage]).replace(/"/g, '&quot;');
         let galleryButton = `<button class="btn-secondary" style="position: absolute; bottom: 20px; right: 20px; background: white; color: black; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);" onclick="window.Popup.gallery('Thư viện ảnh', JSON.parse('${imagesJson}'))"><i class="icon-camera"></i> Xem tất cả ảnh</button>`;
-        let amenities = cruise.amenities && cruise.amenities.length > 0 ? cruise.amenities : [
-            { iconClass: '✨', name: 'Wifi miễn phí' },
-            { iconClass: '🍽️', name: 'Nhà hàng 5 sao' },
-            { iconClass: '🏊', name: 'Bể bơi vô cực' },
-            { iconClass: '💆', name: 'Spa & Massage' },
-            { iconClass: '🍸', name: 'Quầy Bar' },
-            { iconClass: '🌅', name: 'Boong tắm nắng' }
-        ];
-        let amenitiesHtml = amenities.map(a => `
-                <div class="amenity-card" style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-light); transition: transform 0.2s;">
-                    <span style="font-size: 1.5rem; color: var(--primary);">${a.iconClass || '✨'}</span>
-                    <span style="font-weight: 500; font-size: 1.1rem;">${a.name}</span>
-                </div>
-            `).join('');
 
         container.innerHTML = `
             <div class="cruise-detail-header mb-4 text-center">
@@ -235,15 +221,8 @@ async function loadCruiseDetail() {
             <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 60px;">
                 <div class="main-content">
                     <div class="cruise-section mb-5">
-                        <h3 class="section-heading mb-3" style="font-size: 1.8rem; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Về Du Thuyền</h3>
+                        <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Tổng Quan</h3>
                         <p style="font-size: 1.1rem; line-height: 1.8; color: #444;">${cruise.description || cruise.shortDescription || 'Chưa có mô tả'}</p>
-                    </div>
-
-                    <div class="cruise-section mb-5">
-                        <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Tiện Nghi Nổi Bật</h3>
-                        <div class="amenities-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
-                            ${amenitiesHtml}
-                        </div>
                     </div>
 
                     <div class="cruise-section mb-5">
@@ -290,6 +269,8 @@ async function loadCruiseDetail() {
                             <div class="schedule-list" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
                                 ${schedulesHtml}
                             </div>
+                            
+                            <button class="btn-primary w-100 mt-4" style="font-size: 1.2rem; padding: 14px; border-radius: 10px; font-weight: bold; text-transform: uppercase;" onclick="if(!window.selectedScheduleId) { if(window.Popup) { window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành trước', 'warning'); } else { alert('Vui lòng chọn Lịch Khởi Hành trước'); } } else { document.querySelector('.cabin-list').scrollIntoView({behavior: 'smooth'}); setTimeout(() => { window.Popup.show('Hướng dẫn', 'Vui lòng chọn số lượng phòng bạn muốn đặt và bấm Tiếp tục', 'info'); }, 500); }">Đặt phòng ngay</button>
                         </div>
                         
                         <div class="help-box mt-4 p-3 text-center" style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
