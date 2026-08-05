@@ -88,7 +88,6 @@ public class CruisesController : ControllerBase
                 .Include(c => c.CabinTypes)
                 .Include(c => c.Schedules.OrderByDescending(s => s.DepartureDate))
                 .Include(c => c.Reviews.OrderByDescending(r => r.CreatedAt).Take(5))
-                .Include(c => c.Amenities)
                 .FirstOrDefaultAsync(c => c.CruiseId == id && c.IsActive);
 
             if (cruise == null)
@@ -107,12 +106,7 @@ public class CruisesController : ControllerBase
                 Images = cruise.CruiseImages.Any() 
                     ? cruise.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).ToList() 
                     : (!string.IsNullOrEmpty(cruise.ThumbnailUrl) ? new List<string> { cruise.ThumbnailUrl } : new List<string>()),
-                Amenities = cruise.Amenities.Select(a => new
-                {
-                    a.AmenityId,
-                    a.Name,
-                    a.IconClass
-                }).ToList(),
+
                 Cabins = cruise.CabinTypes.Select(cb => new
                 {
                     cb.CabinTypeId,
