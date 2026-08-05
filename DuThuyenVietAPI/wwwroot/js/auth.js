@@ -222,6 +222,12 @@ document.addEventListener('DOMContentLoaded', async function () {
                         tabBookingsNav.style.display = 'block';
                         loadAdminBookings();
                     }
+                    
+                    const tabCruisesNav = document.getElementById('tab-cruises-nav');
+                    if (tabCruisesNav && (isAdmin || isManager || isStaff)) {
+                        tabCruisesNav.style.display = 'block';
+                        loadAdminCruises();
+                    }
 
                     loader.style.display = 'none';
                     mainContent.style.display = 'block';
@@ -419,6 +425,125 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             });
         }
+
+        // --- Fetch Admin Cruises Data ---
+        async function loadAdminCruises() {
+            try {
+                // Using existing GET /api/Cruises which returns pagination
+                const res = await fetch('/api/Cruises?pageSize=50');
+                if (res.ok) {
+                    const json = await res.json();
+                    const cruises = json.data;
+                    const tbody = document.getElementById('cruises-table-body');
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+                    
+                    cruises.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><img src="${c.thumbnailUrl}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;"></td>
+                            <td style="font-weight: 500;">${c.name}</td>
+                            <td>${c.destinationName}</td>
+                            <td>${c.reviewCount} lượt đánh giá</td>
+                            <td><span style="color: #f59e0b;">★</span> ${c.averageRating}</td>
+                            <td style="text-align: right;">
+                                <button class="btn-sm btn-outline" style="margin-right:8px;" onclick="window.editCruise(${c.cruiseId})">Sửa</button>
+                                <button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="window.deleteCruise(${c.cruiseId})">Xóa</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi lấy danh sách du thuyền:", err);
+            }
+        }
+        
+        window.openCruiseModal = function() {
+            document.getElementById('cruiseModalTitle').innerText = 'Thêm Du Thuyền';
+            document.getElementById('cruise-id-input').value = '';
+            document.getElementById('cruise-name-input').value = '';
+            document.getElementById('cruise-dest-input').value = '1';
+            document.getElementById('cruise-cabins-input').value = '20';
+            document.getElementById('cruise-shortdesc-input').value = '';
+            document.getElementById('cruise-desc-input').value = '';
+            document.getElementById('cruise-thumb-input').value = '';
+            document.getElementById('cruiseModal').style.display = 'flex';
+        };
+        
+        window.editCruise = async function(id) {
+            try {
+                const res = await fetch(`/api/Cruises/${id}`);
+                if (res.ok) {
+                    const c = await res.json();
+                    document.getElementById('cruiseModalTitle').innerText = 'Cập nhật Du Thuyền';
+                    document.getElementById('cruise-id-input').value = c.cruiseId;
+                    document.getElementById('cruise-name-input').value = c.name;
+                    // c.destinationId is not returned in detail currently, just use a default or fetch if needed
+                    document.getElementById('cruise-dest-input').value = '1'; 
+                    document.getElementById('cruise-cabins-input').value = '20';
+                    document.getElementById('cruise-shortdesc-input').value = c.shortDescription || '';
+                    document.getElementById('cruise-desc-input').value = c.description || '';
+                    document.getElementById('cruise-thumb-input').value = c.images && c.images.length > 0 ? c.images[0] : '';
+                    
+                    document.getElementById('cruiseModal').style.display = 'flex';
+                }
+            } catch (err) {
+                Popup.show('Lỗi', 'Không thể lấy thông tin.', 'error');
+            }
+        };
+        
+        window.saveCruise = async function() {
+            const id = document.getElementById('cruise-id-input').value;
+            const data = {
+                destinationId: parseInt(document.getElementById('cruise-dest-input').value) || 1,
+                name: document.getElementById('cruise-name-input').value,
+                totalCabins: parseInt(document.getElementById('cruise-cabins-input').value) || 20,
+                shortDescription: document.getElementById('cruise-shortdesc-input').value,
+                description: document.getElementById('cruise-desc-input').value,
+                thumbnailUrl: document.getElementById('cruise-thumb-input').value
+            };
+            
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/Cruises/${id}` : '/api/Cruises';
+            
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    Popup.show('Thành công', 'Lưu du thuyền thành công!', 'success');
+                    document.getElementById('cruiseModal').style.display = 'none';
+                    loadAdminCruises();
+                } else {
+                    Popup.show('Lỗi', 'Lưu thất bại.', 'error');
+                }
+            } catch (err) {
+                Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            }
+        };
+        
+        window.deleteCruise = function(id) {
+            Popup.confirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa du thuyền này không?', async () => {
+                try {
+                    const res = await fetch(`/api/Cruises/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        Popup.show('Thành công', 'Đã xóa du thuyền', 'success');
+                        loadAdminCruises();
+                    } else {
+                        Popup.show('Lỗi', 'Xóa thất bại', 'error');
+                    }
+                } catch (err) {
+                    Popup.show('Lỗi', 'Lỗi kết nối', 'error');
+                }
+            });
+        };
 
         // --- Fetch Admin Data (Staff Management) ---
         async function loadAdminUsers() {

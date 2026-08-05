@@ -1,6 +1,7 @@
 using DuThuyenVietAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DuThuyenVietAPI.Controllers;
 
@@ -139,5 +140,69 @@ public class CruisesController : ControllerBase
         {
             return StatusCode(500, "Lỗi server: " + ex.Message);
         }
+    }
+
+    public class CruiseDTO
+    {
+        public int DestinationId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int TotalCabins { get; set; }
+        public string ShortDescription { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ThumbnailUrl { get; set; } = string.Empty;
+    }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPost]
+    public async Task<IActionResult> CreateCruise([FromBody] CruiseDTO dto)
+    {
+        var cruise = new Cruise
+        {
+            DestinationId = dto.DestinationId,
+            Name = dto.Name,
+            Slug = dto.Name.ToLower().Replace(" ", "-").Replace("đ", "d"), // basic slug
+            TotalCabins = dto.TotalCabins,
+            ShortDescription = dto.ShortDescription,
+            Description = dto.Description,
+            ThumbnailUrl = dto.ThumbnailUrl,
+            IsActive = true,
+            CreatedAt = DateTime.Now
+        };
+        _context.Cruises.Add(cruise);
+        await _context.SaveChangesAsync();
+        return Ok(cruise);
+    }
+    
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCruise(int id, [FromBody] CruiseDTO dto)
+    {
+        var cruise = await _context.Cruises.FindAsync(id);
+        if (cruise == null) return NotFound();
+        
+        cruise.DestinationId = dto.DestinationId;
+        cruise.Name = dto.Name;
+        cruise.TotalCabins = dto.TotalCabins;
+        cruise.ShortDescription = dto.ShortDescription;
+        cruise.Description = dto.Description;
+        cruise.ThumbnailUrl = dto.ThumbnailUrl;
+        cruise.UpdatedAt = DateTime.Now;
+        
+        await _context.SaveChangesAsync();
+        return Ok(cruise);
+    }
+    
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCruise(int id)
+    {
+        var cruise = await _context.Cruises.FindAsync(id);
+        if (cruise == null) return NotFound();
+        
+        cruise.IsActive = false; // soft delete
+        cruise.UpdatedAt = DateTime.Now;
+        
+        await _context.SaveChangesAsync();
+        return Ok(new { Message = "Đã xóa du thuyền" });
     }
 }
