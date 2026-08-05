@@ -265,15 +265,13 @@ async function loadCruiseDetail() {
                             </div>
                         </div>
 
-                        <div class="schedule-section">
+                        <div class="schedule-section" style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #eee;">
                             <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                                 📅 Chọn Lịch Khởi Hành
                             </h4>
                             <div class="schedule-list" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
                                 ${schedulesHtml}
                             </div>
-                            
-                            <button class="btn-primary w-100 mt-4" style="font-size: 1.2rem; padding: 14px; border-radius: 10px; font-weight: bold; text-transform: uppercase;" onclick="if(!window.selectedScheduleId) { if(window.Popup) { window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành trước', 'warning'); } else { alert('Vui lòng chọn Lịch Khởi Hành trước'); } } else { document.querySelector('.cabin-list').scrollIntoView({behavior: 'smooth'}); setTimeout(() => { window.Popup.show('Hướng dẫn', 'Vui lòng chọn số lượng phòng bạn muốn đặt và bấm Tiếp tục', 'info'); }, 500); }">Đặt phòng ngay</button>
                         </div>
                         
                         <div class="help-box mt-4 p-3 text-center" style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
@@ -319,6 +317,14 @@ window.selectSchedule = function(scheduleId) {
         btn.innerText = 'Đã chọn ✓';
         btn.style.background = 'var(--primary)';
         btn.style.color = 'white';
+        
+        // Auto scroll to cabins after slight delay for better UX
+        setTimeout(() => {
+            const cabinSection = document.querySelector('.cabin-list');
+            if (cabinSection) {
+                cabinSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
     }
 };
 
