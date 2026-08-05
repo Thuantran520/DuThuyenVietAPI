@@ -11,9 +11,8 @@
     <header class="main-header">
         <div class="container">
             <a href="/index.html" class="logo">DuThuyenViet</a>
-            <nav>
+            <nav id="topNav">
                 <a href="/search.html">Tìm Du Thuyền</a>
-                <a href="/login.html">Đăng nhập</a>
             </nav>
         </div>
     </header>
@@ -48,5 +47,32 @@
             loadTopCruises();
         });
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('auth_token');
+            const nav = document.getElementById('topNav');
+            if (nav) {
+                if (token) {
+                    nav.innerHTML += `
+                        <a href="/history.html">Lịch sử</a>
+                        <a href="/profile.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">👤 Tài khoản</a>
+                        <a href="#" id="btnLogoutBtn" style="color: #ef4444;">Đăng xuất</a>
+                    `;
+                    document.getElementById('btnLogoutBtn').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('auth_token');
+                        window.location.reload();
+                    });
+                } else {
+                    nav.innerHTML += `
+                        <a href="/login.html" style="font-weight: 600;">Đăng nhập</a>
+                        <a href="/register.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Đăng ký</a>
+                    `;
+                }
+            }
+        });
+    </script>
+
 </body>
 </html>
