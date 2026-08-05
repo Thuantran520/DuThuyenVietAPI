@@ -464,6 +464,35 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         }
         
+        // --- Admin Cruises Preview Mode ---
+        window.switchCruiseModalTab = function(tab) {
+            const formSection = document.getElementById('cruise-form-section');
+            const previewSection = document.getElementById('cruise-preview-section');
+            const btnForm = document.getElementById('btn-tab-form');
+            const btnPreview = document.getElementById('btn-tab-preview');
+            
+            if (tab === 'preview') {
+                formSection.style.display = 'none';
+                previewSection.style.display = 'block';
+                btnForm.className = 'btn btn-outline btn-sm';
+                btnPreview.className = 'btn btn-primary btn-sm';
+                
+                // Populate preview with current form values
+                document.getElementById('preview-title').textContent = document.getElementById('cruise-name-input').value || 'Tên Du Thuyền Mới';
+                
+                const destSelect = document.getElementById('cruise-dest-input');
+                document.getElementById('preview-dest').textContent = destSelect.options[destSelect.selectedIndex].text;
+                document.getElementById('preview-cabins').textContent = document.getElementById('cruise-cabins-input').value || '0';
+                document.getElementById('preview-shortdesc').textContent = document.getElementById('cruise-shortdesc-input').value || 'Chưa có mô tả ngắn...';
+                document.getElementById('preview-desc').innerHTML = document.getElementById('cruise-desc-input').value || 'Chưa có mô tả chi tiết...';
+            } else {
+                formSection.style.display = 'block';
+                previewSection.style.display = 'none';
+                btnForm.className = 'btn btn-primary btn-sm';
+                btnPreview.className = 'btn btn-outline btn-sm';
+            }
+        };
+
         window.openCruiseModal = function() {
             document.getElementById('cruiseModalTitle').innerText = 'Thêm Du Thuyền';
             document.getElementById('cruise-id-input').value = '';
@@ -474,6 +503,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             document.getElementById('cruise-desc-input').value = '';
             document.getElementById('cruise-thumb-input').value = '';
             document.getElementById('cruiseModal').style.display = 'flex';
+            window.switchCruiseModalTab('form');
         };
         
         window.editCruise = async function(id) {
@@ -494,8 +524,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                     document.getElementById('cruiseModal').style.display = 'flex';
                 }
             } catch (err) {
-                Popup.show('Lỗi', 'Không thể lấy thông tin.', 'error');
+                Popup.show('Lỗi', 'Không thể tải thông tin du thuyền.', 'error');
             }
+            window.switchCruiseModalTab('form');
         };
         
         window.saveCruise = async function() {
