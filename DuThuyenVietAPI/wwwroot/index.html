@@ -33,10 +33,11 @@
 
     <section class="top-cruises-section py-5">
         <div class="container">
-            <h2 class="section-title text-center mb-4">Du Thuyền Nổi Bật</h2>
+            <h2 class="section-title text-center mb-4">Khám Phá Các Du Thuyền</h2>
             <div id="topCruisesList" class="cruise-grid">
                 <!-- Data will be loaded here -->
             </div>
+            <div id="homePagination" class="pagination-container text-center mt-4"></div>
         </div>
     </section>
 
@@ -44,7 +45,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadDestinations('destinationSelectHome');
-            loadTopCruises();
+            window.loadHomeCruises(1);
         });
     </script>
 

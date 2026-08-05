@@ -27,16 +27,34 @@ async function loadDestinations(selectId) {
     }
 }
 
-async function loadTopCruises() {
+window.loadHomeCruises = async function(page = 1) {
     try {
-        const response = await fetch(`${API_URL}/Cruises?pageSize=6`);
-        const data = await response.json();
         const container = document.getElementById('topCruisesList');
+        const paginationContainer = document.getElementById('homePagination');
         if (!container) return;
 
+        container.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Đang tải...</p>';
+        
+        const response = await fetch(`${API_URL}/Cruises?page=${page}&pageSize=6`);
+        const data = await response.json();
+        
+        if (!data.data || data.data.length === 0) {
+            container.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Chưa có dữ liệu du thuyền.</p>';
+            if(paginationContainer) paginationContainer.innerHTML = '';
+            return;
+        }
+
         container.innerHTML = data.data.map(cruise => renderCruiseCard(cruise)).join('');
+        
+        if(paginationContainer) {
+            let paginationHtml = '';
+            for (let i = 1; i <= data.totalPages; i++) {
+                paginationHtml += `<button class="btn-page ${i === data.currentPage ? 'active' : ''}" onclick="window.loadHomeCruises(${i})">${i}</button>`;
+            }
+            paginationContainer.innerHTML = paginationHtml;
+        }
     } catch (error) {
-        console.error('Error loading top cruises:', error);
+        console.error('Error loading home cruises:', error);
     }
 }
 
