@@ -103,6 +103,8 @@ public class CruisesController : ControllerBase
                 cruise.ReviewCount,
                 cruise.ShortDescription,
                 cruise.Description,
+                cruise.TotalCabins,
+                cruise.ThumbnailUrl,
                 DestinationId = cruise.DestinationId,
                 DestinationName = cruise.Destination != null ? cruise.Destination.Name : "Đang cập nhật",
                 Images = cruise.CruiseImages.Any() 

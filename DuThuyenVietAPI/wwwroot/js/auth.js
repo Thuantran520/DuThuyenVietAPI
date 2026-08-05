@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                     <span class="destination">📍 ${c.destinationName}</span>
                                 </div>
                                 <div class="cruise-footer" style="display: flex; gap: 8px;">
-                                    <button class="btn-primary" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: none; font-size: 14px; cursor: pointer; background-color: var(--primary); color: white;" onclick="window.editCruise(${c.cruiseId})">Sửa</button>
+                                    <a href="/admin/cruise-editor.html?id=${c.cruiseId}" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: none; font-size: 14px; cursor: pointer; background-color: var(--primary); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center;">Sửa</a>
                                     <button class="btn-outline" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: 1px solid #ef4444; color: #ef4444; background: transparent; font-size: 14px; cursor: pointer;" onclick="window.deleteCruise(${c.cruiseId})">Xóa</button>
                                 </div>
                             </div>

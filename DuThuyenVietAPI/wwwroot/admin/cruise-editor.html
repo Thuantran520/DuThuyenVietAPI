@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Du Thuyền - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <style>
+        body { background-color: #f8fafc; }
+        .editable-field {
+            border: 1px dashed #cbd5e1;
+            padding: 4px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.2s;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            font-weight: inherit;
+        }
+        .editable-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        .admin-toolbar {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cruise-detail-wrapper {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-toolbar">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+                <a href="/admin/profile.html" class="btn btn-outline" style="padding: 8px 16px; text-decoration: none;">&larr; Quay lại Admin</a>
+                <span style="font-weight: 600; margin-left: 20px; font-size: 1.1rem; color: #0f172a;" id="editor-title">Thêm Du Thuyền Mới</span>
+            </div>
+            <div>
+                <button class="btn btn-primary" id="btn-save-cruise" style="padding: 10px 24px; font-weight: 600;">Lưu Thay Đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CRUISE LAYOUT (SIMILAR TO CUSTOMER VIEW) -->
+    <div class="container py-5" id="editor-container">
+        <div class="cruise-detail-wrapper">
+            <!-- Hero Section -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px; margin-bottom: 40px;">
+                <div>
+                    <input type="text" id="edit-name" class="editable-field" style="font-size: 2.5rem; font-family: 'Playfair Display', serif; font-weight: 700; color: #0f172a; margin-bottom: 15px;" placeholder="Tên Du Thuyền">
+                    
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px; color: #64748b; font-size: 1.1rem;">
+                        <div>📍 Khu vực: 
+                            <select id="edit-dest" class="editable-field" style="width: auto; display: inline-block;">
+                                <option value="1">Vịnh Hạ Long</option>
+                                <option value="2">Vịnh Lan Hạ</option>
+                            </select>
+                        </div>
+                        <div>🛏️ Tổng số phòng: <input type="number" id="edit-cabins" class="editable-field" style="width: 80px; display: inline-block;" value="20"></div>
+                    </div>
+
+                    <div style="font-size: 1.2rem; line-height: 1.6; color: #334155; margin-bottom: 30px; font-style: italic; border-left: 4px solid var(--primary); padding-left: 20px;">
+                        <textarea id="edit-shortdesc" class="editable-field" rows="3" placeholder="Giới thiệu tóm tắt..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Main Image -->
+                <div>
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #334155;">Ảnh đại diện (URL)</label>
+                    <input type="text" id="edit-thumb" class="editable-field" style="margin-bottom: 10px; font-size: 14px;" placeholder="https://example.com/image.jpg" oninput="document.getElementById('preview-thumb').src = this.value || '/images/default-cruise.jpg'">
+                    <img id="preview-thumb" src="/images/default-cruise.jpg" style="width: 100%; height: 250px; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+
+            <hr style="border-color: #e2e8f0; margin: 40px 0;">
+
+            <!-- Details Section -->
+            <div style="margin-bottom: 50px;">
+                <h3 style="font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 20px;">Chi tiết Hành trình</h3>
+                <textarea id="edit-desc" class="editable-field" rows="15" style="line-height: 1.8; color: #1e293b;" placeholder="Bài viết chi tiết về du thuyền (Hỗ trợ HTML)..."></textarea>
+            </div>
+            
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; font-style: italic; color: #64748b;">
+                * Tính năng quản lý Loại phòng (Cabins) và Lịch trình (Schedules) sẽ được cập nhật trong phiên bản tiếp theo.
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/admin-cruise-editor.js"></script>
+</body>
+</html>
