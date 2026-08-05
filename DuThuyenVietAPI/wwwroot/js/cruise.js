@@ -223,7 +223,7 @@ async function loadCruiseDetail() {
                     <span class="destination">📍 ${cruise.destinationName}</span>
                 </div>
                 <div class="cruise-itinerary mt-3" style="font-size: 1.15rem; color: var(--primary); font-weight: 500;">
-                    ⚓ Hành trình: ${cruise.itinerary || 'Vịnh Lan Hạ - Bãi tắm Ba Trái Đào - Hang Sáng Tối'}
+                    ⚓ ${cruise.shortDescription || 'Chưa cập nhật hành trình'}
                 </div>
             </div>
             
@@ -410,14 +410,10 @@ function renderCruiseCard(cruise) {
             <img src="${cruise.thumbnailUrl || '/images/default-cruise.jpg'}" alt="${cruise.name}" class="cruise-img" onerror="this.src='/images/default-cruise.jpg'">
             <div class="cruise-card-body">
                 <h3 class="cruise-title"><a href="/cruise-detail.html?id=${cruise.cruiseId}">${cruise.name}</a></h3>
-                <div class="cruise-meta">
+                <div class="cruise-meta mb-3">
                     <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount})</span>
                     <span class="destination">📍 ${cruise.destinationName}</span>
                 </div>
-                <div class="cruise-itinerary mt-2 text-muted" style="font-size: 0.9rem;">
-                    <strong>Hành trình:</strong> ${cruise.itinerary || 'Vịnh Lan Hạ - Bãi tắm Ba Trái Đào - Hang Sáng Tối'}
-                </div>
-                <p class="cruise-desc mt-2">${cruise.shortDescription || ''}</p>
                 <div class="cruise-footer">
                     <span class="price">Từ ${formatPrice(cruise.startingPrice)}</span>
                     <a href="/cruise-detail.html?id=${cruise.cruiseId}" class="btn-secondary">Xem Chi Tiết</a>
