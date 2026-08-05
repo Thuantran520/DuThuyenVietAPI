@@ -374,7 +374,53 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                     const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
                     
+                    window.copyToClipboard = function(text) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            window.Popup.show('Đã sao chép', 'Mã đã được lưu vào bộ nhớ tạm!', 'success');
+                        });
+                    };
+
+                    const grouped = {};
                     bookings.forEach(b => {
+                        if (!grouped[b.bookingCode]) {
+                            grouped[b.bookingCode] = { ...b, items: [], totalPrice: 0 };
+                        }
+                        grouped[b.bookingCode].items.push(b);
+                        grouped[b.bookingCode].totalPrice += b.totalPrice;
+                    });
+                    
+                    window.adminGroupedBookings = grouped; // for modal
+
+                    window.showBookingDetails = function(code) {
+                        const grp = window.adminGroupedBookings[code];
+                        if(!grp) return;
+                        
+                        document.getElementById('modal-booking-code').innerText = code;
+                        
+                        let html = `<p><strong>Khách hàng:</strong> ${grp.contactName} - ${grp.contactPhone}</p>`;
+                        html += `<p><strong>Du thuyền:</strong> ${grp.cruiseName}</p>`;
+                        html += `<p><strong>Ngày khởi hành:</strong> ${new Date(grp.departureDate).toLocaleDateString('vi-VN')}</p>`;
+                        html += `<hr style="margin: 16px 0; border: none; border-top: 1px dashed #cbd5e1;">`;
+                        html += `<h4 style="margin-bottom: 12px;">Chi tiết phòng:</h4>`;
+                        
+                        grp.items.forEach(item => {
+                            html += `<div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                <div>
+                                    <div style="font-weight: 600;">${item.cabinName}</div>
+                                    <div style="font-size: 0.9rem; color: #64748b;">Số lượng: ${item.numberOfRooms} phòng</div>
+                                </div>
+                                <div style="font-weight: 600; color: var(--primary);">${formatPrice(item.totalPrice)}</div>
+                            </div>`;
+                        });
+                        
+                        html += `<hr style="margin: 16px 0; border: none; border-top: 1px dashed #cbd5e1;">`;
+                        html += `<div style="text-align: right; font-size: 1.2rem;"><strong>Tổng cộng: <span style="color: #ef4444;">${formatPrice(grp.totalPrice)}</span></strong></div>`;
+                        
+                        document.getElementById('booking-details-content').innerHTML = html;
+                        document.getElementById('bookingDetailsModal').style.display = 'flex';
+                    };
+
+                    Object.values(grouped).forEach(b => {
                         let statusHtml = '';
                         if (b.status === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
                         else if (b.status === 'AwaitingConfirmation') statusHtml = '<span class="role-badge" style="background:#e0e7ff; color:#4338ca;">Chờ xác nhận</span>';
@@ -382,17 +428,25 @@ document.addEventListener('DOMContentLoaded', async function () {
                         else if (b.status === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
                         else statusHtml = b.status;
 
-                        let actionsHtml = '';
+                        let actionsHtml = `<button class="btn-sm btn-outline" style="border-color:#3b82f6; color:#3b82f6; margin-right:8px;" onclick="showBookingDetails('${b.bookingCode}')">Chi tiết</button>`;
+                        
                         if (b.status === 'AwaitingConfirmation' || b.status === 'Pending') {
-                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981; margin-right:8px;" onclick="updateBookingStatus(${b.bookingId}, 'Confirmed')">Xác nhận</button>`;
-                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingStatus(${b.bookingId}, 'Cancelled')">Hủy</button>`;
+                            // Only confirm/cancel the first item for simplicity, or ideally call an API that updates by bookingCode.
+                            // Currently, we'll just pass the bookingId of the first item which is technically partial, 
+                            // but our backend should ideally handle it. Since we haven't changed the backend, we loop or just pass the first.
+                            // Assuming backend updates ALL bookings with this code if we adapt it later, but for now we'll just loop in JS.
+                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981; margin-right:8px;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
+                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Cancelled')">Hủy</button>`;
                         }
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td style="font-weight: 500;">${b.bookingCode}</td>
+                            <td style="font-weight: 500;">
+                                ${b.bookingCode}
+                                <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
+                            </td>
                             <td>${b.contactName}<br><small class="text-muted">${b.contactPhone}</small></td>
-                            <td>${b.cruiseName}<br><small class="text-muted">${b.cabinName} (x${b.numberOfRooms})</small></td>
+                            <td>${b.cruiseName}<br><small class="text-muted">${b.items.length} loại phòng</small></td>
                             <td style="font-weight: 600; color: #ef4444;">${formatPrice(b.totalPrice)}</td>
                             <td>${statusHtml}</td>
                             <td style="text-align: right;">${actionsHtml}</td>
@@ -403,6 +457,33 @@ document.addEventListener('DOMContentLoaded', async function () {
             } catch (err) {
                 console.error("Lỗi lấy danh sách booking:", err);
             }
+        }
+        
+        window.updateBookingGroupStatus = async function(bookingCode, newStatus) {
+            const grp = window.adminGroupedBookings[bookingCode];
+            if(!grp || !grp.items || grp.items.length === 0) return;
+            
+            Popup.confirm('Xác nhận cập nhật', 'Bạn có chắc chắn muốn cập nhật trạng thái đơn này không?', async () => {
+                try {
+                    let successCount = 0;
+                    for (const item of grp.items) {
+                        const res = await fetch(`/api/Bookings/${item.bookingId}/Status`, {
+                            method: 'PUT',
+                            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        if (res.ok) successCount++;
+                    }
+                    if (successCount > 0) {
+                        Popup.show('Thành công', 'Cập nhật trạng thái thành công!', 'success');
+                        loadAdminBookings();
+                    } else {
+                        Popup.show('Lỗi', 'Không thể cập nhật trạng thái', 'error');
+                    }
+                } catch(e) {
+                    Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+                }
+            });
         }
         
         window.updateBookingStatus = async function(bookingId, status) {
@@ -520,6 +601,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     document.getElementById('cruise-shortdesc-input').value = c.shortDescription || '';
                     document.getElementById('cruise-desc-input').value = c.description || '';
                     document.getElementById('cruise-thumb-input').value = c.images && c.images.length > 0 ? c.images[0] : '';
+                    document.getElementById('cruise-preview-img').src = document.getElementById('cruise-thumb-input').value || '/images/default-cruise.jpg';
                     
                     document.getElementById('cruiseModal').style.display = 'flex';
                 }

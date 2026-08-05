@@ -101,7 +101,23 @@
                     return;
                 }
 
-                container.innerHTML = data.map(b => {
+                // Group by bookingCode
+                const grouped = {};
+                data.forEach(b => {
+                    if (!grouped[b.bookingCode]) {
+                        grouped[b.bookingCode] = { ...b, items: [], totalPrice: 0 };
+                    }
+                    grouped[b.bookingCode].items.push(b);
+                    grouped[b.bookingCode].totalPrice += b.totalPrice;
+                });
+
+                window.copyToClipboard = function(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        window.Popup.show('Đã sao chép', 'Mã thanh toán đã được lưu vào bộ nhớ tạm!', 'success');
+                    });
+                };
+
+                container.innerHTML = Object.values(grouped).map(b => {
                     const isPending = b.status === 'Pending';
                     const statusText = isPending ? 'Chờ thanh toán' : (b.status === 'AwaitingConfirmation' ? 'Đang xử lý' : (b.status === 'Confirmed' ? 'Thành công' : 'Đã hủy'));
                     
@@ -115,15 +131,21 @@
                         </p>`;
                     }
 
+                    const roomsSummary = b.items.map(i => `${i.cabinName} (x${i.numberOfRooms})`).join(', ');
+
                     return `
                         <div class="history-card" style="align-items: flex-start;">
                             <div style="flex: 1;">
                                 <h4 class="mb-1" style="color: var(--primary);">${b.cruiseName}</h4>
-                                <p class="text-muted mb-2" style="font-size: 0.9rem;">Mã đơn: <strong>${b.bookingCode}</strong> | Ngày tạo: ${new Date(b.createdAt).toLocaleString('vi-VN')}</p>
+                                <p class="text-muted mb-2" style="font-size: 0.9rem;">
+                                    Mã đơn: <strong style="color:#0f172a; font-size:1.05rem;">${b.bookingCode}</strong> 
+                                    <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
+                                    | Ngày tạo: ${new Date(b.createdAt).toLocaleString('vi-VN')}
+                                </p>
                                 
                                 <div style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.95rem;">
                                     <p class="mb-1"><strong>Khách hàng:</strong> ${b.contactName} - ${b.contactPhone}</p>
-                                    <p class="mb-1"><strong>Phòng:</strong> ${b.cabinName} (x${b.numberOfRooms})</p>
+                                    <p class="mb-1"><strong>Phòng:</strong> ${roomsSummary}</p>
                                     <p class="mb-1"><strong>Lịch đi:</strong> ${new Date(b.departureDate).toLocaleDateString('vi-VN')}</p>
                                 </div>
                                 
