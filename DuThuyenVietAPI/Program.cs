@@ -90,6 +90,17 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+    var dbContext = scope.ServiceProvider.GetRequiredService<DuThuyenVietDBContext>();
+    if (!await dbContext.Schedules.AnyAsync())
+    {
+        var cruises = await dbContext.Cruises.ToListAsync();
+        foreach (var cruise in cruises)
+        {
+            dbContext.Schedules.Add(new Schedule { CruiseId = cruise.CruiseId, DepartureDate = DateTime.Now.AddDays(2), ReturnDate = DateTime.Now.AddDays(3), DurationLabel = "2 Ngày 1 Đêm", Status = "Open", CreatedAt = DateTime.Now });
+            dbContext.Schedules.Add(new Schedule { CruiseId = cruise.CruiseId, DepartureDate = DateTime.Now.AddDays(5), ReturnDate = DateTime.Now.AddDays(7), DurationLabel = "3 Ngày 2 Đêm", Status = "Open", CreatedAt = DateTime.Now });
+        }
+        await dbContext.SaveChangesAsync();
+    }
 }
 
 app.Run();
