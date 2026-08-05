@@ -173,9 +173,12 @@ async function loadCruiseDetail() {
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
             schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item mb-2 p-3 border rounded" id="schedule-box-${s.scheduleId}" style="transition: all 0.2s;">
-                    <strong>${new Date(s.departureDate).toLocaleDateString('vi-VN')}</strong> - ${s.durationLabel}
-                    <button class="btn-secondary float-right" id="btn-schedule-${s.scheduleId}" onclick="window.selectSchedule(${s.scheduleId})" style="padding: 5px 10px; font-size: 14px;">Chọn lịch này</button>
+                <div class="schedule-item mb-3 p-3" id="schedule-box-${s.scheduleId}" style="transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.selectSchedule(${s.scheduleId})">
+                    <div>
+                        <div style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 4px;">📅 ${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
+                        <div style="color: #64748b; font-size: 0.95rem;">⏱️ ${s.durationLabel}</div>
+                    </div>
+                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 8px 16px; font-size: 0.95rem; border-radius: 8px; border: 1px solid var(--primary); color: var(--primary); background: transparent; font-weight: 600; pointer-events: none;">Chọn</button>
                 </div>
             `).join('');
         } else {
@@ -218,7 +221,7 @@ async function loadCruiseDetail() {
                 ${galleryButton}
             </div>
 
-            <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 60px;">
+            <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 60px; margin-top: 60px;">
                 <div class="main-content">
                     <div class="cruise-section mb-5">
                         <h3 class="section-heading mb-4" style="font-size: 1.8rem;">Tổng Quan</h3>
@@ -295,12 +298,15 @@ window.selectSchedule = function(scheduleId) {
     
     // Reset all
     document.querySelectorAll('.schedule-item').forEach(el => {
-        el.style.borderColor = 'var(--border)';
+        el.style.borderColor = '#e2e8f0';
         el.style.background = 'transparent';
-    });
-    document.querySelectorAll('.schedule-item button').forEach(el => {
-        el.className = 'btn-secondary float-right';
-        el.innerText = 'Chọn lịch này';
+        const btn = el.querySelector('button');
+        if(btn) {
+            btn.className = 'btn-outline';
+            btn.innerText = 'Chọn';
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--primary)';
+        }
     });
 
     // Highlight selected
@@ -308,9 +314,11 @@ window.selectSchedule = function(scheduleId) {
     const btn = document.getElementById(`btn-schedule-${scheduleId}`);
     if(box && btn) {
         box.style.borderColor = 'var(--primary)';
-        box.style.background = 'var(--bg-light)';
-        btn.className = 'btn-primary float-right';
+        box.style.background = '#f0fdf4';
+        btn.className = 'btn-primary';
         btn.innerText = 'Đã chọn ✓';
+        btn.style.background = 'var(--primary)';
+        btn.style.color = 'white';
     }
 };
 
@@ -355,7 +363,7 @@ window.updateTotalSelectedPrice = function() {
                     <span style="font-size: 1.1rem; color: #555;">Đã chọn <strong>${selectedCount}</strong> phòng</span>
                     <div style="font-size: 1.6rem; font-weight: 700; color: #ef4444;">Tổng: ${formatPrice(total)}</div>
                 </div>
-                <button class="btn-primary" style="padding: 12px 30px; font-size: 1.2rem; border-radius: 8px;" onclick="window.bookMultipleCabins()">Tiếp tục đặt phòng</button>
+                <button class="btn-primary" style="font-size: 1.2rem; padding: 14px 30px; border-radius: 10px; font-weight: bold; text-transform: uppercase;" onclick="window.bookMultipleCabins()">Tiếp tục đặt phòng</button>
             </div>
         `;
     } else {
