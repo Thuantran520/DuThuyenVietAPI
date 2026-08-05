@@ -157,10 +157,21 @@
             // Booking page logic
             const urlParams = new URLSearchParams(window.location.search);
             const scheduleId = urlParams.get('scheduleId');
-            const cabinTypeId = urlParams.get('cabinTypeId');
             const cruiseId = urlParams.get('cruiseId');
+            const cabinsParam = urlParams.get('cabins');
+            const singleCabinId = urlParams.get('cabinTypeId');
+            
+            let selectedCabins = [];
+            if (cabinsParam) {
+                selectedCabins = cabinsParam.split(',').map(c => {
+                    const parts = c.split(':');
+                    return { cabinTypeId: parseInt(parts[0]), count: parseInt(parts[1]) };
+                });
+            } else if (singleCabinId) {
+                selectedCabins = [{ cabinTypeId: parseInt(singleCabinId), count: 1 }];
+            }
 
-            if (!scheduleId || !cabinTypeId) {
+            if (!scheduleId || selectedCabins.length === 0) {
                 window.Popup.show('Lỗi', 'Thông tin không hợp lệ.', 'error');
                 return;
             }
@@ -169,59 +180,111 @@
                 const response = await fetch(`${API_URL}/Cruises/${cruiseId}`);
                 const cruise = await response.json();
                 const schedule = cruise.schedules.find(s => s.scheduleId == scheduleId);
-                const cabin = cruise.cabins.find(c => c.cabinTypeId == cabinTypeId);
-
-                if (!schedule || !cabin) throw new Error('Data mismatch');
+                
+                if (!schedule) throw new Error('Data mismatch');
 
                 const updateSummary = () => {
-                    const rooms = parseInt(document.getElementById('b_rooms').value) || 1;
-                    const total = cabin.basePrice * rooms;
-                    const summaryHtml = `
+                    let totalAmount = 0;
+                    let summaryHtml = `
                         <h4 class="mb-2">${cruise.name}</h4>
-                        <p><strong>Loại phòng:</strong> ${cabin.name}</p>
                         <p><strong>Khởi hành:</strong> ${new Date(schedule.departureDate).toLocaleDateString('vi-VN')}</p>
                         <p><strong>Thời gian:</strong> ${schedule.durationLabel}</p>
                         <hr class="my-3">
-                        <p><strong>Đơn giá:</strong> <span class="text-danger">${formatPrice(cabin.basePrice)}</span> / phòng</p>
-                        <p><strong>Số lượng phòng:</strong> ${rooms}</p>
-                        <h4 class="mt-3">Tổng cộng: <span class="text-danger">${formatPrice(total)}</span></h4>
                     `;
+                    
+                    // If single cabin mode and no cabinsParam, take count from input
+                    if (singleCabinId && !cabinsParam) {
+                        selectedCabins[0].count = parseInt(document.getElementById('b_rooms').value) || 1;
+                    }
+
+                    selectedCabins.forEach(sc => {
+                        const cabin = cruise.cabins.find(c => c.cabinTypeId == sc.cabinTypeId);
+                        if (cabin) {
+                            const lineTotal = cabin.basePrice * sc.count;
+                            totalAmount += lineTotal;
+                            summaryHtml += `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span><strong>${cabin.name}</strong> (x${sc.count})</span>
+                                    <span>${formatPrice(lineTotal)}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    summaryHtml += `
+                        <hr class="my-3">
+                        <h4 class="mt-3">Tổng cộng: <span class="text-danger">${formatPrice(totalAmount)}</span></h4>
+                    `;
+                    
                     document.getElementById('bookingSummary').innerHTML = summaryHtml;
                 };
 
                 updateSummary();
-                document.getElementById('b_rooms').addEventListener('input', updateSummary);
+                if (singleCabinId && !cabinsParam) {
+                    document.getElementById('b_rooms').addEventListener('input', updateSummary);
+                } else {
+                    document.getElementById('b_rooms').closest('div').style.display = 'none';
+                }
+
             } catch (e) {
                 document.getElementById('bookingSummary').innerHTML = '<p class="text-danger">Không thể tải thông tin chuyến đi.</p>';
             }
 
             document.getElementById('bookingForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const payload = {
-                    scheduleId: parseInt(scheduleId),
-                    cabinTypeId: parseInt(cabinTypeId),
-                    numberOfRooms: parseInt(document.getElementById('b_rooms').value),
-                    numberOfGuests: parseInt(document.getElementById('b_guests').value),
-                    contactName: document.getElementById('b_name').value,
-                    contactPhone: document.getElementById('b_phone').value,
-                    contactEmail: document.getElementById('b_email').value,
-                    note: document.getElementById('b_note').value
-                };
+                
+                const contactName = document.getElementById('b_name').value;
+                const contactPhone = document.getElementById('b_phone').value;
+                const contactEmail = document.getElementById('b_email').value;
+                const note = document.getElementById('b_note').value;
+                const numberOfGuests = parseInt(document.getElementById('b_guests').value);
+
+                // Re-read rooms for single mode
+                if (singleCabinId && !cabinsParam) {
+                    selectedCabins[0].count = parseInt(document.getElementById('b_rooms').value) || 1;
+                }
 
                 try {
-                    const res = await fetch(`${API_URL}/Bookings`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        window.location.href = `/checkout.html?bookingId=${data.bookingId}`;
-                    } else {
-                        window.Popup.show('Lỗi', data.message || 'Lỗi đặt phòng', 'error');
+                    let firstBookingId = null;
+                    let hasError = false;
+                    for (let i = 0; i < selectedCabins.length; i++) {
+                        const sc = selectedCabins[i];
+                        const payload = {
+                            scheduleId: parseInt(scheduleId),
+                            cabinTypeId: sc.cabinTypeId,
+                            numberOfRooms: sc.count,
+                            numberOfGuests: i === 0 ? numberOfGuests : 1, // Allocate guests to first booking
+                            contactName,
+                            contactPhone,
+                            contactEmail,
+                            note
+                        };
+
+                        const res = await fetch(`${API_URL}/Bookings`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            if (!firstBookingId) firstBookingId = data.bookingId;
+                        } else {
+                            window.Popup.show('Lỗi', data.message || 'Lỗi đặt phòng', 'error');
+                            hasError = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!hasError) {
+                        if (selectedCabins.length === 1 && firstBookingId) {
+                            window.location.href = `/checkout.html?bookingId=${firstBookingId}`;
+                        } else {
+                            window.Popup.show('Thành công', 'Đã tạo các đơn đặt phòng thành công.', 'success');
+                            setTimeout(() => window.location.href = `/history.html`, 1500);
+                        }
                     }
                 } catch (error) {
                     window.Popup.show('Lỗi', 'Không thể kết nối máy chủ.', 'error');

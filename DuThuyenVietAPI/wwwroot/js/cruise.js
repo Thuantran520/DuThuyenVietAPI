@@ -123,21 +123,31 @@ async function loadCruiseDetail() {
 
         let cabinsHtml = '';
         if (cruise.cabins && cruise.cabins.length > 0) {
-            cabinsHtml = cruise.cabins.map(cabin => `
+            window.selectedCabins = {};
+            window.cabinData = {};
+            cabinsHtml = cruise.cabins.map(cabin => {
+                window.cabinData[cabin.cabinTypeId] = { price: cabin.basePrice, totalRooms: cabin.totalRooms || 10 };
+                return `
                 <div class="cabin-card luxury-card mb-4" style="display: flex; gap: 20px; padding: 20px;">
                     <img src="${cabin.imageUrl || '/images/default-cabin.jpg'}" alt="${cabin.name}" class="cabin-img" style="width: 250px; height: 180px; object-fit: cover; border-radius: 12px; box-shadow: var(--shadow);">
                     <div class="cabin-info" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <h4 style="font-size: 1.3rem; margin-bottom: 10px;">${cabin.name}</h4>
-                            <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người</p>
+                            <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người | 🛏️ Tổng số phòng: ${cabin.totalRooms || 'Không giới hạn'}</p>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ người</span></div>
-                            <button class="btn-primary" style="padding: 12px 25px; border-radius: 8px; font-weight: 600;" onclick="window.bookCabin(${cabin.cabinTypeId})">Đặt Phòng</button>
+                            <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ phòng</span></div>
+                            <div class="room-selector" style="display: flex; align-items: center; gap: 15px; background: var(--bg-light); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                <button onclick="window.updateCabinCount(${cabin.cabinTypeId}, -1)" style="border: none; background: #e2e8f0; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #333;">-</button>
+                                <span id="cabin-count-${cabin.cabinTypeId}" style="font-size: 1.2rem; font-weight: 600; min-width: 20px; text-align: center;">0</span>
+                                <button onclick="window.updateCabinCount(${cabin.cabinTypeId}, 1)" style="border: none; background: var(--primary); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: white;">+</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
+            cabinsHtml += `<div id="cabin-total-summary" style="display: none; position: sticky; bottom: 20px; z-index: 10;"></div>`;
         } else {
             cabinsHtml = '<p>Không có phòng nào.</p>';
         }
@@ -273,19 +283,75 @@ window.selectSchedule = function(scheduleId) {
     }
 };
 
-window.bookCabin = function(cabinTypeId) {
+window.selectedCabins = {}; 
+window.cabinData = {};
+
+window.updateCabinCount = function(cabinId, delta) {
+    const data = window.cabinData[cabinId];
+    if (!data) return;
+    
+    let current = window.selectedCabins[cabinId] || 0;
+    let next = current + delta;
+    
+    if (next < 0) next = 0;
+    if (next > data.totalRooms) {
+        if(window.Popup) window.Popup.show('Thông báo', `Chỉ còn ${data.totalRooms} phòng trống loại này.`, 'info');
+        next = data.totalRooms;
+    }
+    
+    window.selectedCabins[cabinId] = next;
+    document.getElementById(`cabin-count-${cabinId}`).innerText = next;
+    
+    updateTotalSelectedPrice();
+};
+
+window.updateTotalSelectedPrice = function() {
+    let total = 0;
+    let selectedCount = 0;
+    for (const [id, count] of Object.entries(window.selectedCabins)) {
+        if (count > 0) {
+            total += window.cabinData[id].price * count;
+            selectedCount += count;
+        }
+    }
+    
+    const summaryEl = document.getElementById('cabin-total-summary');
+    if (selectedCount > 0) {
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #fff; border-radius: 12px; border: 2px solid var(--primary); margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div>
+                    <span style="font-size: 1.1rem; color: #555;">Đã chọn <strong>${selectedCount}</strong> phòng</span>
+                    <div style="font-size: 1.6rem; font-weight: 700; color: #ef4444;">Tổng: ${formatPrice(total)}</div>
+                </div>
+                <button class="btn-primary" style="padding: 12px 30px; font-size: 1.2rem; border-radius: 8px;" onclick="window.bookMultipleCabins()">Tiếp tục đặt phòng</button>
+            </div>
+        `;
+    } else {
+        summaryEl.style.display = 'none';
+    }
+};
+
+window.bookMultipleCabins = function() {
     if (!window.selectedScheduleId) {
         if(window.Popup) {
-            window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành trước khi đặt phòng.', 'warning');
+            window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành ở bên phải trước khi đặt phòng.', 'warning');
         } else {
             alert('Vui lòng chọn Lịch Khởi Hành trước khi đặt phòng.');
         }
         return;
     }
     
+    let selected = [];
+    for (const [id, count] of Object.entries(window.selectedCabins)) {
+        if (count > 0) selected.push(`${id}:${count}`);
+    }
+    
+    if (selected.length === 0) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const cruiseId = urlParams.get('id');
-    window.location.href = `/booking.html?cruiseId=${cruiseId}&scheduleId=${window.selectedScheduleId}&cabinTypeId=${cabinTypeId}`;
+    window.location.href = `/booking.html?cruiseId=${cruiseId}&scheduleId=${window.selectedScheduleId}&cabins=${selected.join(',')}`;
 };
 
 function renderCruiseCard(cruise) {

@@ -88,6 +88,7 @@ public class CruisesController : ControllerBase
                 .Include(c => c.CabinTypes)
                 .Include(c => c.Schedules.Where(s => s.DepartureDate >= DateTime.Now && s.Status == "Open"))
                 .Include(c => c.Reviews.OrderByDescending(r => r.CreatedAt).Take(5))
+                .Include(c => c.Amenities)
                 .FirstOrDefaultAsync(c => c.CruiseId == id && c.IsActive);
 
             if (cruise == null)
@@ -105,7 +106,12 @@ public class CruisesController : ControllerBase
                 Images = cruise.CruiseImages.Any() 
                     ? cruise.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).ToList() 
                     : (!string.IsNullOrEmpty(cruise.ThumbnailUrl) ? new List<string> { cruise.ThumbnailUrl } : new List<string>()),
-                Amenities = new List<object>(), // Fixed DB error: Returning empty for now
+                Amenities = cruise.Amenities.Select(a => new
+                {
+                    a.AmenityId,
+                    a.Name,
+                    a.IconClass
+                }).ToList(),
                 Cabins = cruise.CabinTypes.Select(cb => new
                 {
                     cb.CabinTypeId,
@@ -113,7 +119,8 @@ public class CruisesController : ControllerBase
                     cb.MaxOccupancy,
                     cb.BasePrice,
                     cb.ImageUrl,
-                    cb.Description
+                    cb.Description,
+                    cb.TotalRooms
                 }).ToList(),
                 Schedules = cruise.Schedules.Select(s => new
                 {
