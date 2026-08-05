@@ -82,6 +82,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     string[] roles = { "Admin", "Manager", "Staff", "Customer" };
     foreach (var role in roles)
     {
@@ -90,6 +91,22 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+    
+    // Seed Admin account
+    var adminEmail = "admin@duthuyenviet.vn";
+    if (await userManager.FindByEmailAsync(adminEmail) == null)
+    {
+        var adminUser = new ApplicationUser
+        {
+            UserName = "admin",
+            Email = adminEmail,
+            FullName = "Administrator",
+            EmailConfirmed = true
+        };
+        await userManager.CreateAsync(adminUser, "Admin@123");
+        await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+
     var dbContext = scope.ServiceProvider.GetRequiredService<DuThuyenVietDBContext>();
     if (!await dbContext.Schedules.AnyAsync())
     {
