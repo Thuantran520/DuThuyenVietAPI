@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             btn.disabled = true; btnText.style.display = 'none'; spinner.style.display = 'block'; alertBox.style.display = 'none';
 
             try {
-                const response = await fetch('/api/account/login', {
+                const response = await fetch('/api/Account/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usernameOrEmail: usernameOrEmail, password, loginAsAdmin })
@@ -95,7 +95,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     Popup.show('Thành công', 'Đăng nhập thành công! Đang chuyển hướng...', 'success');
                     setTimeout(() => { window.location.href = redirectUrl; }, 1000);
                 } else if (response.status === 401) {
-                    alertBox.className = 'alert-error'; alertBox.innerHTML = 'Email hoặc mật khẩu không đúng.';
+                    alertBox.className = 'alert-error'; 
+                    alertBox.innerHTML = `Email hoặc mật khẩu không đúng.<br><small>Gỡ lỗi: Đã gửi tài khoản "${usernameOrEmail}", độ dài mật khẩu: ${password.length}</small>`;
                 } else {
                     const textData = await response.text();
                     let errData = {};
