@@ -40,8 +40,10 @@ public class BookingsController : ControllerBase
             // Tính tiền
             decimal totalPrice = cabin.BasePrice * dto.NumberOfRooms;
 
-            // Mã booking random
-            string bookingCode = "BKG" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(100, 999);
+            // Sử dụng mã booking từ frontend nếu có, nếu không thì tạo mới
+            string bookingCode = !string.IsNullOrEmpty(dto.BookingCode) 
+                ? dto.BookingCode 
+                : "BKG" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(100, 999);
 
             var booking = new Booking
             {

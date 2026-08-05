@@ -4,6 +4,8 @@ namespace DuThuyenVietAPI.DTOs;
 
 public class CreateBookingDTO
 {
+    public string? BookingCode { get; set; }
+
     [Required]
     public int ScheduleId { get; set; }
 

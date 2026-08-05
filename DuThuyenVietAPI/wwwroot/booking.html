@@ -245,9 +245,14 @@
                 try {
                     let firstBookingId = null;
                     let hasError = false;
+                    
+                    // Generate a single BookingCode for the entire order
+                    const orderBookingCode = "BKG" + Date.now() + Math.floor(Math.random() * 900 + 100);
+
                     for (let i = 0; i < selectedCabins.length; i++) {
                         const sc = selectedCabins[i];
                         const payload = {
+                            bookingCode: orderBookingCode,
                             scheduleId: parseInt(scheduleId),
                             cabinTypeId: sc.cabinTypeId,
                             numberOfRooms: sc.count,

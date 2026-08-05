@@ -177,16 +177,35 @@ public class CruisesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCruise(int id, [FromBody] CruiseDTO dto)
     {
-        var cruise = await _context.Cruises.FindAsync(id);
+        var cruise = await _context.Cruises.Include(c => c.CruiseImages).FirstOrDefaultAsync(c => c.CruiseId == id);
         if (cruise == null) return NotFound();
         
         cruise.DestinationId = dto.DestinationId;
         cruise.Name = dto.Name;
+        cruise.Slug = dto.Name.ToLower().Replace(" ", "-").Replace("đ", "d");
         cruise.TotalCabins = dto.TotalCabins;
         cruise.ShortDescription = dto.ShortDescription;
         cruise.Description = dto.Description;
         cruise.ThumbnailUrl = dto.ThumbnailUrl;
         cruise.UpdatedAt = DateTime.Now;
+        
+        // Also update CruiseImages to reflect the new ThumbnailUrl as primary
+        if (!string.IsNullOrEmpty(dto.ThumbnailUrl))
+        {
+            var primaryImage = cruise.CruiseImages.FirstOrDefault(i => i.DisplayOrder == 1);
+            if (primaryImage != null)
+            {
+                primaryImage.ImageUrl = dto.ThumbnailUrl;
+            }
+            else if (!cruise.CruiseImages.Any(i => i.ImageUrl == dto.ThumbnailUrl))
+            {
+                cruise.CruiseImages.Add(new CruiseImage
+                {
+                    ImageUrl = dto.ThumbnailUrl,
+                    DisplayOrder = 1
+                });
+            }
+        }
         
         await _context.SaveChangesAsync();
         return Ok(cruise);
