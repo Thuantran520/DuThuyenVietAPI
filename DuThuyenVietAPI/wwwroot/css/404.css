@@ -1,0 +1,72 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #f9fafb; /* Màu nền phụ theo QuyTacThietKe_UI */
+    color: #4b5563; /* Màu nội dung Body Text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.error-container {
+    text-align: center;
+    background: #ffffff;
+    padding: 60px 40px;
+    border-radius: 6px; /* Bo góc vừa phải 4px-6px */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Bóng đổ siêu nhẹ */
+    border: 1px solid #e5e7eb; /* Viền siêu mỏng */
+    max-width: 500px;
+    width: 90%;
+}
+
+.error-icon {
+    width: 150px; /* Kích thước ảnh */
+    height: auto;
+    margin-bottom: 24px;
+}
+
+.error-code {
+    font-family: 'Playfair Display', serif;
+    font-size: 100px;
+    font-weight: 700;
+    color: #0d9488; /* Teal 600 - Màu chủ đạo */
+    line-height: 1;
+    margin-bottom: 16px;
+}
+
+.error-title {
+    font-family: 'Playfair Display', serif; /* Font Serif cho Heading */
+    font-size: 24px;
+    font-weight: 600;
+    color: #1f2937; /* Tiêu đề xám đen sẫm */
+    margin-bottom: 12px;
+}
+
+.error-message {
+    font-size: 15px;
+    color: #4b5563; /* Xám trung tính dễ đọc */
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.btn-home {
+    display: inline-block;
+    background: #0d9488; /* Teal 600 */
+    color: #ffffff;
+    padding: 12px 24px; /* Padding rộng rãi */
+    border-radius: 6px; /* Bo góc 6px */
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s ease-in-out;
+}
+
+.btn-home:hover {
+    background: #0f766e; /* Teal 700 */
+}
