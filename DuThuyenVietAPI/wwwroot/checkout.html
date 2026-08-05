@@ -71,7 +71,10 @@
                 <div class="payment-method" data-method="Cash">Tiền mặt / Thu hộ</div>
             </div>
             
-            <button id="btnPay" class="btn-primary w-100" style="font-size: 1.2rem; padding: 15px;">Thanh Toán Ngay</button>
+            <div id="paymentInstructions" class="text-left mb-4" style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px dashed #cbd5e1; display: none;">
+            </div>
+            
+            <button id="btnPay" class="btn-primary w-100" style="font-size: 1.2rem; padding: 15px;">Xác nhận</button>
         </div>
     </div>
 
@@ -140,6 +143,68 @@
                     <p><strong>Khách hàng:</strong> ${booking.contactName} - ${booking.contactPhone}</p>
                 `;
 
+                const updateInstructions = () => {
+                    const instructions = document.getElementById('paymentInstructions');
+                    instructions.style.display = 'block';
+                    const btn = document.getElementById('btnPay');
+                    const bCode = booking.bookingCode;
+                    const bTotal = formatPrice(booking.totalPrice);
+                    
+                    if (selectedMethod === 'BankTransfer') {
+                        instructions.innerHTML = `
+                            <h4 style="color: var(--primary); margin-bottom: 15px; font-weight: 600;">Thông tin chuyển khoản</h4>
+                            <div style="display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <p class="mb-2"><strong>Ngân hàng:</strong> Vietcombank (VCB)</p>
+                                    <p class="mb-2"><strong>Chủ tài khoản:</strong> CTY TNHH DU THUYEN VIET</p>
+                                    <p class="mb-2"><strong>Số tài khoản:</strong> <span style="font-size: 1.2rem; font-weight: bold; color: #ef4444;">1023456789</span></p>
+                                    <p class="mb-2"><strong>Nội dung:</strong> <span style="font-weight: bold;">${bCode}</span></p>
+                                    <p class="mb-2"><strong>Số tiền:</strong> <span style="font-weight: bold; color: #ef4444;">${bTotal}</span></p>
+                                </div>
+                                <div style="text-align: center; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; background: white;">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=VCB:1023456789" alt="QR Code" style="width: 150px; height: 150px;">
+                                    <p style="font-size: 12px; margin-top: 8px; color: #64748b;">Quét mã QRPay</p>
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px; font-size: 14px; color: #64748b; font-style: italic;">
+                                Sau khi chuyển khoản, vui lòng bấm <b>"Xác nhận đã chuyển khoản"</b>. Nhân viên sẽ kiểm tra và xác nhận đơn của bạn.
+                            </div>
+                        `;
+                        btn.innerText = 'Xác nhận đã chuyển khoản';
+                    } else if (selectedMethod === 'Cash') {
+                        instructions.innerHTML = `
+                            <h4 style="color: var(--primary); margin-bottom: 15px; font-weight: 600;">Hướng dẫn thanh toán Tiền mặt</h4>
+                            <p class="mb-2">Bạn có thể thanh toán trực tiếp tại văn phòng của chúng tôi hoặc yêu cầu nhân viên đến thu hộ tại nhà (chỉ áp dụng trong nội thành).</p>
+                            <ul style="padding-left: 20px; color: #475569; margin-bottom: 15px; line-height: 1.6;">
+                                <li><strong>Văn phòng:</strong> 123 Đường Nguyễn Huệ, Quận 1, TP.HCM</li>
+                                <li><strong>Hotline thu hộ:</strong> 1900 1234</li>
+                            </ul>
+                            <div style="font-size: 14px; color: #64748b; font-style: italic;">
+                                Bấm <b>"Xác nhận đặt phòng"</b> để chúng tôi ghi nhận yêu cầu và xếp lịch thu tiền hoặc hẹn tại văn phòng.
+                            </div>
+                        `;
+                        btn.innerText = 'Xác nhận đặt phòng';
+                    }
+                };
+                
+                updateInstructions();
+                
+                // Overwrite the previous click listeners to update instructions
+                document.querySelectorAll('.payment-method').forEach(el => {
+                    // clone node to remove old listeners
+                    const clone = el.cloneNode(true);
+                    el.parentNode.replaceChild(clone, el);
+                });
+                
+                document.querySelectorAll('.payment-method').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        document.querySelectorAll('.payment-method').forEach(btn => btn.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                        selectedMethod = e.target.getAttribute('data-method');
+                        updateInstructions();
+                    });
+                });
+
                 document.getElementById('btnPay').addEventListener('click', async () => {
                     const btn = document.getElementById('btnPay');
                     btn.disabled = true;
@@ -162,12 +227,12 @@
                         } else {
                             window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại', 'error');
                             btn.disabled = false;
-                            btn.innerText = 'Thanh Toán Ngay';
+                            updateInstructions();
                         }
                     } catch (error) {
                         window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ', 'error');
                         btn.disabled = false;
-                        btn.innerText = 'Thanh Toán Ngay';
+                        updateInstructions();
                     }
                 });
 

@@ -84,19 +84,23 @@ public class BookingsController : ControllerBase
                 .Include(b => b.Schedule)
                 .ThenInclude(s => s.Cruise)
                 .Include(b => b.CabinType)
+                .Include(b => b.Payments)
                 .Where(b => b.UserId == userId)
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new
                 {
                     b.BookingId,
                     b.BookingCode,
+                    b.ContactName,
+                    b.ContactPhone,
                     CruiseName = b.Schedule.Cruise.Name,
                     CabinName = b.CabinType.Name,
                     b.Schedule.DepartureDate,
                     b.NumberOfRooms,
                     b.TotalPrice,
                     b.Status,
-                    b.CreatedAt
+                    b.CreatedAt,
+                    Payments = b.Payments.Select(p => new { p.PaymentMethod, p.PaidAt, p.Status, p.TransactionCode })
                 })
                 .ToListAsync();
 
