@@ -22,9 +22,11 @@ public class BookingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDTO dto)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("Không tìm thấy thông tin người dùng.");
 
@@ -37,13 +39,28 @@ public class BookingsController : ControllerBase
                 return BadRequest("Lịch trình hoặc loại phòng không hợp lệ.");
             }
 
-            // Tính tiền
-            decimal totalPrice = cabin.BasePrice * dto.NumberOfRooms;
+            // Kiểm tra tồn kho phòng (ScheduleCabinInventory) — chống bán vượt số phòng
+            var inventory = await _context.ScheduleCabinInventories
+                .FirstOrDefaultAsync(i => i.ScheduleId == dto.ScheduleId && i.CabinTypeId == dto.CabinTypeId);
+
+            if (inventory != null)
+            {
+                if (inventory.AvailableRooms < dto.NumberOfRooms)
+                    return BadRequest($"Chỉ còn {inventory.AvailableRooms} phòng trống. Vui lòng điều chỉnh số lượng.");
+
+                // Trừ số phòng còn lại
+                inventory.AvailableRooms -= dto.NumberOfRooms;
+            }
+
+            // Tính tiền (ưu tiên PriceOverride từ tồn kho nếu có, nếu không dùng giá gốc)
+            decimal unitPrice = inventory?.PriceOverride ?? cabin.BasePrice;
+            decimal totalPrice = unitPrice * dto.NumberOfRooms;
 
             // Sử dụng mã booking từ frontend nếu có, nếu không thì tạo mới
-            string bookingCode = !string.IsNullOrEmpty(dto.BookingCode) 
-                ? dto.BookingCode 
+            string bookingCode = !string.IsNullOrEmpty(dto.BookingCode)
+                ? dto.BookingCode
                 : "BKG" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(100, 999);
+
 
             var booking = new Booking
             {
@@ -64,11 +81,13 @@ public class BookingsController : ControllerBase
 
             _context.Bookings.Add(booking);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Ok(new { Message = "Đặt vé thành công", BookingId = booking.BookingId, BookingCode = bookingCode });
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             return StatusCode(500, "Lỗi server: " + ex.Message);
         }
     }
