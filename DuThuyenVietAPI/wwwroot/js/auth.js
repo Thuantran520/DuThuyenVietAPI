@@ -398,12 +398,16 @@ document.addEventListener('DOMContentLoaded', async function () {
                         document.getElementById('modal-booking-code').innerText = code;
 
                         // --- Header info ---
+                        let firstItem = grp.items[0] || grp;
+                        let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
                         let html = `
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
                             <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName}</strong></div>
                             <div><span style="color:#64748b;">📞 Điện thoại</span><br><strong>${grp.contactPhone}</strong></div>
                             <div><span style="color:#64748b;">🚢 Du thuyền</span><br><strong>${grp.cruiseName}</strong></div>
                             <div><span style="color:#64748b;">📅 Khởi hành</span><br><strong>${new Date(grp.departureDate).toLocaleDateString('vi-VN')}</strong></div>
+                            <div><span style="color:#64748b;">🕒 Ngày giờ tạo</span><br><strong>${new Date(firstItem.createdAt).toLocaleString('vi-VN')}</strong></div>
+                            <div><span style="color:#64748b;">👨‍💼 Người duyệt</span><br><strong>${approver}</strong></div>
                             ${grp.contactEmail ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📧 Email</span><br><strong>${grp.contactEmail}</strong></div>` : ''}
                             ${grp.note ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📝 Ghi chú</span><br><em style="color:#334155;">${grp.note}</em></div>` : ''}
                         </div>`;
@@ -458,6 +462,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                         
                         document.getElementById('booking-details-content').innerHTML = html;
                         document.getElementById('bookingDetailsModal').style.display = 'flex';
+                        
+                        const btnCopy = document.getElementById('btnCopyInvoice');
+                        if (btnCopy) {
+                            btnCopy.onclick = function() {
+                                const txt = `Mã đơn: ${code}\nKhách hàng: ${grp.contactName}\nSĐT: ${grp.contactPhone}\nDu thuyền: ${grp.cruiseName}\nKhởi hành: ${new Date(grp.departureDate).toLocaleDateString('vi-VN')}\nTổng tiền: ${formatPrice(grp.totalPrice)}\nTrạng thái: ${firstItem.status === 'Confirmed' ? 'Thành công' : 'Chưa xác nhận'}`;
+                                window.copyToClipboard(txt);
+                            };
+                        }
                     };
 
                     Object.values(grouped).forEach(b => {
@@ -468,16 +480,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                         else if (b.status === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
                         else statusHtml = b.status;
 
-                        let actionsHtml = `<button class="btn-sm btn-outline" style="border-color:#3b82f6; color:#3b82f6; margin-right:8px;" onclick="showBookingDetails('${b.bookingCode}')">Chi tiết</button>`;
+                        let actionsHtml = `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
+                        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#3b82f6; color:#3b82f6;" onclick="showBookingDetails('${b.bookingCode}')">Chi tiết</button>`;
                         
                         if (b.status === 'AwaitingConfirmation' || b.status === 'Pending') {
-                            // Only confirm/cancel the first item for simplicity, or ideally call an API that updates by bookingCode.
-                            // Currently, we'll just pass the bookingId of the first item which is technically partial, 
-                            // but our backend should ideally handle it. Since we haven't changed the backend, we loop or just pass the first.
-                            // Assuming backend updates ALL bookings with this code if we adapt it later, but for now we'll just loop in JS.
-                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981; margin-right:8px;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
+                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
                             actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Cancelled')">Hủy</button>`;
                         }
+                        actionsHtml += `</div>`;
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `

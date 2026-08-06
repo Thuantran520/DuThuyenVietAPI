@@ -12,7 +12,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding: 40px 20px; }
 
-.container { max-width: 1200px; margin: 0 auto; }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
 
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; }
 .logo { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--primary); }
