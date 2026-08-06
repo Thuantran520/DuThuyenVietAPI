@@ -151,6 +151,9 @@ public class ReviewsController : ControllerBase
             if (alreadyReviewed)
                 return Ok(new { CanReview = false, Reason = "Bạn đã đánh giá du thuyền này rồi." });
 
+            var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+            bool isStaff = roles.Contains("Admin") || roles.Contains("Manager") || roles.Contains("Staff");
+
             // Có đặt phòng Confirmed cho du thuyền này chưa?
             bool hasConfirmedBooking = await _context.Bookings
                 .Include(b => b.Schedule)
@@ -158,10 +161,12 @@ public class ReviewsController : ControllerBase
                     && b.Schedule.CruiseId == cruiseId
                     && (b.Status == "Confirmed" || b.Status == "AwaitingConfirmation"));
 
+            bool canReview = isStaff || hasConfirmedBooking;
+
             return Ok(new
             {
-                CanReview = hasConfirmedBooking,
-                Reason = hasConfirmedBooking ? null : "Bạn cần có đặt chỗ thành công để đánh giá."
+                CanReview = canReview,
+                Reason = canReview ? null : "Bạn cần có đặt chỗ thành công để đánh giá."
             });
         }
         catch (Exception ex)
