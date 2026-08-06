@@ -90,7 +90,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const data = await response.json();
                     localStorage.setItem('auth_token', data.token);
                     
-                    const redirectUrl = '/index.html';
+                    let redirectUrl = '/index.html';
+                    if (loginAsAdmin) {
+                        redirectUrl = '/admin/profile.html';
+                    }
 
                     Popup.show('Thành công', 'Đăng nhập thành công! Đang chuyển hướng...', 'success');
                     setTimeout(() => { window.location.href = redirectUrl; }, 1000);
