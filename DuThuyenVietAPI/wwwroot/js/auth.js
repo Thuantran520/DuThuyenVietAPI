@@ -445,9 +445,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                         `;
                         tbody.appendChild(tr);
                     });
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('bookings-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Lỗi tải dữ liệu: ${errorText || response.statusText}</td></tr>`;
                 }
             } catch (err) {
                 console.error("Lỗi lấy danh sách booking:", err);
+                const tbody = document.getElementById('bookings-table-body');
+                if(tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Lỗi: ${err.message}</td></tr>`;
             }
         }
         
@@ -712,9 +717,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                         `;
                         tbody.appendChild(tr);
                     });
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('user-table-body').innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Lỗi tải dữ liệu: ${errorText || response.statusText}</td></tr>`;
                 }
             } catch (err) {
                 console.error("Lỗi lấy danh sách user:", err);
+                const tbody = document.getElementById('user-table-body');
+                if(tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Lỗi: ${err.message}</td></tr>`;
             }
         }
 
