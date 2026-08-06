@@ -392,14 +392,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                     window.adminGroupedBookings = grouped; // for modal
 
                     window.showBookingDetails = function(code) {
-                        const grp = window.adminGroupedBookings[code];
-                        if(!grp) return;
-                        
-                        document.getElementById('modal-booking-code').innerText = code;
+                        try {
+                            const grp = window.adminGroupedBookings[code];
+                            if(!grp) return;
+                            
+                            document.getElementById('modal-booking-code').innerText = code;
 
-                        // --- Header info ---
-                        let firstItem = grp.items[0] || grp;
-                        let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
+                            // --- Header info ---
+                            let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
+                            let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
                         let html = `
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
                             <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName}</strong></div>
@@ -469,6 +470,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                                 const txt = `Mã đơn: ${code}\nKhách hàng: ${grp.contactName}\nSĐT: ${grp.contactPhone}\nDu thuyền: ${grp.cruiseName}\nKhởi hành: ${new Date(grp.departureDate).toLocaleDateString('vi-VN')}\nTổng tiền: ${formatPrice(grp.totalPrice)}\nTrạng thái: ${firstItem.status === 'Confirmed' ? 'Thành công' : 'Chưa xác nhận'}`;
                                 window.copyToClipboard(txt);
                             };
+                        }
+                        } catch (err) {
+                            console.error("Lỗi khi hiển thị chi tiết hóa đơn:", err);
+                            alert("Đã xảy ra lỗi khi hiển thị chi tiết hóa đơn. Chi tiết: " + err.message);
                         }
                     };
 
