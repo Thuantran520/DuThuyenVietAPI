@@ -27,18 +27,53 @@ window.loadCruiseReviews = async function(cruiseId, page = 1) {
             return;
         }
 
-        listEl.innerHTML = data.reviews.map(r => `
-            <div style="padding:16px 0; border-bottom:1px solid #f1f5f9;">
+        const jwtData = (() => {
+            const token = localStorage.getItem('auth_token');
+            if (!token) return null;
+            try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+        })();
+        const currentUserId = jwtData ? jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] : null;
+        const currentRole = jwtData ? (jwtData['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '') : '';
+        const isStaff = currentRole.includes('Admin') || currentRole.includes('Manager') || currentRole.includes('Staff');
+
+        listEl.innerHTML = data.reviews.map(r => {
+            let staffReplyHtml = r.staffReply ? `
+                <div style="margin-top:12px; background:#f0fdf4; border-left:4px solid #22c55e; padding:10px 14px; border-radius:0 8px 8px 0;">
+                    <strong style="color:#166534; font-size:0.9rem;">Phản hồi từ Đội ngũ:</strong>
+                    <p style="margin:4px 0 0; color:#15803d; font-size:0.95rem;">${r.staffReply}</p>
+                </div>
+            ` : '';
+
+            // Chỉ cho sửa nếu tên user trùng (vì Get API đang ẩn UserId, tạm so sánh tên, nếu cần chuẩn thì API trả UserId)
+            // Hoặc API trả username, nên ta có thể check name
+            const currentName = jwtData ? (jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || '') : '';
+            const isOwner = currentName === r.userName || (jwtData && r.userName.includes(currentName));
+            
+            let actionsHtml = '';
+            if (isOwner) {
+                actionsHtml += `<button onclick="window.editReview(${r.reviewId}, ${r.rating}, '${r.comment.replace(/'/g, "\\'")}', ${cruiseId})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; font-weight:600;">Sửa</button>`;
+            }
+            if (isStaff) {
+                actionsHtml += `<button onclick="window.replyReview(${r.reviewId}, ${cruiseId})" style="background:none; border:none; color:#10b981; cursor:pointer; font-size:0.85rem; font-weight:600; margin-left:12px;">Trả lời</button>`;
+            }
+
+            return `
+            <div style="padding:16px 0; border-bottom:1px solid #f1f5f9;" id="review-${r.reviewId}">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div>
                         <span style="font-weight:700; color:#0f172a;">${r.userName}</span>
                         <span style="color:#fbbf24; margin-left:10px; font-size:1.1rem;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
                     </div>
-                    <small style="color:#94a3b8;">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</small>
+                    <div style="text-align:right;">
+                        <small style="color:#94a3b8; display:block;">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</small>
+                        <div style="margin-top:4px;">${actionsHtml}</div>
+                    </div>
                 </div>
-                <p style="color:#374151; line-height:1.6; margin:0;">${r.comment}</p>
+                <p style="color:#374151; line-height:1.6; margin:0;" id="review-comment-${r.reviewId}">${r.comment}</p>
+                ${staffReplyHtml}
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Phân trang
         if (paginationEl && data.totalPages > 1) {
@@ -208,4 +243,47 @@ window.submitReview = async function(cruiseId) {
         if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá 🚀'; }
         console.error('submitReview error:', e);
     }
+};
+
+window.editReview = function(reviewId, oldRating, oldComment, cruiseId) {
+    const newComment = prompt('Nhập nội dung đánh giá mới:', oldComment);
+    if (newComment === null) return;
+    let newRating = prompt('Nhập điểm (1-5):', oldRating);
+    if (newRating === null) return;
+    newRating = parseInt(newRating);
+    if (isNaN(newRating) || newRating < 1 || newRating > 5) {
+        alert('Điểm đánh giá không hợp lệ.');
+        return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    fetch(`${REVIEW_API}/Reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: newRating, comment: newComment, cruiseId: cruiseId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (window.Popup) window.Popup.show('Thành công', 'Đã cập nhật đánh giá.', 'success');
+        window.loadCruiseReviews(cruiseId, 1);
+    })
+    .catch(err => alert('Lỗi sửa đánh giá.'));
+};
+
+window.replyReview = function(reviewId, cruiseId) {
+    const replyText = prompt('Nhập nội dung phản hồi của Staff:');
+    if (!replyText) return;
+
+    const token = localStorage.getItem('auth_token');
+    fetch(`${REVIEW_API}/Reviews/${reviewId}/reply`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replyText: replyText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (window.Popup) window.Popup.show('Thành công', 'Đã trả lời đánh giá.', 'success');
+        window.loadCruiseReviews(cruiseId, 1);
+    })
+    .catch(err => alert('Lỗi trả lời đánh giá.'));
 };

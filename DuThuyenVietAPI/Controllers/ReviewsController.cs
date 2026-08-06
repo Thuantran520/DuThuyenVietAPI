@@ -40,6 +40,7 @@ public class ReviewsController : ControllerBase
                     r.ReviewId,
                     r.Rating,
                     r.Comment,
+                    r.StaffReply,
                     r.CreatedAt,
                     UserName = u.FullName ?? u.UserName ?? "Khách hàng"
                 })
@@ -162,6 +163,72 @@ public class ReviewsController : ControllerBase
                 CanReview = hasConfirmedBooking,
                 Reason = hasConfirmedBooking ? null : "Bạn cần có đặt chỗ thành công để đánh giá."
             });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Lỗi server: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Chỉnh sửa đánh giá (chính chủ)
+    /// </summary>
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> EditReview(int id, [FromBody] CreateReviewDTO dto)
+    {
+        try
+        {
+            if (dto.Rating < 1 || dto.Rating > 5) return BadRequest("Điểm đánh giá phải từ 1 đến 5.");
+            if (string.IsNullOrWhiteSpace(dto.Comment)) return BadRequest("Vui lòng nhập nội dung đánh giá.");
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var review = await _context.Reviews.Include(r => r.Cruise).FirstOrDefaultAsync(r => r.ReviewId == id);
+            
+            if (review == null) return NotFound("Không tìm thấy đánh giá.");
+            if (review.UserId != userId) return Forbid("Bạn không có quyền sửa đánh giá này.");
+
+            int oldRating = review.Rating;
+            review.Rating = dto.Rating;
+            review.Comment = dto.Comment;
+            
+            // Cập nhật điểm trung bình nếu thay đổi rating
+            if (oldRating != dto.Rating && review.Cruise != null)
+            {
+                double currentTotal = (double)review.Cruise.AverageRating * review.Cruise.ReviewCount;
+                double newTotal = currentTotal - oldRating + dto.Rating;
+                review.Cruise.AverageRating = (decimal)Math.Round(newTotal / review.Cruise.ReviewCount, 1);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Đã cập nhật đánh giá." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Lỗi server: " + ex.Message);
+        }
+    }
+
+    public class ReplyDTO
+    {
+        public string ReplyText { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Nhân viên trả lời đánh giá
+    /// </summary>
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPut("{id}/reply")]
+    public async Task<IActionResult> ReplyReview(int id, [FromBody] ReplyDTO dto)
+    {
+        try
+        {
+            var review = await _context.Reviews.FindAsync(id);
+            if (review == null) return NotFound("Không tìm thấy đánh giá.");
+
+            review.StaffReply = dto.ReplyText;
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Đã phản hồi đánh giá." });
         }
         catch (Exception ex)
         {

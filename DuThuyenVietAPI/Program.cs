@@ -81,6 +81,9 @@ app.MapControllers();
 // Tự động tạo các quyền (Roles) nếu chưa có trong Database
 using (var scope = app.Services.CreateScope())
 {
+    var context = scope.ServiceProvider.GetRequiredService<DuThuyenVietDBContext>();
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Reviews ADD StaffReply NVARCHAR(MAX) NULL;"); } catch { }
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     string[] roles = { "Admin", "Manager", "Staff", "Customer" };

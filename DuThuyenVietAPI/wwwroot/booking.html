@@ -85,12 +85,13 @@
                     </div>
                     
                     <h3 class="mb-4 mt-4">Thông tin chuyến đi</h3>
-                    <div class="form-group form-row">
-                        <div>
+                    <!-- Mặc định ẩn để JS quyết định layout, tránh hiện tượng flash -->
+                    <div class="form-group" id="trip-info-row" style="display: none;">
+                        <div id="room-count-wrapper">
                             <label>Số lượng phòng *</label>
                             <input type="number" id="b_rooms" min="1" max="10" value="1" required>
                         </div>
-                        <div>
+                        <div id="guest-count-wrapper">
                             <label>Số lượng khách *</label>
                             <input type="number" id="b_guests" min="1" max="50" value="2" required>
                         </div>
@@ -160,10 +161,17 @@
             const singleCabinId = urlParams.get('cabinTypeId');
             
             // Fix layout flash: Hide 'Số lượng phòng' immediately if using cabinsParam
+            const tripInfoRow = document.getElementById('trip-info-row');
+            const roomWrapper = document.getElementById('room-count-wrapper');
+            
             if (!singleCabinId || cabinsParam) {
-                const bRoomsDiv = document.getElementById('b_rooms').closest('div');
-                bRoomsDiv.style.display = 'none';
-                bRoomsDiv.parentElement.style.gridTemplateColumns = '1fr';
+                roomWrapper.style.display = 'none';
+                tripInfoRow.classList.remove('form-row');
+                tripInfoRow.style.display = 'block';
+            } else {
+                roomWrapper.style.display = 'block';
+                tripInfoRow.classList.add('form-row');
+                tripInfoRow.style.display = 'grid';
             }
 
             let selectedCabins = [];
@@ -217,6 +225,13 @@
                     });
                     
                     summaryHtml += `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; margin-top: 10px; color: #64748b; font-size: 0.95rem;">
+                            <span>Số lượng khách:</span>
+                            <span>${document.getElementById('b_guests').value} người</span>
+                        </div>
+                    `;
+
+                    summaryHtml += `
                         <hr class="my-3">
                         <h4 class="mt-3">Tổng cộng: <span class="text-danger">${formatPrice(totalAmount)}</span></h4>
                     `;
@@ -228,6 +243,7 @@
                 if (singleCabinId && !cabinsParam) {
                     document.getElementById('b_rooms').addEventListener('input', updateSummary);
                 }
+                document.getElementById('b_guests').addEventListener('input', updateSummary);
 
             } catch (e) {
                 document.getElementById('bookingSummary').innerHTML = '<p class="text-danger">Không thể tải thông tin chuyến đi.</p>';
