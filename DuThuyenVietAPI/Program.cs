@@ -108,6 +108,30 @@ using (var scope = app.Services.CreateScope())
     }
 
     var dbContext = scope.ServiceProvider.GetRequiredService<DuThuyenVietDBContext>();
+
+    // Tự động tạo bảng ScheduleCabinInventories nếu chưa có trên Azure SQL
+    try 
+    {
+        await dbContext.Database.ExecuteSqlRawAsync(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ScheduleCabinInventories')
+            BEGIN
+                CREATE TABLE ScheduleCabinInventories (
+                    ScheduleCabinId INT IDENTITY(1,1) PRIMARY KEY,
+                    ScheduleId INT NOT NULL,
+                    CabinTypeId INT NOT NULL,
+                    AvailableRooms INT NOT NULL,
+                    PriceOverride DECIMAL(18,2) NULL,
+                    CONSTRAINT FK_Inventory_Schedule FOREIGN KEY (ScheduleId) REFERENCES Schedules(ScheduleId) ON DELETE CASCADE,
+                    CONSTRAINT FK_Inventory_CabinType FOREIGN KEY (CabinTypeId) REFERENCES CabinTypes(CabinTypeId) ON DELETE CASCADE
+                );
+            END
+        ");
+    }
+    catch (Exception ex) 
+    {
+        Console.WriteLine("Cảnh báo: Không thể tạo bảng ScheduleCabinInventories. Lỗi: " + ex.Message);
+    }
+
     if (!await dbContext.Schedules.AnyAsync())
     {
         var cruises = await dbContext.Cruises.ToListAsync();
