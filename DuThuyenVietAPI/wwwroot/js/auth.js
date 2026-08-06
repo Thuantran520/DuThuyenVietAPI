@@ -775,8 +775,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 });
 
-});
-
 window.downloadInvoiceDirectly = function(code) {
     try {
         const grp = window.adminGroupedBookings ? window.adminGroupedBookings[code] : null;
