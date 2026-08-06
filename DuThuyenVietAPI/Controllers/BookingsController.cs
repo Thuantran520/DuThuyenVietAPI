@@ -28,7 +28,7 @@ public class BookingsController : ControllerBase
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized("Không tìm thấy thông tin người dùng.");
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng." });
 
             // Kiểm tra Schedule và CabinType
             var schedule = await _context.Schedules.FindAsync(dto.ScheduleId);
@@ -36,7 +36,7 @@ public class BookingsController : ControllerBase
 
             if (schedule == null || schedule.Status != "Open" || cabin == null || cabin.CruiseId != schedule.CruiseId)
             {
-                return BadRequest("Lịch trình hoặc loại phòng không hợp lệ.");
+                return BadRequest(new { message = "Lịch trình hoặc loại phòng không hợp lệ." });
             }
 
             // Kiểm tra tồn kho phòng (ScheduleCabinInventory) — chống bán vượt số phòng
@@ -46,7 +46,7 @@ public class BookingsController : ControllerBase
             if (inventory != null)
             {
                 if (inventory.AvailableRooms < dto.NumberOfRooms)
-                    return BadRequest($"Chỉ còn {inventory.AvailableRooms} phòng trống. Vui lòng điều chỉnh số lượng.");
+                    return BadRequest(new { message = $"Chỉ còn {inventory.AvailableRooms} phòng trống. Vui lòng điều chỉnh số lượng." });
 
                 // Trừ số phòng còn lại
                 inventory.AvailableRooms -= dto.NumberOfRooms;
@@ -88,7 +88,7 @@ public class BookingsController : ControllerBase
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 
@@ -99,7 +99,7 @@ public class BookingsController : ControllerBase
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng." });
 
             var bookings = await _context.Bookings
                 .Include(b => b.Schedule)
@@ -129,7 +129,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 
@@ -140,7 +140,7 @@ public class BookingsController : ControllerBase
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng." });
 
             var booking = await _context.Bookings
                 .Include(b => b.Schedule)
@@ -149,7 +149,7 @@ public class BookingsController : ControllerBase
                 .Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.BookingId == id);
 
-            if (booking == null) return NotFound("Không tìm thấy đơn đặt vé.");
+            if (booking == null) return NotFound(new { message = "Không tìm thấy đơn đặt vé." });
 
             // Check if user is staff/admin
             bool isStaff = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
@@ -187,7 +187,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 
@@ -233,7 +233,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 
@@ -249,7 +249,7 @@ public class BookingsController : ControllerBase
         try
         {
             var booking = await _context.Bookings.FindAsync(id);
-            if (booking == null) return NotFound("Không tìm thấy đơn hàng");
+            if (booking == null) return NotFound(new { message = "Không tìm thấy đơn hàng" });
 
             booking.Status = dto.Status;
             booking.UpdatedAt = DateTime.Now;
@@ -270,7 +270,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 
@@ -282,13 +282,13 @@ public class BookingsController : ControllerBase
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var booking = await _context.Bookings.FindAsync(id);
 
-            if (booking == null) return NotFound();
+            if (booking == null) return NotFound(new { message = "Không tìm thấy đơn đặt vé." });
 
             if (booking.UserId != userId) return Forbid();
 
             if (booking.Status != "Pending")
             {
-                return BadRequest("Chỉ có thể hủy đơn đang chờ thanh toán.");
+                return BadRequest(new { message = "Chỉ có thể hủy đơn đang chờ thanh toán." });
             }
 
             booking.Status = "Cancelled";
@@ -299,7 +299,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 }

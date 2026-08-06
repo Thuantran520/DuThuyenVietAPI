@@ -35,7 +35,7 @@ public class ReviewsController : ControllerBase
             var reviews = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Join(_context.Users, r => r.UserId, u => u, (r, u) => new
+                .Join(_context.Users, r => r.UserId, u => u.Id, (r, u) => new
                 {
                     r.ReviewId,
                     r.Rating,
@@ -117,7 +117,7 @@ public class ReviewsController : ControllerBase
 
             // Cập nhật AverageRating và ReviewCount trong Cruise
             int currentCount = cruise.ReviewCount;
-            double currentAvg = cruise.AverageRating.HasValue ? (double)cruise.AverageRating.Value : 0;
+            double currentAvg = (double)cruise.AverageRating;
             cruise.ReviewCount = currentCount + 1;
             cruise.AverageRating = (decimal)Math.Round((currentAvg * currentCount + dto.Rating) / (currentCount + 1), 1);
 
@@ -198,11 +198,11 @@ public class ReviewsController : ControllerBase
                 if (cruise.ReviewCount == 1)
                 {
                     cruise.ReviewCount = 0;
-                    cruise.AverageRating = null;
+                    cruise.AverageRating = 0;
                 }
                 else
                 {
-                    double currentAvg = cruise.AverageRating.HasValue ? (double)cruise.AverageRating.Value : 0;
+                    double currentAvg = (double)cruise.AverageRating;
                     int newCount = cruise.ReviewCount - 1;
                     double newAvg = (currentAvg * cruise.ReviewCount - review.Rating) / newCount;
                     cruise.ReviewCount = newCount;

@@ -38,9 +38,9 @@ public class PaymentsController : ControllerBase
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var booking = await _context.Bookings.FindAsync(request.BookingId);
 
-            if (booking == null) return NotFound("Không tìm thấy đơn hàng");
+            if (booking == null) return NotFound(new { message = "Không tìm thấy đơn hàng" });
             if (booking.UserId != userId) return Forbid();
-            if (booking.Status != "Pending") return BadRequest("Đơn hàng không ở trạng thái chờ thanh toán");
+            if (booking.Status != "Pending") return BadRequest(new { message = "Đơn hàng không ở trạng thái chờ thanh toán" });
 
             bool isImmediate = request.PaymentMethod != "Cash" && request.PaymentMethod != "BankTransfer";
 
@@ -83,8 +83,8 @@ public class PaymentsController : ControllerBase
                 .Where(b => b.BookingCode == request.BookingCode && b.UserId == userId)
                 .ToListAsync();
 
-            if (!bookings.Any()) return NotFound("Không tìm thấy đơn hàng với mã này");
-            if (bookings.Any(b => b.Status != "Pending")) return BadRequest("Một số đơn hàng không ở trạng thái chờ thanh toán");
+            if (!bookings.Any()) return NotFound(new { message = "Không tìm thấy đơn hàng với mã này" });
+            if (bookings.Any(b => b.Status != "Pending")) return BadRequest(new { message = "Một số đơn hàng không ở trạng thái chờ thanh toán" });
 
             bool isImmediate = request.PaymentMethod != "Cash" && request.PaymentMethod != "BankTransfer";
             string transactionCode = "TXN" + DateTime.Now.Ticks.ToString();
