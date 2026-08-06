@@ -33,9 +33,15 @@ public class BookingsController : ControllerBase
             var schedule = await _context.Schedules.FindAsync(dto.ScheduleId);
             var cabin = await _context.CabinTypes.FindAsync(dto.CabinTypeId);
 
-            if (schedule == null || schedule.Status != "Open" || cabin == null || cabin.CruiseId != schedule.CruiseId)
+            if (schedule == null || schedule.Status == null || !schedule.Status.Equals("Open", StringComparison.OrdinalIgnoreCase) || cabin == null || cabin.CruiseId != schedule.CruiseId)
             {
-                return BadRequest(new { message = "Lịch trình hoặc loại phòng không hợp lệ." });
+                string reason = "";
+                if (schedule == null) reason += " Không tìm thấy lịch trình.";
+                else if (schedule.Status != "Open") reason += $" Trạng thái lịch trình là '{schedule.Status}' (yêu cầu 'Open').";
+                if (cabin == null) reason += " Không tìm thấy loại phòng.";
+                else if (schedule != null && cabin.CruiseId != schedule.CruiseId) reason += $" Phòng thuộc CruiseId={cabin.CruiseId} nhưng lịch trình thuộc CruiseId={schedule.CruiseId}.";
+
+                return BadRequest(new { message = "Lịch trình hoặc loại phòng không hợp lệ." + reason });
             }
 
             // Kiểm tra tồn kho phòng (ScheduleCabinInventory) — chống bán vượt số phòng
