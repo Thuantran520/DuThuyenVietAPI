@@ -279,5 +279,99 @@
     </script>
     <script src="/js/popup.js"></script>
     <script src="/js/auth.js"></script>
+    <script>
+        // Force overriding showBookingDetails in case auth.js is cached
+        window.showBookingDetails = function(code) {
+            try {
+                const grp = window.adminGroupedBookings ? window.adminGroupedBookings[code] : null;
+                if(!grp) {
+                    alert("Dữ liệu hóa đơn chưa được tải xong hoặc không tồn tại. Vui lòng làm mới trang (Ctrl+F5).");
+                    return;
+                }
+                
+                document.getElementById('modal-booking-code').innerText = code;
+                const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+                // --- Header info ---
+                let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
+                let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
+                let html = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
+                    <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName || ''}</strong></div>
+                    <div><span style="color:#64748b;">📞 Điện thoại</span><br><strong>${grp.contactPhone || ''}</strong></div>
+                    <div><span style="color:#64748b;">🚢 Du thuyền</span><br><strong>${grp.cruiseName || ''}</strong></div>
+                    <div><span style="color:#64748b;">📅 Khởi hành</span><br><strong>${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</strong></div>
+                    <div><span style="color:#64748b;">🕒 Ngày giờ tạo</span><br><strong>${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</strong></div>
+                    <div><span style="color:#64748b;">👨‍💼 Người duyệt</span><br><strong>${approver}</strong></div>
+                    ${grp.contactEmail ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📧 Email</span><br><strong>${grp.contactEmail}</strong></div>` : ''}
+                    ${grp.note ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📝 Ghi chú</span><br><em style="color:#334155;">${grp.note}</em></div>` : ''}
+                </div>`;
+
+                // --- Room breakdown ---
+                html += `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1rem;">🛏️ Chi tiết phòng đặt (${grp.items ? grp.items.length : 0} loại):</div>`;
+
+                if (grp.items) {
+                    grp.items.forEach(item => {
+                        const unitPrice = item.numberOfRooms > 0 ? item.totalPrice / item.numberOfRooms : item.totalPrice;
+                        html += `
+                        <div style="background:#f1f5f9; border:1px solid #e2e8f0; padding:12px 16px; border-radius:10px; margin-bottom:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div>
+                                    <div style="font-weight:700; color:#0f172a; font-size:1rem;">${item.cabinName || ''}</div>
+                                    <div style="font-size:0.88rem; color:#64748b; margin-top:3px;">
+                                        ${formatPrice(unitPrice)} × ${item.numberOfRooms || 0} phòng
+                                    </div>
+                                </div>
+                                <div style="font-weight:700; color:#0d9488; font-size:1.05rem; white-space:nowrap; margin-left:12px;">
+                                    ${formatPrice(item.totalPrice || 0)}
+                                </div>
+                            </div>
+                            <div style="margin-top:8px; font-size:0.85rem; color:#64748b; display:flex; gap:16px; flex-wrap:wrap;">
+                                <span>Trạng thái: <span style="font-weight:600; color:${item.status === 'Confirmed' ? '#16a34a' : item.status === 'Cancelled' ? '#dc2626' : item.status === 'AwaitingConfirmation' ? '#4338ca' : '#d97706'};">${item.status === 'Confirmed' ? 'Thành công' : item.status === 'Cancelled' ? 'Đã hủy' : item.status === 'AwaitingConfirmation' ? 'Chờ xác nhận' : 'Chờ thanh toán'}</span></span>
+                                ${item.numberOfGuests ? `<span>👥 ${item.numberOfGuests} khách</span>` : ''}
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                // --- Payment info ---
+                const allPayments = (grp.items || []).reduce((acc, i) => acc.concat(i.payments || []), []);
+                if (allPayments.length > 0) {
+                    const p = allPayments[0];
+                    const pMethod = p.paymentMethod === 'BankTransfer' ? '🏦 Chuyển khoản NH' : p.paymentMethod === 'Cash' ? '💵 Tiền mặt' : p.paymentMethod;
+                    html += `
+                    <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:12px 16px; margin-top:4px; font-size:0.9rem;">
+                        <div style="font-weight:700; color:#0369a1; margin-bottom:6px;">💳 Thông tin thanh toán</div>
+                        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                            <span><strong>Phương thức:</strong> ${pMethod}</span>
+                            ${p.transactionCode ? `<span><strong>Mã GD:</strong> <code style="background:white; padding:2px 6px; border-radius:4px;">${p.transactionCode}</code></span>` : ''}
+                            ${p.paidAt ? `<span><strong>Ngày TT:</strong> ${new Date(p.paidAt).toLocaleDateString('vi-VN')}</span>` : ''}
+                        </div>
+                    </div>`;
+                }
+
+                // --- Grand total ---
+                html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:14px 16px; background:#fefce8; border:2px solid #fde047; border-radius:10px;">
+                    <span style="font-size:1rem; color:#92400e; font-weight:600;">Tổng thanh toán (${grp.items ? grp.items.length : 0} loại phòng)</span>
+                    <span style="font-size:1.35rem; font-weight:800; color:#ef4444;">${formatPrice(grp.totalPrice || 0)}</span>
+                </div>`;
+                
+                document.getElementById('booking-details-content').innerHTML = html;
+                document.getElementById('bookingDetailsModal').style.display = 'flex';
+                
+                const btnCopy = document.getElementById('btnCopyInvoice');
+                if (btnCopy) {
+                    btnCopy.onclick = function() {
+                        const txt = `Mã đơn: ${code}\nKhách hàng: ${grp.contactName || ''}\nSĐT: ${grp.contactPhone || ''}\nDu thuyền: ${grp.cruiseName || ''}\nKhởi hành: ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}\nTổng tiền: ${formatPrice(grp.totalPrice || 0)}\nTrạng thái: ${firstItem.status === 'Confirmed' ? 'Thành công' : 'Chưa xác nhận'}`;
+                        window.copyToClipboard(txt);
+                    };
+                }
+            } catch (err) {
+                console.error("Lỗi khi hiển thị chi tiết hóa đơn:", err);
+                alert("Đã xảy ra lỗi khi hiển thị chi tiết hóa đơn. Lỗi: " + err.message);
+            }
+        };
+    </script>
 </body>
 </html>
