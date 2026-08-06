@@ -75,7 +75,6 @@ public class PaymentsController : ControllerBase
     [HttpPost("ProcessByCode")]
     public async Task<IActionResult> ProcessByCode([FromBody] PaymentByCodeRequestDTO request)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -109,15 +108,13 @@ public class PaymentsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
 
             string msg = isImmediate ? "Thanh toán thành công cho toàn bộ đơn hàng!" : "Đã ghi nhận yêu cầu cho toàn bộ đơn hàng. Vui lòng chờ xác nhận!";
             return Ok(new { Message = msg, TransactionCode = transactionCode });
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
-            return StatusCode(500, "Lỗi server: " + ex.Message);
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
 }

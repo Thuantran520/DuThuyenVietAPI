@@ -22,7 +22,6 @@ public class BookingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDTO dto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -81,13 +80,11 @@ public class BookingsController : ControllerBase
 
             _context.Bookings.Add(booking);
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
 
             return Ok(new { Message = "Đặt vé thành công", BookingId = booking.BookingId, BookingCode = bookingCode });
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
