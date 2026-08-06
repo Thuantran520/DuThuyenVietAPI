@@ -131,7 +131,7 @@ public class AccountController : ControllerBase
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null) return NotFound("User not found");
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
 
         return Ok(new
         {
