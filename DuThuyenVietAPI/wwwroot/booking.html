@@ -159,6 +159,13 @@
             const cabinsParam = urlParams.get('cabins');
             const singleCabinId = urlParams.get('cabinTypeId');
             
+            // Fix layout flash: Hide 'Số lượng phòng' immediately if using cabinsParam
+            if (!singleCabinId || cabinsParam) {
+                const bRoomsDiv = document.getElementById('b_rooms').closest('div');
+                bRoomsDiv.style.display = 'none';
+                bRoomsDiv.parentElement.style.gridTemplateColumns = '1fr';
+            }
+
             let selectedCabins = [];
             if (cabinsParam) {
                 selectedCabins = cabinsParam.split(',').map(c => {
@@ -220,8 +227,6 @@
                 updateSummary();
                 if (singleCabinId && !cabinsParam) {
                     document.getElementById('b_rooms').addEventListener('input', updateSummary);
-                } else {
-                    document.getElementById('b_rooms').closest('div').style.display = 'none';
                 }
 
             } catch (e) {
