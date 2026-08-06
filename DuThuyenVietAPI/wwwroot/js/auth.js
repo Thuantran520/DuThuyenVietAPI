@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if (token && isAuthPage) {
         // Đã đăng nhập nhưng cố vào trang đăng nhập/đăng ký
-        window.location.replace('/profile.html');
+        window.location.replace('/index.html');
         return;
     }
     if (!token && isProfilePage) {
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const data = await response.json();
                     localStorage.setItem('auth_token', data.token);
                     
-                    const redirectUrl = loginAsAdmin ? '/admin/profile.html' : '/profile.html';
+                    const redirectUrl = '/index.html';
 
                     Popup.show('Thành công', 'Đăng nhập thành công! Đang chuyển hướng...', 'success');
                     setTimeout(() => { window.location.href = redirectUrl; }, 1000);
@@ -391,6 +391,26 @@ document.addEventListener('DOMContentLoaded', async function () {
                     
                     window.adminGroupedBookings = grouped; // for modal
 
+                    let totalRevenue = 0;
+                    let uniqueCustomers = new Set();
+                    let totalOrders = 0;
+
+                    Object.values(grouped).forEach(b => {
+                        if (b.status === 'Confirmed') {
+                            totalRevenue += b.totalPrice;
+                        }
+                        if (b.contactPhone) uniqueCustomers.add(b.contactPhone);
+                        totalOrders++;
+                    });
+
+                    const elRev = document.getElementById('dash-revenue');
+                    const elCus = document.getElementById('dash-customers');
+                    const elBook = document.getElementById('dash-bookings');
+                    if (elRev) elRev.innerText = formatPrice(totalRevenue);
+                    if (elCus) elCus.innerText = uniqueCustomers.size.toString();
+                    if (elBook) elBook.innerText = totalOrders.toString();
+
+
                     Object.values(grouped).forEach(b => {
                         let statusHtml = '';
                         if (b.status === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
@@ -400,7 +420,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         else statusHtml = b.status;
 
                         let actionsHtml = `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-                        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#3b82f6; color:#3b82f6;" onclick="showBookingDetails('${b.bookingCode}')">Chi tiết</button>`;
+                        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#0d9488; color:#0d9488;" onclick="downloadInvoiceDirectly('${b.bookingCode}')">📥 Tải PDF</button>`;
                         
                         if (b.status === 'AwaitingConfirmation' || b.status === 'Pending') {
                             actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
@@ -752,94 +772,91 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 });
 
-window.showBookingDetails = function(code) {
+});
+
+window.downloadInvoiceDirectly = function(code) {
     try {
         const grp = window.adminGroupedBookings ? window.adminGroupedBookings[code] : null;
         if(!grp) {
-            alert("Không tìm thấy dữ liệu hóa đơn trong bộ nhớ. Vui lòng tải lại trang.");
+            alert("Không tìm thấy dữ liệu hóa đơn. Vui lòng tải lại trang.");
             return;
         }
-        
-        document.getElementById('modal-booking-code').innerText = code;
-        const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-        // --- Header info ---
+        const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
         let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
         let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
+        
         let html = `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
-            <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName || ''}</strong></div>
-            <div><span style="color:#64748b;">📞 Điện thoại</span><br><strong>${grp.contactPhone || ''}</strong></div>
-            <div><span style="color:#64748b;">🚢 Du thuyền</span><br><strong>${grp.cruiseName || ''}</strong></div>
-            <div><span style="color:#64748b;">📅 Khởi hành</span><br><strong>${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</strong></div>
-            <div><span style="color:#64748b;">🕒 Ngày giờ tạo</span><br><strong>${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</strong></div>
-            <div><span style="color:#64748b;">👨‍💼 Người duyệt</span><br><strong>${approver}</strong></div>
-            ${grp.contactEmail ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📧 Email</span><br><strong>${grp.contactEmail}</strong></div>` : ''}
-            ${grp.note ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📝 Ghi chú</span><br><em style="color:#334155;">${grp.note}</em></div>` : ''}
-        </div>`;
-
-        // --- Room breakdown ---
-        html += `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1rem;">🛏️ Chi tiết phòng đặt (${grp.items ? grp.items.length : 0} loại):</div>`;
+        <div style="padding: 30px; font-family: 'Inter', sans-serif; color: #0f172a; max-width: 800px; margin: 0 auto;">
+            <h2 style="text-align: center; color: #0f172a; margin-bottom: 24px;">HÓA ĐƠN ĐẶT PHÒNG</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; font-size:14px;">
+                <div><strong>Mã đơn:</strong> ${code}</div>
+                <div><strong>Khách hàng:</strong> ${grp.contactName || ''}</div>
+                <div><strong>Điện thoại:</strong> ${grp.contactPhone || ''}</div>
+                <div><strong>Du thuyền:</strong> ${grp.cruiseName || ''}</div>
+                <div><strong>Khởi hành:</strong> ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</div>
+                <div><strong>Ngày tạo:</strong> ${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</div>
+            </div>
+            
+            <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Chi tiết phòng</h4>
+        `;
 
         if (grp.items) {
             grp.items.forEach(item => {
                 const unitPrice = item.numberOfRooms > 0 ? item.totalPrice / item.numberOfRooms : item.totalPrice;
                 html += `
-                <div style="background:#f1f5f9; border:1px solid #e2e8f0; padding:12px 16px; border-radius:10px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <div style="font-weight:700; color:#0f172a; font-size:1rem;">${item.cabinName || ''}</div>
-                            <div style="font-size:0.88rem; color:#64748b; margin-top:3px;">
-                                ${formatPrice(unitPrice)} × ${item.numberOfRooms || 0} phòng
-                            </div>
-                        </div>
-                        <div style="font-weight:700; color:#0d9488; font-size:1.05rem; white-space:nowrap; margin-left:12px;">
-                            ${formatPrice(item.totalPrice || 0)}
-                        </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px;">
+                    <div>
+                        <div style="font-weight:600;">${item.cabinName || ''}</div>
+                        <div style="color:#64748b;">${formatPrice(unitPrice)} × ${item.numberOfRooms || 0} phòng</div>
                     </div>
-                    <div style="margin-top:8px; font-size:0.85rem; color:#64748b; display:flex; gap:16px; flex-wrap:wrap;">
-                        <span>Trạng thái: <span style="font-weight:600; color:${item.status === 'Confirmed' ? '#16a34a' : item.status === 'Cancelled' ? '#dc2626' : item.status === 'AwaitingConfirmation' ? '#4338ca' : '#d97706'};">${item.status === 'Confirmed' ? 'Thành công' : item.status === 'Cancelled' ? 'Đã hủy' : item.status === 'AwaitingConfirmation' ? 'Chờ xác nhận' : 'Chờ thanh toán'}</span></span>
-                        ${item.numberOfGuests ? `<span>👥 ${item.numberOfGuests} khách</span>` : ''}
-                    </div>
+                    <div style="font-weight:600;">${formatPrice(item.totalPrice || 0)}</div>
                 </div>`;
             });
         }
 
-        // --- Payment info ---
         const allPayments = (grp.items || []).reduce((acc, i) => acc.concat(i.payments || []), []);
         if (allPayments.length > 0) {
             const p = allPayments[0];
-            const pMethod = p.paymentMethod === 'BankTransfer' ? '🏦 Chuyển khoản NH' : p.paymentMethod === 'Cash' ? '💵 Tiền mặt' : p.paymentMethod;
+            const pMethod = p.paymentMethod === 'BankTransfer' ? 'Chuyển khoản NH' : p.paymentMethod === 'Cash' ? 'Tiền mặt' : p.paymentMethod;
             html += `
-            <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:12px 16px; margin-top:4px; font-size:0.9rem;">
-                <div style="font-weight:700; color:#0369a1; margin-bottom:6px;">💳 Thông tin thanh toán</div>
-                <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                    <span><strong>Phương thức:</strong> ${pMethod}</span>
-                    ${p.transactionCode ? `<span><strong>Mã GD:</strong> <code style="background:white; padding:2px 6px; border-radius:4px;">${p.transactionCode}</code></span>` : ''}
-                    ${p.paidAt ? `<span><strong>Ngày TT:</strong> ${new Date(p.paidAt).toLocaleDateString('vi-VN')}</span>` : ''}
-                </div>
+            <div style="margin-top:20px; font-size:14px;">
+                <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Thanh toán</h4>
+                <div><strong>Phương thức:</strong> ${pMethod}</div>
+                ${p.transactionCode ? `<div><strong>Mã GD:</strong> ${p.transactionCode}</div>` : ''}
             </div>`;
         }
 
-        // --- Grand total ---
         html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:14px 16px; background:#fefce8; border:2px solid #fde047; border-radius:10px;">
-            <span style="font-size:1rem; color:#92400e; font-weight:600;">Tổng thanh toán (${grp.items ? grp.items.length : 0} loại phòng)</span>
-            <span style="font-size:1.35rem; font-weight:800; color:#ef4444;">${formatPrice(grp.totalPrice || 0)}</span>
+            <div style="margin-top:24px; padding:16px; background:#f8fafc; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:600;">Tổng cộng:</span>
+                <span style="font-size:18px; font-weight:700; color:#ef4444;">${formatPrice(grp.totalPrice || 0)}</span>
+            </div>
         </div>`;
-        
-        document.getElementById('booking-details-content').innerHTML = html;
-        document.getElementById('bookingDetailsModal').style.display = 'flex';
-        
-        const btnCopy = document.getElementById('btnCopyInvoice');
-        if (btnCopy) {
-            btnCopy.onclick = function() {
-                const txt = `Mã đơn: ${code}\nKhách hàng: ${grp.contactName || ''}\nSĐT: ${grp.contactPhone || ''}\nDu thuyền: ${grp.cruiseName || ''}\nKhởi hành: ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}\nTổng tiền: ${formatPrice(grp.totalPrice || 0)}\nTrạng thái: ${firstItem.status === 'Confirmed' ? 'Thành công' : 'Chưa xác nhận'}`;
-                window.copyToClipboard(txt);
-            };
+
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        document.body.appendChild(container);
+
+        if (typeof html2pdf === 'undefined') {
+            alert("Thư viện tải PDF chưa sẵn sàng. Vui lòng đợi hoặc thử lại.");
+            return;
         }
+
+        html2pdf().set({
+            margin: 10,
+            filename: `HoaDon_${code}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(container).save().then(() => {
+            document.body.removeChild(container);
+        });
+
     } catch (err) {
-        console.error("Lỗi khi hiển thị chi tiết hóa đơn:", err);
-        alert("Đã xảy ra lỗi khi hiển thị chi tiết hóa đơn. Vui lòng tải lại trang hoặc báo cho bộ phận IT. Lỗi: " + err.message);
+        console.error("Lỗi khi tải PDF:", err);
+        alert("Lỗi tải hóa đơn: " + err.message);
     }
 };

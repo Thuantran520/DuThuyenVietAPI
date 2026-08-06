@@ -14,9 +14,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease;">
-            <div class="logo">Du Thuyền Việt</div>
-            <button class="btn-logout" id="btnLogout">Đăng xuất</button>
+        <div class="header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; margin-bottom: 32px;">
+            <a href="/index.html" class="logo" style="text-decoration:none; font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--primary);">DuThuyenViet</a>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/search.html" style="text-decoration:none; color: var(--text-heading); font-weight: 500; font-size: 15px;">Tìm Du Thuyền</a>
+                <a href="/history.html" style="text-decoration:none; color: var(--text-heading); font-weight: 500; font-size: 15px;">Lịch sử</a>
+                <button class="btn-logout" id="btnLogout">Đăng xuất</button>
+            </div>
         </div>
 
         <div id="loader">
@@ -95,6 +99,21 @@
                 <div class="card">
                     <div class="card-title">Quản lý Yêu cầu Đặt Phòng</div>
                     <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Duyệt hoặc từ chối các yêu cầu thanh toán chuyển khoản/tiền mặt từ khách hàng.</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #166534; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG DOANH THU</div>
+                            <div id="dash-revenue" style="color: #15803d; font-size: 24px; font-weight: 800;">0 ₫</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #1e40af; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG KHÁCH HÀNG</div>
+                            <div id="dash-customers" style="color: #1d4ed8; font-size: 24px; font-weight: 800;">0</div>
+                        </div>
+                        <div style="background: #fefce8; border: 1px solid #fef08a; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #854d0e; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG ĐƠN ĐẶT</div>
+                            <div id="dash-bookings" style="color: #a16207; font-size: 24px; font-weight: 800;">0</div>
+                        </div>
+                    </div>
                     
                     <div class="table-responsive">
                         <table>
@@ -240,138 +259,12 @@
         </div>
     </div>
 
-    <!-- Booking Details Modal -->
-    <div id="bookingDetailsModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-        <div class="modal-content" style="background: white; width: 95%; max-width: 600px; border-radius: 16px; padding: 0; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                <h3 style="margin: 0; font-weight: 700; color: #0f172a; font-size: 1.2rem;">
-                    Chi tiết Đơn hàng: <span id="modal-booking-code" style="color:var(--primary)"></span>
-                    <button id="btnCopyInvoice" style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Sao chép hóa đơn">📋</button>
-                </h3>
-                <button onclick="document.getElementById('bookingDetailsModal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
-            </div>
-            <div style="padding: 24px; overflow-y: auto; flex: 1;" id="pdf-invoice-area">
-                <div id="booking-details-content">
-                    <!-- Content injected via JS -->
-                </div>
-            </div>
-            <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 16px; background: #f8fafc;">
-                <button class="btn btn-primary" style="padding: 8px 24px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: #0d9488; color: white;" onclick="downloadInvoicePDF()">📥 Tải PDF</button>
-                <button class="btn btn-outline" style="padding: 8px 24px; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; background: white;" onclick="document.getElementById('bookingDetailsModal').style.display='none'">Đóng</button>
-            </div>
-        </div>
-    </div>
+
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        function downloadInvoicePDF() {
-            const element = document.getElementById('pdf-invoice-area');
-            const code = document.getElementById('modal-booking-code').innerText || 'HoaDon';
-            const opt = {
-                margin:       [10, 10, 10, 10],
-                filename:     `HoaDon_${code}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
-        }
-    </script>
+
     <script src="/js/popup.js"></script>
     <script src="/js/auth.js"></script>
-    <script>
-        // Force overriding showBookingDetails in case auth.js is cached
-        window.showBookingDetails = function(code) {
-            try {
-                const grp = window.adminGroupedBookings ? window.adminGroupedBookings[code] : null;
-                if(!grp) {
-                    alert("Dữ liệu hóa đơn chưa được tải xong hoặc không tồn tại. Vui lòng làm mới trang (Ctrl+F5).");
-                    return;
-                }
-                
-                document.getElementById('modal-booking-code').innerText = code;
-                const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-                // --- Header info ---
-                let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
-                let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
-                let html = `
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
-                    <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName || ''}</strong></div>
-                    <div><span style="color:#64748b;">📞 Điện thoại</span><br><strong>${grp.contactPhone || ''}</strong></div>
-                    <div><span style="color:#64748b;">🚢 Du thuyền</span><br><strong>${grp.cruiseName || ''}</strong></div>
-                    <div><span style="color:#64748b;">📅 Khởi hành</span><br><strong>${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</strong></div>
-                    <div><span style="color:#64748b;">🕒 Ngày giờ tạo</span><br><strong>${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</strong></div>
-                    <div><span style="color:#64748b;">👨‍💼 Người duyệt</span><br><strong>${approver}</strong></div>
-                    ${grp.contactEmail ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📧 Email</span><br><strong>${grp.contactEmail}</strong></div>` : ''}
-                    ${grp.note ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📝 Ghi chú</span><br><em style="color:#334155;">${grp.note}</em></div>` : ''}
-                </div>`;
-
-                // --- Room breakdown ---
-                html += `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1rem;">🛏️ Chi tiết phòng đặt (${grp.items ? grp.items.length : 0} loại):</div>`;
-
-                if (grp.items) {
-                    grp.items.forEach(item => {
-                        const unitPrice = item.numberOfRooms > 0 ? item.totalPrice / item.numberOfRooms : item.totalPrice;
-                        html += `
-                        <div style="background:#f1f5f9; border:1px solid #e2e8f0; padding:12px 16px; border-radius:10px; margin-bottom:10px;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div>
-                                    <div style="font-weight:700; color:#0f172a; font-size:1rem;">${item.cabinName || ''}</div>
-                                    <div style="font-size:0.88rem; color:#64748b; margin-top:3px;">
-                                        ${formatPrice(unitPrice)} × ${item.numberOfRooms || 0} phòng
-                                    </div>
-                                </div>
-                                <div style="font-weight:700; color:#0d9488; font-size:1.05rem; white-space:nowrap; margin-left:12px;">
-                                    ${formatPrice(item.totalPrice || 0)}
-                                </div>
-                            </div>
-                            <div style="margin-top:8px; font-size:0.85rem; color:#64748b; display:flex; gap:16px; flex-wrap:wrap;">
-                                <span>Trạng thái: <span style="font-weight:600; color:${item.status === 'Confirmed' ? '#16a34a' : item.status === 'Cancelled' ? '#dc2626' : item.status === 'AwaitingConfirmation' ? '#4338ca' : '#d97706'};">${item.status === 'Confirmed' ? 'Thành công' : item.status === 'Cancelled' ? 'Đã hủy' : item.status === 'AwaitingConfirmation' ? 'Chờ xác nhận' : 'Chờ thanh toán'}</span></span>
-                                ${item.numberOfGuests ? `<span>👥 ${item.numberOfGuests} khách</span>` : ''}
-                            </div>
-                        </div>`;
-                    });
-                }
-
-                // --- Payment info ---
-                const allPayments = (grp.items || []).reduce((acc, i) => acc.concat(i.payments || []), []);
-                if (allPayments.length > 0) {
-                    const p = allPayments[0];
-                    const pMethod = p.paymentMethod === 'BankTransfer' ? '🏦 Chuyển khoản NH' : p.paymentMethod === 'Cash' ? '💵 Tiền mặt' : p.paymentMethod;
-                    html += `
-                    <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:12px 16px; margin-top:4px; font-size:0.9rem;">
-                        <div style="font-weight:700; color:#0369a1; margin-bottom:6px;">💳 Thông tin thanh toán</div>
-                        <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                            <span><strong>Phương thức:</strong> ${pMethod}</span>
-                            ${p.transactionCode ? `<span><strong>Mã GD:</strong> <code style="background:white; padding:2px 6px; border-radius:4px;">${p.transactionCode}</code></span>` : ''}
-                            ${p.paidAt ? `<span><strong>Ngày TT:</strong> ${new Date(p.paidAt).toLocaleDateString('vi-VN')}</span>` : ''}
-                        </div>
-                    </div>`;
-                }
-
-                // --- Grand total ---
-                html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:14px 16px; background:#fefce8; border:2px solid #fde047; border-radius:10px;">
-                    <span style="font-size:1rem; color:#92400e; font-weight:600;">Tổng thanh toán (${grp.items ? grp.items.length : 0} loại phòng)</span>
-                    <span style="font-size:1.35rem; font-weight:800; color:#ef4444;">${formatPrice(grp.totalPrice || 0)}</span>
-                </div>`;
-                
-                document.getElementById('booking-details-content').innerHTML = html;
-                document.getElementById('bookingDetailsModal').style.display = 'flex';
-                
-                const btnCopy = document.getElementById('btnCopyInvoice');
-                if (btnCopy) {
-                    btnCopy.onclick = function() {
-                        const txt = `Mã đơn: ${code}\nKhách hàng: ${grp.contactName || ''}\nSĐT: ${grp.contactPhone || ''}\nDu thuyền: ${grp.cruiseName || ''}\nKhởi hành: ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}\nTổng tiền: ${formatPrice(grp.totalPrice || 0)}\nTrạng thái: ${firstItem.status === 'Confirmed' ? 'Thành công' : 'Chưa xác nhận'}`;
-                        window.copyToClipboard(txt);
-                    };
-                }
-            } catch (err) {
-                console.error("Lỗi khi hiển thị chi tiết hóa đơn:", err);
-                alert("Đã xảy ra lỗi khi hiển thị chi tiết hóa đơn. Lỗi: " + err.message);
-            }
-        };
-    </script>
 </body>
 </html>

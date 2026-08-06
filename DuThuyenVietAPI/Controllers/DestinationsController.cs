@@ -78,5 +78,19 @@ public class DestinationsController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { destination.DestinationId, destination.Name, destination.Slug });
     }
-}
 
+    [Authorize(Roles = "Admin,Manager")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var destination = await _context.Destinations.FindAsync(id);
+        if (destination == null)
+            return NotFound(new { message = "Không tìm thấy khu vực." });
+
+        // Soft delete or hard delete? Let's do hard delete or deactivate
+        destination.IsActive = false;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Đã xóa khu vực thành công." });
+    }
+}

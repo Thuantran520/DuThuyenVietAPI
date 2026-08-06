@@ -97,6 +97,33 @@ document.addEventListener('DOMContentLoaded', () => {
         finally { btn.innerText = '💾 Tạo Khu Vực'; btn.disabled = false; }
     });
 
+    // Delete destination
+    document.getElementById('btn-del-dest').addEventListener('click', () => {
+        const select = document.getElementById('edit-dest');
+        const destId = select.value;
+        const destName = select.options[select.selectedIndex]?.text;
+        if (!destId) return;
+
+        Popup.confirm('Xóa khu vực', `Bạn có chắc chắn muốn xóa khu vực "${destName}"? Các du thuyền thuộc khu vực này có thể bị ảnh hưởng.`, async () => {
+            try {
+                const res = await fetch(`/api/Destinations/${destId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    Popup.show('Thành công', 'Đã xóa khu vực.', 'success');
+                    await loadDestinations();
+                } else {
+                    let msg = 'Lỗi xóa khu vực.';
+                    try { const e = await res.json(); msg = e.message || msg; } catch {}
+                    Popup.show('Lỗi', msg, 'error');
+                }
+            } catch {
+                Popup.show('Lỗi', 'Lỗi kết nối.', 'error');
+            }
+        });
+    });
+
     // Close dest modal on overlay click
     document.getElementById('dest-modal').addEventListener('click', function(e) {
         if (e.target === this) this.classList.remove('active');
