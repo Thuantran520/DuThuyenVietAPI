@@ -178,33 +178,18 @@ public class AccountController : ControllerBase
             var user = await _userManager.FindByEmailAsync(email ?? "");
             if (user == null) return NotFound("User not found");
 
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            // Xóa file ảnh cũ nếu có
-            if (!string.IsNullOrEmpty(user.AvatarUrl))
+            // Convert file to Base64 string
+            using (var memoryStream = new MemoryStream())
             {
-                var oldFileName = Path.GetFileName(user.AvatarUrl);
-                var oldFilePath = Path.Combine(uploadsFolder, oldFileName);
-                if (System.IO.File.Exists(oldFilePath))
-                {
-                    System.IO.File.Delete(oldFilePath);
-                }
+                await file.CopyToAsync(memoryStream);
+                byte[] fileBytes = memoryStream.ToArray();
+                string base64String = Convert.ToBase64String(fileBytes);
+                user.AvatarUrl = $"data:{file.ContentType};base64,{base64String}";
             }
 
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(fileStream);
-            }
-
-            user.AvatarUrl = "/uploads/avatars/" + uniqueFileName;
             await _userManager.UpdateAsync(user);
 
-            return Ok(new { message = "Avatar uploaded successfully", avatarUrl = user.AvatarUrl });
+            return Ok(new { message = "Avatar uploaded successfully to database", avatarUrl = user.AvatarUrl });
         }
         catch (Exception ex)
         {

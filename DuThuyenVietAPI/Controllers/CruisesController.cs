@@ -126,7 +126,8 @@ public class CruisesController : ControllerBase
                     s.ScheduleId,
                     s.DepartureDate,
                     s.ReturnDate,
-                    s.DurationLabel
+                    s.DurationLabel,
+                    Inventories = s.ScheduleCabinInventories.Select(i => new { i.CabinTypeId, i.AvailableRooms, i.PriceOverride }).ToList()
                 }).ToList(),
                 RecentReviews = cruise.Reviews.Select(r => new
                 {

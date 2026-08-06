@@ -16,7 +16,7 @@
    ========================================================= */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
-.modal-card { background: white; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 90%; max-width: 400px; padding: 24px; transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.modal-card { position: relative; background: white; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 90%; max-width: 400px; padding: 24px; transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .modal-overlay.show .modal-card { transform: scale(1); }
 .modal-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #111827; margin-bottom: 8px; font-weight: 700; }
 .modal-body { font-size: 15px; color: #4b5563; margin-bottom: 24px; font-family: 'Inter', sans-serif; line-height: 1.5; }
@@ -35,7 +35,24 @@
    Gallery Modal (thumbnail grid)
    ========================================================= */
 .gallery-modal { max-width: 900px !important; width: 95% !important; }
-.gallery-modal .modal-body { margin-bottom: 16px; }
+.gallery-modal .modal-body { margin-bottom: 0; }
+.gallery-modal .modal-actions { display: none !important; }
+
+.modal-close-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: #64748b;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+    padding: 5px;
+    border-radius: 4px;
+}
+.modal-close-icon:hover { color: #ef4444; background: #fee2e2; }
 
 .gallery-count-badge {
     display: inline-block;

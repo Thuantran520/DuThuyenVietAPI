@@ -14,6 +14,7 @@ window.Popup = (function() {
             modalOverlay.className = 'modal-overlay';
             modalOverlay.innerHTML = `
                 <div class="modal-card">
+                    <button class="modal-close-icon" id="modal-close-icon" title="Đóng">✕</button>
                     <h3 class="modal-title" id="modal-title"></h3>
                     <div class="modal-body" id="modal-body"></div>
                     <input type="text" class="modal-input" id="modal-input" style="display: none;">
@@ -26,6 +27,10 @@ window.Popup = (function() {
             document.body.appendChild(modalOverlay);
             
             document.getElementById('modal-cancel').addEventListener('click', close);
+            document.getElementById('modal-close-icon').addEventListener('click', close);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) close();
+            });
         }
     }
 

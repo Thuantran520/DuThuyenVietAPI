@@ -795,7 +795,15 @@ window.downloadInvoiceDirectly = function(code) {
 
         const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
         let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
-        let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? 'Admin (Hệ thống)' : 'Chưa duyệt';
+        
+        // Decode JWT to get staff's name
+        const jwtData = (() => {
+            const token = localStorage.getItem('auth_token');
+            if (!token) return null;
+            try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+        })();
+        const staffName = jwtData ? (jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email'] || 'Admin') : 'Admin (Hệ thống)';
+        let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? staffName : 'Chưa duyệt';
         
         let html = `
         <div style="padding: 30px; font-family: 'Inter', sans-serif; color: #0f172a; max-width: 800px; margin: 0 auto;">
@@ -807,6 +815,8 @@ window.downloadInvoiceDirectly = function(code) {
                 <div><strong>Du thuyền:</strong> ${grp.cruiseName || ''}</div>
                 <div><strong>Khởi hành:</strong> ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</div>
                 <div><strong>Ngày tạo:</strong> ${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</div>
+                <div><strong>Trạng thái:</strong> <span style="color:${firstItem.status === 'Confirmed' ? '#16a34a' : '#ea580c'}; font-weight:600;">${firstItem.status === 'Confirmed' ? 'Đã thanh toán' : (firstItem.status === 'Cancelled' ? 'Đã hủy' : 'Chờ xác nhận')}</span></div>
+                <div><strong>Xác nhận bởi:</strong> ${approver}</div>
             </div>
             
             <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Chi tiết phòng</h4>
@@ -845,12 +855,6 @@ window.downloadInvoiceDirectly = function(code) {
             </div>
         </div>`;
 
-        const container = document.createElement('div');
-        container.innerHTML = html;
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-
         if (typeof html2pdf === 'undefined') {
             alert("Thư viện tải PDF chưa sẵn sàng. Vui lòng đợi hoặc thử lại.");
             return;
@@ -860,11 +864,9 @@ window.downloadInvoiceDirectly = function(code) {
             margin: 10,
             filename: `HoaDon_${code}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(container).save().then(() => {
-            document.body.removeChild(container);
-        });
+        }).from(html).save();
 
     } catch (err) {
         console.error("Lỗi khi tải PDF:", err);

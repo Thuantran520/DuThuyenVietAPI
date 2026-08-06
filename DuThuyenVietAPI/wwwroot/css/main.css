@@ -283,7 +283,6 @@ a:hover { color: var(--primary-hover); }
 }
 .modal-card.gallery-modal {
     max-width: 900px;
-    height: 80vh;
     display: flex;
     flex-direction: column;
 }

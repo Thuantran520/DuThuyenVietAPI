@@ -138,6 +138,7 @@ async function loadCruiseDetail() {
         if (!response.ok) throw new Error('Not found');
         const cruise = await response.json();
         
+        window.cruiseSchedules = cruise.schedules || [];
 
         let cabinsHtml = '';
         if (cruise.cabins && cruise.cabins.length > 0) {
@@ -325,6 +326,46 @@ window.selectSchedule = function(scheduleId) {
         btn.style.background = 'var(--primary)';
         btn.style.color = 'white';
         
+        // Update cabin availability based on schedule inventory
+        const schedule = window.cruiseSchedules.find(s => s.scheduleId === scheduleId);
+        if (schedule && schedule.inventories) {
+            schedule.inventories.forEach(inv => {
+                const cData = window.cabinData[inv.cabinTypeId];
+                if (cData) {
+                    cData.availableRooms = inv.availableRooms;
+                    // Update price if there is a price override
+                    if (inv.priceOverride) cData.price = inv.priceOverride;
+                    
+                    const countSpan = document.getElementById(`cabin-count-${inv.cabinTypeId}`);
+                    if (countSpan) {
+                        // Reset selected count if it exceeds available
+                        if (window.selectedCabins[inv.cabinTypeId] > inv.availableRooms) {
+                            window.selectedCabins[inv.cabinTypeId] = inv.availableRooms;
+                            countSpan.innerText = inv.availableRooms;
+                        }
+                        
+                        const minusBtn = countSpan.previousElementSibling;
+                        const plusBtn = countSpan.nextElementSibling;
+                        if (inv.availableRooms <= 0) {
+                            countSpan.innerText = "Hết phòng";
+                            countSpan.style.color = "red";
+                            countSpan.style.fontSize = "0.9rem";
+                            if(minusBtn) minusBtn.style.display = 'none';
+                            if(plusBtn) plusBtn.style.display = 'none';
+                        } else {
+                            if(countSpan.innerText === "Hết phòng") countSpan.innerText = window.selectedCabins[inv.cabinTypeId] || 0;
+                            countSpan.style.color = "inherit";
+                            countSpan.style.fontSize = "1.2rem";
+                            if(minusBtn) minusBtn.style.display = 'inline-block';
+                            if(plusBtn) plusBtn.style.display = 'inline-block';
+                        }
+                    }
+                }
+            });
+        }
+        
+        window.updateTotalSelectedPrice();
+        
         // Auto scroll to cabins after slight delay for better UX
         setTimeout(() => {
             const cabinSection = document.querySelector('.cabin-list');
@@ -339,16 +380,22 @@ window.selectedCabins = {};
 window.cabinData = {};
 
 window.updateCabinCount = function(cabinId, delta) {
+    if (!window.selectedScheduleId) {
+        if(window.Popup) window.Popup.show('Thông báo', 'Vui lòng chọn Lịch Khởi Hành trước khi chọn phòng.', 'warning');
+        return;
+    }
     const data = window.cabinData[cabinId];
     if (!data) return;
+    
+    const maxAvailable = data.availableRooms !== undefined ? data.availableRooms : data.totalRooms;
     
     let current = window.selectedCabins[cabinId] || 0;
     let next = current + delta;
     
     if (next < 0) next = 0;
-    if (next > data.totalRooms) {
-        if(window.Popup) window.Popup.show('Thông báo', `Chỉ còn ${data.totalRooms} phòng trống loại này.`, 'info');
-        next = data.totalRooms;
+    if (next > maxAvailable) {
+        if(window.Popup) window.Popup.show('Thông báo', `Chỉ còn ${maxAvailable} phòng trống loại này cho lịch trình đã chọn.`, 'info');
+        next = maxAvailable;
     }
     
     window.selectedCabins[cabinId] = next;

@@ -267,6 +267,12 @@
                     let firstBookingId = null;
                     let hasError = false;
                     
+                    const submitBtn = document.querySelector('#bookingForm button[type="submit"]');
+                    if(submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="icon-spinner icon-spin"></i> Đang xử lý...';
+                    }
+                    
                     // Generate a single BookingCode for the entire order
                     const orderBookingCode = "BKG" + Date.now() + Math.floor(Math.random() * 900 + 100);
 
@@ -298,6 +304,10 @@
                         } else {
                             window.Popup.show('Lỗi', data.message || 'Lỗi đặt phòng', 'error');
                             hasError = true;
+                            if(submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = 'Xác nhận đặt phòng';
+                            }
                             break;
                         }
                     }

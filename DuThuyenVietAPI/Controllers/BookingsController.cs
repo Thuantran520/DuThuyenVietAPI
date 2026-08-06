@@ -82,7 +82,7 @@ public class BookingsController : ControllerBase
                 ContactName = dto.ContactName,
                 ContactPhone = dto.ContactPhone,
                 ContactEmail = dto.ContactEmail,
-                Note = dto.Note,
+                Note = dto.Note ?? "",
                 TotalPrice = totalPrice,
                 Status = "Pending", // Đợi thanh toán
                 CreatedAt = DateTime.Now
@@ -95,7 +95,8 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
+            var innerMsg = ex.InnerException != null ? ex.InnerException.Message : "";
+            return StatusCode(500, new { message = $"Lỗi server: {ex.Message}. Chi tiết: {innerMsg}" });
         }
     }
 

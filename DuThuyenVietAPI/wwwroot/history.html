@@ -62,19 +62,25 @@
             return true;
         };
 
-        window.cancelBooking = function(id) {
-            window.Popup.confirm('Xác nhận hủy', 'Bạn có chắc chắn muốn hủy đơn đặt vé này không?', async () => {
+        window.cancelBooking = function(bookingCode) {
+            const grp = window.customerGroupedBookings[bookingCode];
+            if (!grp || !grp.items || grp.items.length === 0) return;
+
+            window.Popup.confirm('Xác nhận hủy', 'Bạn có chắc chắn muốn hủy toàn bộ đơn đặt vé này không?', async () => {
                 try {
-                    const res = await fetch(`${API_URL}/Bookings/${id}/Cancel`, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${getToken()}` }
-                    });
-                    if (res.ok) {
-                        window.Popup.show('Thành công', 'Hủy vé thành công', 'success');
+                    let successCount = 0;
+                    for (const item of grp.items) {
+                        const res = await fetch(`${API_URL}/Bookings/${item.bookingId}/Cancel`, {
+                            method: 'PUT',
+                            headers: { 'Authorization': `Bearer ${getToken()}` }
+                        });
+                        if (res.ok) successCount++;
+                    }
+                    if (successCount > 0) {
+                        window.Popup.show('Thành công', 'Hủy đơn thành công', 'success');
                         initHistoryPage();
                     } else {
-                        const data = await res.json();
-                        window.Popup.show('Lỗi', data.message || 'Không thể hủy vé', 'error');
+                        window.Popup.show('Lỗi', 'Không thể hủy đơn', 'error');
                     }
                 } catch (e) {
                     window.Popup.show('Lỗi', 'Lỗi kết nối', 'error');
@@ -110,6 +116,7 @@
                     grouped[b.bookingCode].items.push(b);
                     grouped[b.bookingCode].totalPrice += b.totalPrice;
                 });
+                window.customerGroupedBookings = grouped;
 
                 window.copyToClipboard = function(text) {
                     navigator.clipboard.writeText(text).then(() => {
@@ -134,7 +141,7 @@
                     const roomsSummary = b.items.map(i => `${i.cabinName} (x${i.numberOfRooms})`).join(', ');
 
                     return `
-                        <div class="history-card" style="align-items: flex-start;">
+                        <div class="history-card" style="align-items: stretch;">
                             <div style="flex: 1;">
                                 <h4 class="mb-1" style="color: var(--primary);">${b.cruiseName}</h4>
                                 <p class="text-muted mb-2" style="font-size: 0.9rem;">
@@ -153,10 +160,12 @@
                                 
                                 <p class="mt-3" style="font-size: 1.1rem;"><strong>Tổng tiền: <span class="text-danger">${formatPrice(b.totalPrice)}</span></strong></p>
                             </div>
-                            <div class="text-right" style="text-align: right; min-width: 150px; display: flex; flex-direction: column; align-items: flex-end;">
-                                <span class="status-badge status-${b.status} mb-3" style="display: inline-block;">${statusText}</span>
-                                ${isPending ? `<a href="/checkout.html?bookingCode=${b.bookingCode}" class="btn-primary mt-2 text-center" style="padding: 8px 15px; font-size: 14px; width: 100%; border-radius: 6px; text-decoration: none;">Thanh toán</a>` : ''}
-                                ${isPending ? `<button onclick="cancelBooking(${b.bookingId})" class="btn-secondary mt-2" style="padding: 8px 15px; font-size: 14px; width: 100%; border-radius: 6px;">Hủy vé</button>` : ''}
+                            <div class="text-right" style="text-align: right; min-width: 150px; margin-left: 20px; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;">
+                                <span class="status-badge status-${b.status}" style="display: inline-block;">${statusText}</span>
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                                    ${isPending ? `<a href="/checkout.html?bookingCode=${b.bookingCode}" class="btn-primary text-center" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; text-decoration: none;">Thanh toán</a>` : ''}
+                                    ${isPending ? `<button onclick="cancelBooking('${b.bookingCode}')" class="btn-secondary" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px;">Hủy vé</button>` : ''}
+                                </div>
                             </div>
                         </div>
                     `;
