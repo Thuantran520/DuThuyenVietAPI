@@ -42,6 +42,92 @@ window.Popup = (function() {
 
     document.addEventListener('DOMContentLoaded', init);
 
+    // ===== GALLERY LIGHTBOX =====
+    let galleryImages = [];
+    let galleryCurrentIndex = 0;
+    let lightboxOverlay = null;
+
+    function initLightbox() {
+        if (lightboxOverlay) return;
+        lightboxOverlay = document.createElement('div');
+        lightboxOverlay.id = 'lightbox-overlay';
+        lightboxOverlay.innerHTML = `
+            <div class="lightbox-backdrop"></div>
+            <div class="lightbox-container">
+                <button class="lightbox-close" id="lightbox-close" title="Đóng (Esc)">✕</button>
+                <button class="lightbox-nav lightbox-prev" id="lightbox-prev" title="Ảnh trước (←)">&#8249;</button>
+                <div class="lightbox-img-wrap">
+                    <img id="lightbox-img" src="" alt="Gallery">
+                    <div class="lightbox-loader" id="lightbox-loader"></div>
+                </div>
+                <button class="lightbox-nav lightbox-next" id="lightbox-next" title="Ảnh sau (→)">&#8250;</button>
+                <div class="lightbox-counter" id="lightbox-counter">1 / 1</div>
+            </div>
+        `;
+        document.body.appendChild(lightboxOverlay);
+
+        document.getElementById('lightbox-close').onclick = closeLightbox;
+        document.querySelector('.lightbox-backdrop').onclick = closeLightbox;
+        document.getElementById('lightbox-prev').onclick = () => navigateLightbox(-1);
+        document.getElementById('lightbox-next').onclick = () => navigateLightbox(1);
+
+        document.addEventListener('keydown', (e) => {
+            if (!lightboxOverlay.classList.contains('show')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+    }
+
+    function openLightbox(images, startIndex) {
+        initLightbox();
+        galleryImages = images;
+        galleryCurrentIndex = startIndex;
+        lightboxOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        updateLightboxImage();
+    }
+
+    function closeLightbox() {
+        if (lightboxOverlay) {
+            lightboxOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function navigateLightbox(delta) {
+        galleryCurrentIndex = (galleryCurrentIndex + delta + galleryImages.length) % galleryImages.length;
+        updateLightboxImage();
+    }
+
+    function updateLightboxImage() {
+        const img = document.getElementById('lightbox-img');
+        const loader = document.getElementById('lightbox-loader');
+        const counter = document.getElementById('lightbox-counter');
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
+
+        if (!img) return;
+
+        loader.style.display = 'block';
+        img.style.opacity = '0';
+
+        const src = galleryImages[galleryCurrentIndex];
+        img.onload = () => {
+            loader.style.display = 'none';
+            img.style.opacity = '1';
+        };
+        img.onerror = () => {
+            loader.style.display = 'none';
+            img.style.opacity = '1';
+        };
+        img.src = src;
+        counter.innerText = `${galleryCurrentIndex + 1} / ${galleryImages.length}`;
+
+        prevBtn.style.display = galleryImages.length <= 1 ? 'none' : 'flex';
+        nextBtn.style.display = galleryImages.length <= 1 ? 'none' : 'flex';
+    }
+
     return {
         show: function(title, message, type = 'success') {
             if(!toastContainer) init();
@@ -103,7 +189,7 @@ window.Popup = (function() {
             const input = document.getElementById('modal-input');
             input.style.display = 'block';
             input.placeholder = placeholder || '';
-            input.type = 'text'; // Can be adjusted
+            input.type = 'text';
             
             const btnConfirm = document.getElementById('modal-confirm');
             btnConfirm.className = 'modal-btn modal-btn-confirm';
@@ -126,6 +212,11 @@ window.Popup = (function() {
             setTimeout(() => input.focus(), 100);
         },
 
+        /**
+         * Hiển thị popup gallery với lưới ảnh nhỏ + lightbox khi click.
+         * @param {string} title - Tiêu đề popup
+         * @param {string[]} imagesArray - Mảng URL ảnh
+         */
         gallery: function(title, imagesArray) {
             if(!modalOverlay) init();
             document.getElementById('modal-title').innerText = title;
@@ -134,13 +225,27 @@ window.Popup = (function() {
             card.classList.add('gallery-modal');
 
             const body = document.getElementById('modal-body');
-            let imagesHtml = imagesArray.map(img => `<img src="${img}" alt="Gallery Image" loading="lazy">`).join('');
-            body.innerHTML = `<div class="gallery-grid">${imagesHtml}</div>`;
+            
+            if (!imagesArray || imagesArray.length === 0) {
+                body.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Không có ảnh nào.</p>';
+            } else {
+                // Render grid thumbnails, each clickable to open lightbox
+                const imagesHtml = imagesArray.map((img, idx) => `
+                    <div class="gallery-thumb-wrap" onclick="window.Popup._openLightboxAt(${idx})" title="Nhấn để xem ảnh lớn">
+                        <img src="${img}" alt="Ảnh ${idx + 1}" loading="lazy" onerror="this.src='/images/default-cruise.jpg'">
+                        <div class="gallery-thumb-overlay"><span>🔍</span></div>
+                    </div>
+                `).join('');
+                body.innerHTML = `
+                    <div class="gallery-count-badge">${imagesArray.length} ảnh</div>
+                    <div class="gallery-grid">${imagesHtml}</div>
+                `;
+            }
             
             document.getElementById('modal-input').style.display = 'none';
             
             const btnConfirm = document.getElementById('modal-confirm');
-            btnConfirm.style.display = 'none'; // Hide confirm btn for gallery
+            btnConfirm.style.display = 'none';
             
             const btnCancel = document.getElementById('modal-cancel');
             btnCancel.innerText = 'Đóng';
@@ -153,10 +258,19 @@ window.Popup = (function() {
                 setTimeout(() => {
                     card.classList.remove('gallery-modal');
                     btnConfirm.style.display = 'inline-block';
+                    btnConfirm.style.removeProperty('display');
                 }, 300);
             });
 
+            // Store images for lightbox
+            galleryImages = imagesArray;
+            window.Popup._openLightboxAt = (idx) => openLightbox(imagesArray, idx);
+
             modalOverlay.classList.add('show');
+        },
+
+        _openLightboxAt: function(idx) {
+            openLightbox(galleryImages, idx);
         }
     };
 })();

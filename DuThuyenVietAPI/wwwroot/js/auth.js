@@ -396,25 +396,65 @@ document.addEventListener('DOMContentLoaded', async function () {
                         if(!grp) return;
                         
                         document.getElementById('modal-booking-code').innerText = code;
-                        
-                        let html = `<p><strong>Khách hàng:</strong> ${grp.contactName} - ${grp.contactPhone}</p>`;
-                        html += `<p><strong>Du thuyền:</strong> ${grp.cruiseName}</p>`;
-                        html += `<p><strong>Ngày khởi hành:</strong> ${new Date(grp.departureDate).toLocaleDateString('vi-VN')}</p>`;
-                        html += `<hr style="margin: 16px 0; border: none; border-top: 1px dashed #cbd5e1;">`;
-                        html += `<h4 style="margin-bottom: 12px;">Chi tiết phòng:</h4>`;
-                        
+
+                        // --- Header info ---
+                        let html = `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; background:#f8fafc; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.95rem;">
+                            <div><span style="color:#64748b;">👤 Khách hàng</span><br><strong>${grp.contactName}</strong></div>
+                            <div><span style="color:#64748b;">📞 Điện thoại</span><br><strong>${grp.contactPhone}</strong></div>
+                            <div><span style="color:#64748b;">🚢 Du thuyền</span><br><strong>${grp.cruiseName}</strong></div>
+                            <div><span style="color:#64748b;">📅 Khởi hành</span><br><strong>${new Date(grp.departureDate).toLocaleDateString('vi-VN')}</strong></div>
+                            ${grp.contactEmail ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📧 Email</span><br><strong>${grp.contactEmail}</strong></div>` : ''}
+                            ${grp.note ? `<div style="grid-column:1/-1;"><span style="color:#64748b;">📝 Ghi chú</span><br><em style="color:#334155;">${grp.note}</em></div>` : ''}
+                        </div>`;
+
+                        // --- Room breakdown ---
+                        html += `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1rem;">🛏️ Chi tiết phòng đặt (${grp.items.length} loại):</div>`;
+
                         grp.items.forEach(item => {
-                            html += `<div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between;">
-                                <div>
-                                    <div style="font-weight: 600;">${item.cabinName}</div>
-                                    <div style="font-size: 0.9rem; color: #64748b;">Số lượng: ${item.numberOfRooms} phòng</div>
+                            const unitPrice = item.numberOfRooms > 0 ? item.totalPrice / item.numberOfRooms : item.totalPrice;
+                            html += `
+                            <div style="background:#f1f5f9; border:1px solid #e2e8f0; padding:12px 16px; border-radius:10px; margin-bottom:10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div>
+                                        <div style="font-weight:700; color:#0f172a; font-size:1rem;">${item.cabinName}</div>
+                                        <div style="font-size:0.88rem; color:#64748b; margin-top:3px;">
+                                            ${formatPrice(unitPrice)} × ${item.numberOfRooms} phòng
+                                        </div>
+                                    </div>
+                                    <div style="font-weight:700; color:#0d9488; font-size:1.05rem; white-space:nowrap; margin-left:12px;">
+                                        ${formatPrice(item.totalPrice)}
+                                    </div>
                                 </div>
-                                <div style="font-weight: 600; color: var(--primary);">${formatPrice(item.totalPrice)}</div>
+                                <div style="margin-top:8px; font-size:0.85rem; color:#64748b; display:flex; gap:16px; flex-wrap:wrap;">
+                                    <span>Trạng thái: <span style="font-weight:600; color:${item.status === 'Confirmed' ? '#16a34a' : item.status === 'Cancelled' ? '#dc2626' : item.status === 'AwaitingConfirmation' ? '#4338ca' : '#d97706'};">${item.status === 'Confirmed' ? 'Thành công' : item.status === 'Cancelled' ? 'Đã hủy' : item.status === 'AwaitingConfirmation' ? 'Chờ xác nhận' : 'Chờ thanh toán'}</span></span>
+                                    ${item.numberOfGuests ? `<span>👥 ${item.numberOfGuests} khách</span>` : ''}
+                                </div>
                             </div>`;
                         });
-                        
-                        html += `<hr style="margin: 16px 0; border: none; border-top: 1px dashed #cbd5e1;">`;
-                        html += `<div style="text-align: right; font-size: 1.2rem;"><strong>Tổng cộng: <span style="color: #ef4444;">${formatPrice(grp.totalPrice)}</span></strong></div>`;
+
+                        // --- Payment info ---
+                        const allPayments = grp.items.flatMap(i => i.payments || []);
+                        if (allPayments.length > 0) {
+                            const p = allPayments[0];
+                            const pMethod = p.paymentMethod === 'BankTransfer' ? '🏦 Chuyển khoản NH' : p.paymentMethod === 'Cash' ? '💵 Tiền mặt' : p.paymentMethod;
+                            html += `
+                            <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:12px 16px; margin-top:4px; font-size:0.9rem;">
+                                <div style="font-weight:700; color:#0369a1; margin-bottom:6px;">💳 Thông tin thanh toán</div>
+                                <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                                    <span><strong>Phương thức:</strong> ${pMethod}</span>
+                                    ${p.transactionCode ? `<span><strong>Mã GD:</strong> <code style="background:white; padding:2px 6px; border-radius:4px;">${p.transactionCode}</code></span>` : ''}
+                                    ${p.paidAt ? `<span><strong>Ngày TT:</strong> ${new Date(p.paidAt).toLocaleDateString('vi-VN')}</span>` : ''}
+                                </div>
+                            </div>`;
+                        }
+
+                        // --- Grand total ---
+                        html += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:14px 16px; background:#fefce8; border:2px solid #fde047; border-radius:10px;">
+                            <span style="font-size:1rem; color:#92400e; font-weight:600;">Tổng thanh toán (${grp.items.length} loại phòng)</span>
+                            <span style="font-size:1.35rem; font-weight:800; color:#ef4444;">${formatPrice(grp.totalPrice)}</span>
+                        </div>`;
                         
                         document.getElementById('booking-details-content').innerHTML = html;
                         document.getElementById('bookingDetailsModal').style.display = 'flex';

@@ -150,11 +150,29 @@
                 
                 const roomsDetail = groupItems.map(b => `${b.cabinName} (x${b.numberOfRooms})`).join(', ');
 
+                // Build detailed room breakdown
+                let roomDetailsHtml = groupItems.map(b => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                        <div>
+                            <span style="font-weight:600;">🛏️ ${b.cabinName}</span>
+                            <span style="color:#64748b; font-size:0.9rem; margin-left:8px;">x${b.numberOfRooms} phòng</span>
+                        </div>
+                        <span style="font-weight:600; color:#0d9488;">${formatPrice(b.totalPrice)}</span>
+                    </div>
+                `).join('');
+
                 document.getElementById('checkoutDetails').innerHTML = `
-                    <p><strong>Du thuyền:</strong> ${firstBooking.cruiseName}</p>
-                    <p><strong>Loại phòng:</strong> ${roomsDetail}</p>
-                    <p><strong>Ngày đi:</strong> ${new Date(firstBooking.departureDate).toLocaleDateString('vi-VN')}</p>
-                    <p><strong>Khách hàng:</strong> ${firstBooking.contactName} - ${firstBooking.contactPhone}</p>
+                    <p class="mb-2"><strong>🚢 Du thuyền:</strong> ${firstBooking.cruiseName}</p>
+                    <p class="mb-2"><strong>📅 Ngày đi:</strong> ${new Date(firstBooking.departureDate).toLocaleDateString('vi-VN')}</p>
+                    <p class="mb-3"><strong>👤 Khách hàng:</strong> ${firstBooking.contactName} — ${firstBooking.contactPhone}</p>
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:8px;">
+                        <div style="font-weight:700; margin-bottom:10px; color:#0f172a;">Chi tiết phòng đã đặt (${groupItems.length} loại):</div>
+                        ${roomDetailsHtml}
+                        <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:4px; font-size:1.05rem; font-weight:700;">
+                            <span>Tổng cộng:</span>
+                            <span style="color:#ef4444;">${formatPrice(totalGroupPrice)}</span>
+                        </div>
+                    </div>
                 `;
 
                 const updateInstructions = () => {
@@ -225,34 +243,26 @@
                     btn.innerText = 'Đang xử lý...';
 
                     try {
-                        let successCount = 0;
-                        let lastPayData = null;
-                        
-                        for (const b of groupItems) {
-                            const payRes = await fetch(`${API_URL}/Payments/Process`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({ bookingId: b.bookingId, paymentMethod: selectedMethod })
-                            });
-                            
-                            const payData = await payRes.json();
-                            if (payRes.ok) {
-                                successCount++;
-                                lastPayData = payData;
-                            } else {
-                                window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại cho phòng ' + b.cabinName, 'error');
-                                btn.disabled = false;
-                                updateInstructions();
-                                return;
-                            }
-                        }
+                        // Thanh toán 1 lần duy nhất cho toàn bộ đơn hàng qua endpoint ProcessByCode
+                        const payRes = await fetch(`${API_URL}/Payments/ProcessByCode`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ bookingCode: bookingCode, paymentMethod: selectedMethod })
+                        });
 
-                        if (successCount === groupItems.length) {
-                            window.Popup.show('Thành công', lastPayData.message + (lastPayData.transactionCode ? ' (Mã GD: ' + lastPayData.transactionCode + ')' : ''), 'success');
+                        const payData = await payRes.json();
+
+                        if (payRes.ok) {
+                            const txnMsg = payData.transactionCode ? ` (Mã GD: ${payData.transactionCode})` : '';
+                            window.Popup.show('Thành công', (payData.message || 'Thành công!') + txnMsg, 'success');
                             setTimeout(() => window.location.href = '/history.html', 3000);
+                        } else {
+                            window.Popup.show('Lỗi', payData.message || 'Thanh toán thất bại', 'error');
+                            btn.disabled = false;
+                            updateInstructions();
                         }
                     } catch (error) {
                         window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ', 'error');
