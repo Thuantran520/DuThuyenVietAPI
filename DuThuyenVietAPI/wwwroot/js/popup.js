@@ -2,6 +2,8 @@
 window.Popup = (function() {
     let toastContainer = null;
     let modalOverlay = null;
+    let activeConfirmCallback = null;
+    let activeCancelCallback = null;
 
     function init() {
         if (!toastContainer) {
@@ -26,10 +28,23 @@ window.Popup = (function() {
             `;
             document.body.appendChild(modalOverlay);
             
-            document.getElementById('modal-cancel').addEventListener('click', close);
-            document.getElementById('modal-close-icon').addEventListener('click', close);
+            document.getElementById('modal-cancel').addEventListener('click', () => {
+                close();
+                if (activeCancelCallback) activeCancelCallback();
+            });
+            document.getElementById('modal-close-icon').addEventListener('click', () => {
+                close();
+                if (activeCancelCallback) activeCancelCallback();
+            });
+            document.getElementById('modal-confirm').addEventListener('click', () => {
+                console.log("modal-confirm element clicked in DOM. activeConfirmCallback exists:", !!activeConfirmCallback);
+                if (activeConfirmCallback) activeConfirmCallback();
+            });
             modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) close();
+                if (e.target === modalOverlay) {
+                    close();
+                    if (activeCancelCallback) activeCancelCallback();
+                }
             });
         }
     }
@@ -38,9 +53,24 @@ window.Popup = (function() {
         if (modalOverlay) {
             modalOverlay.classList.remove('show');
             setTimeout(() => {
-                document.getElementById('modal-input').style.display = 'none';
-                document.getElementById('modal-input').value = '';
-                document.getElementById('modal-confirm').className = 'modal-btn modal-btn-confirm';
+                const input = document.getElementById('modal-input');
+                if (input) {
+                    input.style.display = 'none';
+                    input.value = '';
+                    input.style.borderColor = '#d1d5db';
+                }
+                const btnConfirm = document.getElementById('modal-confirm');
+                if (btnConfirm) {
+                    btnConfirm.className = 'modal-btn modal-btn-confirm';
+                    btnConfirm.style.display = 'inline-block';
+                }
+                const btnCancel = document.getElementById('modal-cancel');
+                if (btnCancel) {
+                    btnCancel.style.display = 'inline-block';
+                    btnCancel.innerText = 'Hủy';
+                }
+                activeConfirmCallback = null;
+                activeCancelCallback = null;
             }, 200);
         }
     }
@@ -161,27 +191,27 @@ window.Popup = (function() {
             }, 3000);
         },
 
-        confirm: function(title, message, onConfirm, isDanger = false) {
+        confirm: function(title, message, onConfirm, isDanger = false, confirmBtnText = null) {
+            console.log("Popup.confirm triggered. Title:", title, "Message:", message);
             if(!modalOverlay) init();
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-body').innerText = message;
             
             const btnConfirm = document.getElementById('modal-confirm');
-            btnConfirm.innerText = 'Xác nhận';
+            btnConfirm.innerText = confirmBtnText || 'Xác nhận';
             if (isDanger) {
                 btnConfirm.className = 'modal-btn modal-btn-danger';
-                btnConfirm.innerText = 'Xóa';
+                if (!confirmBtnText) btnConfirm.innerText = 'Xóa';
             } else {
                 btnConfirm.className = 'modal-btn modal-btn-confirm';
             }
             
-            const newBtn = btnConfirm.cloneNode(true);
-            btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
-            
-            newBtn.addEventListener('click', () => {
+            activeConfirmCallback = () => {
+                console.log("activeConfirmCallback executing. Calling close() and onConfirm()...");
                 close();
                 if (onConfirm) onConfirm();
-            });
+            };
+            activeCancelCallback = null;
 
             modalOverlay.classList.add('show');
         },
@@ -200,28 +230,21 @@ window.Popup = (function() {
             btnConfirm.className = 'modal-btn modal-btn-confirm';
             btnConfirm.innerText = 'Lưu';
             
-            const newBtn = btnConfirm.cloneNode(true);
-            btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
-            
-            newBtn.addEventListener('click', () => {
-                const val = document.getElementById('modal-input').value;
+            activeConfirmCallback = () => {
+                const val = input.value;
                 if (!val) {
                     input.style.borderColor = 'red';
                     return;
                 }
                 close();
                 if (onComplete) onComplete(val);
-            });
+            };
+            activeCancelCallback = null;
 
             modalOverlay.classList.add('show');
             setTimeout(() => input.focus(), 100);
         },
 
-        /**
-         * Hiển thị popup gallery với lưới ảnh nhỏ + lightbox khi click.
-         * @param {string} title - Tiêu đề popup
-         * @param {string[]} imagesArray - Mảng URL ảnh
-         */
         gallery: function(title, imagesArray) {
             if(!modalOverlay) init();
             document.getElementById('modal-title').innerText = title;
@@ -234,11 +257,10 @@ window.Popup = (function() {
             if (!imagesArray || imagesArray.length === 0) {
                 body.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Không có ảnh nào.</p>';
             } else {
-                // Render grid thumbnails, each clickable to open lightbox
                 const imagesHtml = imagesArray.map((img, idx) => `
                     <div class="gallery-thumb-wrap" onclick="window.Popup._openLightboxAt(${idx})" title="Nhấn để xem ảnh lớn">
                         <img src="${img}" alt="Ảnh ${idx + 1}" loading="lazy" onerror="this.src='/images/default-cruise.jpg'">
-                        <div class="gallery-thumb-overlay"><span>🔍</span></div>
+                        <div class="gallery-thumb-overlay"><span></span></div>
                     </div>
                 `).join('');
                 body.innerHTML = `
@@ -247,25 +269,21 @@ window.Popup = (function() {
                 `;
             }
             
-            document.getElementById('modal-input').style.display = 'none';
-            
+            const input = document.getElementById('modal-input');
+            if (input) input.style.display = 'none';
             const btnConfirm = document.getElementById('modal-confirm');
-            btnConfirm.style.display = 'none';
+            if (btnConfirm) btnConfirm.style.display = 'none';
             
             const btnCancel = document.getElementById('modal-cancel');
-            btnCancel.innerText = 'Đóng';
+            if (btnCancel) btnCancel.innerText = 'Đóng';
             
-            const newBtn = btnCancel.cloneNode(true);
-            btnCancel.parentNode.replaceChild(newBtn, btnCancel);
-            
-            newBtn.addEventListener('click', () => {
+            activeCancelCallback = () => {
                 close();
                 setTimeout(() => {
                     card.classList.remove('gallery-modal');
-                    btnConfirm.style.display = 'inline-block';
-                    btnConfirm.style.removeProperty('display');
                 }, 300);
-            });
+            };
+            activeConfirmCallback = null;
 
             // Store images for lightbox
             galleryImages = imagesArray;

@@ -35,26 +35,52 @@ window.loadCruiseReviews = async function(cruiseId, page = 1) {
         const currentUserId = jwtData ? jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] : null;
         const currentRole = jwtData ? (jwtData['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '') : '';
         const isStaff = currentRole.includes('Admin') || currentRole.includes('Manager') || currentRole.includes('Staff');
+        const isAdminOrManager = currentRole.includes('Admin') || currentRole.includes('Manager');
 
         listEl.innerHTML = data.reviews.map(r => {
-            let staffReplyHtml = r.staffReply ? `
-                <div style="margin-top:12px; background:#f0fdf4; border-left:4px solid #22c55e; padding:10px 14px; border-radius:0 8px 8px 0;">
-                    <strong style="color:#166534; font-size:0.9rem;">Phản hồi từ Đội ngũ:</strong>
-                    <p style="margin:4px 0 0; color:#15803d; font-size:0.95rem;">${r.staffReply}</p>
-                </div>
-            ` : '';
+            // --- Staff Reply Section ---
+            let staffReplyHtml = '';
+            if (r.staffReply) {
+                let replyActions = '';
+                // Nút Sửa: nhân viên sửa reply của chính mình HOẶC admin/manager sửa bất kỳ
+                const canEditReply = isStaff && (isAdminOrManager || r.staffReplyUserId === currentUserId);
+                // Nút Xóa: chỉ admin/manager
+                const canDeleteReply = isAdminOrManager;
 
-            // Chỉ cho sửa nếu tên user trùng (vì Get API đang ẩn UserId, tạm so sánh tên, nếu cần chuẩn thì API trả UserId)
-            // Hoặc API trả username, nên ta có thể check name
+                if (canEditReply) {
+                    replyActions += `<button onclick="window.editStaffReply(${r.reviewId}, ${cruiseId}, '${(r.staffReply || '').replace(/'/g, "\\'").replace(/\n/g, '\\n')}')"
+                        style="background:none; border:none; color:#16a34a; cursor:pointer; font-size:0.8rem; font-weight:600; padding:0 6px; opacity:0.8;"
+                        title="Sửa phản hồi">✏️ Sửa</button>`;
+                }
+                if (canDeleteReply) {
+                    replyActions += `<button onclick="window.deleteStaffReply(${r.reviewId}, ${cruiseId})"
+                        style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:0.8rem; font-weight:600; padding:0 6px; opacity:0.8;"
+                        title="Xóa phản hồi">🗑️ Xóa</button>`;
+                }
+
+                staffReplyHtml = `
+                    <div style="margin-top:12px; background:#f0fdf4; border-left:4px solid #22c55e; padding:10px 14px; border-radius:0 8px 8px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <strong style="color:#166534; font-size:0.9rem;">💬 Phản hồi từ Đội ngũ:</strong>
+                            <span style="display:flex; gap:2px;">${replyActions}</span>
+                        </div>
+                        <p style="margin:0; color:#15803d; font-size:0.95rem; line-height:1.5;" id="reply-text-${r.reviewId}">${r.staffReply}</p>
+                    </div>
+                `;
+            }
+
+            // --- Review Owner Actions ---
             const currentName = jwtData ? (jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || '') : '';
             const isOwner = currentName === r.userName || (jwtData && r.userName.includes(currentName));
             
             let actionsHtml = '';
             if (isOwner) {
-                actionsHtml += `<button onclick="window.editReview(${r.reviewId}, ${r.rating}, '${r.comment.replace(/'/g, "\\'")}', ${cruiseId})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; font-weight:600;">Sửa</button>`;
+                actionsHtml += `<button onclick="window.editReview(${r.reviewId}, ${r.rating}, '${r.comment.replace(/'/g, "\\'")}', ${cruiseId})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; font-weight:600;">Sửa đánh giá</button>`;
             }
-            if (isStaff) {
-                actionsHtml += `<button onclick="window.replyReview(${r.reviewId}, ${cruiseId})" style="background:none; border:none; color:#10b981; cursor:pointer; font-size:0.85rem; font-weight:600; margin-left:12px;">Trả lời</button>`;
+
+            // Nút "Trả lời": chỉ hiện khi chưa có reply (thêm mới), hoặc ẩn để dùng nút Sửa trong reply block
+            if (isStaff && !r.staffReply) {
+                actionsHtml += `<button onclick="window.replyReview(${r.reviewId}, ${cruiseId})" style="background:none; border:none; color:#10b981; cursor:pointer; font-size:0.85rem; font-weight:600; margin-left:12px;">💬 Trả lời</button>`;
             }
 
             return `
@@ -159,7 +185,7 @@ window.loadReviewForm = async function(cruiseId) {
 
             <button id="btn-submit-review" onclick="window.submitReview(${cruiseId})"
                 class="btn-primary" style="padding:10px 28px; font-weight:600; border-radius:8px;">
-                Gửi đánh giá 🚀
+                Gửi đánh giá
             </button>
         </div>
     `;
@@ -225,65 +251,147 @@ window.submitReview = async function(cruiseId) {
 
         if (res.ok) {
             if (window.Popup) window.Popup.show('Thành công', 'Cảm ơn bạn đã đánh giá!', 'success');
-            // Ẩn form, hiện thông báo thành công
             const formWrap = document.getElementById('review-form-wrap');
             if (formWrap) formWrap.innerHTML = `
                 <div style="background:#dcfce7; border:1px solid #bbf7d0; border-radius:12px; padding:14px 20px; text-align:center; color:#166534; font-weight:600;">
                     ✅ Bạn đã gửi đánh giá thành công! Cảm ơn bạn.
                 </div>
             `;
-            // Tải lại danh sách reviews
             window.loadCruiseReviews(cruiseId, 1);
         } else {
             if (window.Popup) window.Popup.show('Lỗi', data.message || 'Không thể gửi đánh giá.', 'error');
-            if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá 🚀'; }
+            if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá'; }
         }
     } catch(e) {
         if (window.Popup) window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
-        if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá 🚀'; }
+        if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá'; }
         console.error('submitReview error:', e);
     }
 };
 
+// =============================================
+// Sửa đánh giá (chính chủ) — dùng Popup
+// =============================================
 window.editReview = function(reviewId, oldRating, oldComment, cruiseId) {
-    const newComment = prompt('Nhập nội dung đánh giá mới:', oldComment);
-    if (newComment === null) return;
-    let newRating = prompt('Nhập điểm (1-5):', oldRating);
-    if (newRating === null) return;
-    newRating = parseInt(newRating);
-    if (isNaN(newRating) || newRating < 1 || newRating > 5) {
-        alert('Điểm đánh giá không hợp lệ.');
-        return;
-    }
-
-    const token = localStorage.getItem('auth_token');
-    fetch(`${REVIEW_API}/Reviews/${reviewId}`, {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: newRating, comment: newComment, cruiseId: cruiseId })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (window.Popup) window.Popup.show('Thành công', 'Đã cập nhật đánh giá.', 'success');
-        window.loadCruiseReviews(cruiseId, 1);
-    })
-    .catch(err => alert('Lỗi sửa đánh giá.'));
+    if (!window.Popup) return;
+    window.Popup.prompt(
+        'Sửa đánh giá',
+        `Điểm (1-5) hiện tại: ${oldRating} | Nhập nội dung đánh giá mới:`,
+        oldComment,
+        async (newComment) => {
+            if (!newComment || !newComment.trim()) return;
+            const token = localStorage.getItem('auth_token');
+            try {
+                const res = await fetch(`${REVIEW_API}/Reviews/${reviewId}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: oldRating, comment: newComment.trim(), cruiseId })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.Popup.show('Thành công', 'Đã cập nhật đánh giá.', 'success');
+                    window.loadCruiseReviews(cruiseId, 1);
+                } else {
+                    window.Popup.show('Lỗi', data.message || 'Không thể sửa đánh giá.', 'error');
+                }
+            } catch(e) {
+                window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            }
+        }
+    );
 };
 
+// =============================================
+// Trả lời đánh giá (Staff) — dùng Popup
+// =============================================
 window.replyReview = function(reviewId, cruiseId) {
-    const replyText = prompt('Nhập nội dung phản hồi của Staff:');
-    if (!replyText) return;
+    if (!window.Popup) return;
+    window.Popup.prompt(
+        '💬 Phản hồi đánh giá',
+        'Nhập nội dung phản hồi của nhân viên:',
+        '',
+        async (replyText) => {
+            if (!replyText || !replyText.trim()) return;
+            const token = localStorage.getItem('auth_token');
+            try {
+                const res = await fetch(`${REVIEW_API}/Reviews/${reviewId}/reply`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ replyText: replyText.trim() })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.Popup.show('Thành công', 'Đã phản hồi đánh giá.', 'success');
+                    window.loadCruiseReviews(cruiseId, 1);
+                } else {
+                    window.Popup.show('Lỗi', data.message || 'Không thể phản hồi.', 'error');
+                }
+            } catch(e) {
+                window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            }
+        }
+    );
+};
 
-    const token = localStorage.getItem('auth_token');
-    fetch(`${REVIEW_API}/Reviews/${reviewId}/reply`, {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ replyText: replyText })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (window.Popup) window.Popup.show('Thành công', 'Đã trả lời đánh giá.', 'success');
-        window.loadCruiseReviews(cruiseId, 1);
-    })
-    .catch(err => alert('Lỗi trả lời đánh giá.'));
+// =============================================
+// Sửa phản hồi nhân viên (Staff chỉ sửa của mình, Admin/Manager sửa mọi reply)
+// =============================================
+window.editStaffReply = function(reviewId, cruiseId, currentReply) {
+    if (!window.Popup) return;
+    window.Popup.prompt(
+        '✏️ Sửa phản hồi nhân viên',
+        'Chỉnh sửa nội dung phản hồi:',
+        currentReply,
+        async (newReply) => {
+            if (!newReply || !newReply.trim()) return;
+            const token = localStorage.getItem('auth_token');
+            try {
+                const res = await fetch(`${REVIEW_API}/Reviews/${reviewId}/reply`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ replyText: newReply.trim() })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.Popup.show('Thành công', 'Đã cập nhật phản hồi.', 'success');
+                    window.loadCruiseReviews(cruiseId, 1);
+                } else {
+                    window.Popup.show('Lỗi', data.message || 'Không thể sửa phản hồi.', 'error');
+                }
+            } catch(e) {
+                window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            }
+        }
+    );
+};
+
+// =============================================
+// Xóa phản hồi nhân viên (chỉ Admin/Manager)
+// =============================================
+window.deleteStaffReply = function(reviewId, cruiseId) {
+    if (!window.Popup) return;
+    window.Popup.confirm(
+        '🗑️ Xóa phản hồi nhân viên',
+        'Bạn có chắc chắn muốn xóa phản hồi của nhân viên không? Hành động này không thể hoàn tác.',
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const res = await fetch(`${REVIEW_API}/Reviews/${reviewId}/reply`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.Popup.show('Đã xóa', 'Phản hồi nhân viên đã được xóa.', 'success');
+                    window.loadCruiseReviews(cruiseId, 1);
+                } else {
+                    window.Popup.show('Lỗi', data.message || 'Không thể xóa phản hồi.', 'error');
+                }
+            } catch(e) {
+                window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            }
+        },
+        true, // isDanger = true → nút đỏ
+        'Xóa phản hồi'
+    );
 };

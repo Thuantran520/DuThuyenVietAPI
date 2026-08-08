@@ -41,6 +41,7 @@ public class ReviewsController : ControllerBase
                     r.Rating,
                     r.Comment,
                     r.StaffReply,
+                    r.StaffReplyUserId,
                     r.CreatedAt,
                     UserName = u.FullName ?? u.UserName ?? "Khách hàng"
                 })
@@ -220,7 +221,9 @@ public class ReviewsController : ControllerBase
     }
 
     /// <summary>
-    /// Nhân viên trả lời đánh giá
+    /// Nhân viên trả lời / sửa phản hồi đánh giá
+    /// Staff có thể trả lời hoặc sửa reply của chính mình
+    /// Admin/Manager có thể sửa bất kỳ reply nào
     /// </summary>
     [Authorize(Roles = "Admin,Manager,Staff")]
     [HttpPut("{id}/reply")]
@@ -231,9 +234,46 @@ public class ReviewsController : ControllerBase
             var review = await _context.Reviews.FindAsync(id);
             if (review == null) return NotFound("Không tìm thấy đánh giá.");
 
-            review.StaffReply = dto.ReplyText;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+
+            // Nếu đã có reply từ người khác, chỉ admin/manager hoặc chính người đó mới được sửa
+            if (!string.IsNullOrEmpty(review.StaffReplyUserId)
+                && review.StaffReplyUserId != userId
+                && !isAdminOrManager)
+            {
+                return Forbid("Bạn chỉ có thể sửa phản hồi do chính mình viết.");
+            }
+
+            review.StaffReply = dto.ReplyText?.Trim();
+            review.StaffReplyUserId = userId;
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Đã phản hồi đánh giá." });
+            return Ok(new { Message = "Đã cập nhật phản hồi đánh giá." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Lỗi server: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Xóa phản hồi nhân viên (chỉ Admin hoặc Manager)
+    /// </summary>
+    [Authorize(Roles = "Admin,Manager")]
+    [HttpDelete("{id}/reply")]
+    public async Task<IActionResult> DeleteStaffReply(int id)
+    {
+        try
+        {
+            var review = await _context.Reviews.FindAsync(id);
+            if (review == null) return NotFound("Không tìm thấy đánh giá.");
+            if (string.IsNullOrEmpty(review.StaffReply))
+                return BadRequest("Đánh giá này chưa có phản hồi nhân viên.");
+
+            review.StaffReply = null;
+            review.StaffReplyUserId = null;
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Đã xóa phản hồi nhân viên." });
         }
         catch (Exception ex)
         {

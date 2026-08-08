@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang Quản Lý - Du Thuyền Việt</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/popup.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
     <script>
         // Instant check to prevent layout flash
         if (!localStorage.getItem('auth_token')) { window.location.replace('/login.html'); }
     </script>
 </head>
 <body>
-    <div class="container">
-        <div class="header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; margin-bottom: 32px;">
-            <a href="/index.html" class="logo" style="text-decoration:none; font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--primary);">DuThuyenViet</a>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="/search.html" style="text-decoration:none; color: var(--text-heading); font-weight: 500; font-size: 15px;">Tìm Du Thuyền</a>
-                <a href="/history.html" style="text-decoration:none; color: var(--text-heading); font-weight: 500; font-size: 15px;">Lịch sử</a>
-                <button class="btn-logout" id="btnLogout">Đăng xuất</button>
-            </div>
+    <header class="main-header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease;"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li class="active">Admin Dashboard</li>
+            </ul>
         </div>
+    </div>
+
+    <div class="content-wrapper">
+    <div class="container">
 
         <div id="loader">
             <img src="/images/loading.gif" style="width: 48px; height: 48px; margin: 0 auto; display: block;" alt="Loading...">
@@ -31,7 +36,9 @@
         <div id="main-content" style="display: none;">
             <div class="tabs">
                 <div class="tab active" data-target="tab-profile">Hồ sơ Cá nhân</div>
+                <div class="tab" data-target="tab-password">Đổi Mật khẩu</div>
                 <div class="tab" id="tab-bookings-nav" data-target="tab-bookings" style="display: none;">Quản lý Đặt Phòng</div>
+                <div class="tab" id="tab-notes-nav" data-target="tab-notes" style="display: none;">Yêu cầu & Ghi chú</div>
                 <div class="tab" id="tab-cruises-nav" data-target="tab-cruises" style="display: none;">Quản lý Du Thuyền</div>
                 <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
             </div>
@@ -94,6 +101,28 @@
                 </div>
             </div>
 
+            <!-- TAB: ĐỔI MẬT KHẨU -->
+            <div class="tab-content" id="tab-password">
+                <div class="card" style="max-width: 500px; margin: 0 auto; padding: 30px;">
+                    <div class="card-title" style="margin-bottom: 20px;">Thay đổi mật khẩu</div>
+                    <form id="changePasswordForm" onsubmit="event.preventDefault(); window.changePasswordSubmit();">
+                        <div class="pw-form-group">
+                            <label>Mật khẩu hiện tại</label>
+                            <input type="password" id="oldPassword" required placeholder="Nhập mật khẩu hiện tại">
+                        </div>
+                        <div class="pw-form-group">
+                            <label>Mật khẩu mới</label>
+                            <input type="password" id="newPassword" required placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">
+                        </div>
+                        <div class="pw-form-group" style="margin-bottom: 24px;">
+                            <label>Xác nhận mật khẩu mới</label>
+                            <input type="password" id="confirmNewPassword" required placeholder="Nhập lại mật khẩu mới">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="padding: 12px; width: 100%; border-radius: 8px; font-size: 15px;">Lưu mật khẩu mới</button>
+                    </form>
+                </div>
+            </div>
+
             <!-- TAB: BOOKINGS QUẢN LÝ ĐẶT PHÒNG -->
             <div class="tab-content" id="tab-bookings">
                 <div class="card">
@@ -113,6 +142,11 @@
                             <div style="color: #854d0e; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG ĐƠN ĐẶT</div>
                             <div id="dash-bookings" style="color: #a16207; font-size: 24px; font-weight: 800;">0</div>
                         </div>
+                        <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer;" onclick="document.querySelector('[data-target=tab-notes]').click()">
+                            <div style="color: #9d174d; font-size: 14px; font-weight: 600; margin-bottom: 8px;">YÊU CẦU ĐẶC BIỆT</div>
+                            <div id="dash-notes" style="color: #be185d; font-size: 24px; font-weight: 800;">0</div>
+                            <div style="color: #9d174d; font-size: 11px; margin-top: 4px;">Nhấn để xem →</div>
+                        </div>
                     </div>
                     
                     <div class="table-responsive">
@@ -129,6 +163,31 @@
                             </thead>
                             <tbody id="bookings-table-body">
                                 <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: YÊU CẦU & GHI CHÚ -->
+            <div class="tab-content" id="tab-notes">
+                <div class="card">
+                    <div class="card-title">Yêu Cầu Đặc Biệt từ Khách Hàng</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Danh sách các ghi chú, yêu cầu đặc biệt của hành khách đối với các đơn đặt phòng.</div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Chuyến đi & Ngày khởi hành</th>
+                                    <th>Nội dung Yêu cầu / Ghi chú</th>
+                                    <th style="min-width: 120px;">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notes-table-body">
+                                <tr><td colspan="5" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -244,7 +303,7 @@
                 <!-- Preview Section (Hidden by default) -->
                 <div id="cruise-preview-section" style="display: none; background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; overflow-y: auto;">
                     <div style="font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;" id="preview-title">Tên Du Thuyền</div>
-                    <div style="color: #64748b; margin-bottom: 24px; font-size: 1.1rem;">📍 <span id="preview-dest">Vịnh Hạ Long</span> • 🛏️ <span id="preview-cabins">20</span> phòng</div>
+                    <div style="color: #64748b; margin-bottom: 24px; font-size: 1.1rem;"><img src="/images/Direction.svg" alt="Location" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"> <span id="preview-dest">Vịnh Hạ Long</span> • 🛏️ <span id="preview-cabins">20</span> phòng</div>
                     <div style="font-size: 1.1rem; color: #334155; font-style: italic; border-left: 4px solid var(--primary); padding-left: 16px; margin-bottom: 32px; line-height: 1.6;" id="preview-shortdesc">Mô tả ngắn gọn...</div>
                     <div style="line-height: 1.8; color: #1e293b;" id="preview-desc">Nội dung chi tiết...</div>
                 </div>
@@ -253,18 +312,20 @@
             <div style="padding: 24px 32px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 16px; background: #f8fafc;">
                 <button class="btn btn-outline" style="padding: 10px 24px; font-weight: 600;" onclick="document.getElementById('cruiseModal').style.display='none'">Hủy bỏ</button>
                 <button class="btn btn-primary" id="btn-submit-cruise" style="padding: 10px 32px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; gap: 8px;" onclick="window.saveCruise()">
-                    <span>🚀 Đăng Tải Lên Website</span>
+                    <span>Đăng Tải Lên Website</span>
                 </button>
             </div>
         </div>
     </div>
+    </div>
 
 
-    
+    <footer class="main-footer"></footer>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script src="/js/popup.js"></script>
     <script src="/js/auth.js"></script>
-
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

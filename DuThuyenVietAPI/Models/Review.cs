@@ -23,6 +23,8 @@ public partial class Review
 
     public string StaffReply { get; set; }
 
+    public string StaffReplyUserId { get; set; }
+
     public virtual Booking Booking { get; set; }
 
     public virtual Cruise Cruise { get; set; }

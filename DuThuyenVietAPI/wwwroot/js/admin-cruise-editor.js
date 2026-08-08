@@ -416,4 +416,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target === this) this.classList.remove('active');
         });
     });
+
+    // Sync dynamic breadcrumb title
+    const checkNameInterval = setInterval(() => {
+        const editorTitleEl = document.getElementById('editor-title');
+        if (editorTitleEl && editorTitleEl.innerText && editorTitleEl.innerText !== 'Thêm Du Thuyền Mới') {
+            const breadcrumbName = document.getElementById('breadcrumb-editor-title');
+            if (breadcrumbName) {
+                breadcrumbName.innerText = editorTitleEl.innerText;
+            }
+            clearInterval(checkNameInterval);
+        }
+    }, 500);
+    setTimeout(() => clearInterval(checkNameInterval), 10000);
 });

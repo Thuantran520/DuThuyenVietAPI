@@ -1,0 +1,37 @@
+/* ==========================================================================
+   DuThuyenViet - Checkout Page Styles
+   ========================================================================== */
+
+.checkout-box {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--white);
+    padding: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: center;
+}
+.price-total {
+    font-size: 2.5rem;
+    color: #ef4444;
+    font-weight: 700;
+    margin: 20px 0;
+}
+.payment-methods {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    justify-content: center;
+}
+.payment-method {
+    border: 2px solid var(--border);
+    padding: 15px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.payment-method.selected {
+    border-color: var(--primary);
+    background: var(--bg-light);
+}

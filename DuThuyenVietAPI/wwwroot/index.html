@@ -6,16 +6,10 @@
     <title>Trang Chủ - Du Thuyền Việt</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <a href="/index.html" class="logo">DuThuyenViet</a>
-            <nav id="topNav">
-                <a href="/search.html">Tìm Du Thuyền</a>
-            </nav>
-        </div>
-    </header>
+    <header class="main-header"></header>
 
     <section class="hero-section">
         <div class="container text-center">
@@ -49,46 +43,9 @@
         });
     </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('auth_token');
-            const nav = document.getElementById('topNav');
-            if (nav) {
-                if (token) {
-                    let isAdmin = false;
-                    try {
-                        const jwtData = JSON.parse(atob(token.split('.')[1]));
-                        const role = jwtData['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '';
-                        if (role.includes('Admin') || role.includes('Manager') || role.includes('Staff')) {
-                            isAdmin = true;
-                        }
-                    } catch (e) {}
+    <footer class="main-footer"></footer>
 
-                    let adminLink = '';
-                    if (isAdmin) {
-                        adminLink = `<a href="/admin/profile.html" style="color: #f59e0b; font-weight: 600;">Quản trị</a>`;
-                    }
-
-                    nav.innerHTML += `
-                        ${adminLink}
-                        <a href="/history.html">Lịch sử</a>
-                        <a href="/profile.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">👤 Tài khoản</a>
-                        <a href="#" id="btnLogoutBtn" style="color: #ef4444;">Đăng xuất</a>
-                    `;
-                    document.getElementById('btnLogoutBtn').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        localStorage.removeItem('auth_token');
-                        window.location.reload();
-                    });
-                } else {
-                    nav.innerHTML += `
-                        <a href="/login.html" style="font-weight: 600;">Đăng nhập</a>
-                        <a href="/register.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Đăng ký</a>
-                    `;
-                }
-            }
-        });
-    </script>
-
+    <script src="/js/popup.js"></script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

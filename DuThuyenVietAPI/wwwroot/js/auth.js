@@ -227,6 +227,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                         loadAdminBookings();
                     }
                     
+                    const tabNotesNav = document.getElementById('tab-notes-nav');
+                    if (tabNotesNav && (isAdmin || isManager || isStaff)) {
+                        tabNotesNav.style.display = 'block';
+                    }
+                    
                     const tabCruisesNav = document.getElementById('tab-cruises-nav');
                     if (tabCruisesNav && (isAdmin || isManager || isStaff)) {
                         tabCruisesNav.style.display = 'block';
@@ -254,10 +259,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
+                tabContents.forEach(c => {
+                    c.classList.remove('active');
+                    c.style.display = ''; // clear inline display:none so CSS class works
+                });
                 
                 tab.classList.add('active');
-                document.getElementById(tab.getAttribute('data-target')).classList.add('active');
+                const targetEl = document.getElementById(tab.getAttribute('data-target'));
+                if (targetEl) targetEl.classList.add('active');
             });
         });
 
@@ -361,6 +370,52 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
+        // --- Change Password Form Submit ---
+        window.changePasswordSubmit = async () => {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            if (newPassword !== confirmNewPassword) {
+                Popup.show('Lỗi', 'Mật khẩu mới và xác nhận mật khẩu mới không khớp!', 'error');
+                return;
+            }
+
+            const btnSubmit = document.querySelector('#changePasswordForm button[type="submit"]');
+            const originalText = btnSubmit ? btnSubmit.innerText : 'Lưu mật khẩu mới';
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerText = 'Đang đổi...';
+            }
+
+            try {
+                const response = await fetch('/api/account/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ oldPassword, newPassword })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    Popup.show('Thành công', 'Đổi mật khẩu thành công!', 'success');
+                    document.getElementById('changePasswordForm').reset();
+                } else {
+                    Popup.show('Lỗi', data.message || 'Thay đổi mật khẩu thất bại.', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            } finally {
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = originalText;
+                }
+            }
+        };
+
         // --- Fetch Admin Bookings Data ---
         async function loadAdminBookings() {
             try {
@@ -397,6 +452,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     let totalRevenue = 0;
                     let uniqueCustomers = new Set();
                     let totalOrders = 0;
+                    let totalNotes = 0;
 
                     Object.values(grouped).forEach(b => {
                         if (b.status === 'Confirmed') {
@@ -404,6 +460,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         }
                         if (b.contactPhone) uniqueCustomers.add(b.contactPhone);
                         totalOrders++;
+                        if (b.note && b.note.trim() !== '') totalNotes++;
                     });
 
                     const elRev = document.getElementById('dash-revenue');
@@ -413,6 +470,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                     if (elCus) elCus.innerText = uniqueCustomers.size.toString();
                     if (elBook) elBook.innerText = totalOrders.toString();
 
+                    // Update notes dashboard card count (no badge on tab)
+                    const elNotes = document.getElementById('dash-notes');
+                    if (elNotes) elNotes.innerText = totalNotes.toString();
 
                     Object.values(grouped).forEach(b => {
                         let statusHtml = '';
@@ -437,7 +497,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                                 ${b.bookingCode}
                                 <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
                             </td>
-                            <td>${b.contactName}<br><small class="text-muted">${b.contactPhone}</small></td>
+                            <td>
+                                ${b.contactName}<br>
+                                <small class="text-muted">${b.contactPhone}</small>
+                                ${b.note ? `<br><small style="color:#0d9488; font-style:italic;">📝 ${b.note}</small>` : ''}
+                            </td>
                             <td>${b.cruiseName}<br><small class="text-muted">${b.items.length} loại phòng</small></td>
                             <td style="font-weight: 600; color: #ef4444;">${formatPrice(b.totalPrice)}</td>
                             <td>${statusHtml}</td>
@@ -455,6 +519,67 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if(tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Lỗi: ${err.message}</td></tr>`;
             }
         }
+
+        // --- Notes / Special Requests Table ---
+        function loadNotesTable() {
+            const tbody = document.getElementById('notes-table-body');
+            if (!tbody) return;
+
+            // Re-use adminGroupedBookings if already loaded
+            const grouped = window.adminGroupedBookings;
+            if (!grouped) {
+                // Not loaded yet — wait until loadAdminBookings resolves
+                // We listen for a custom event dispatched after loading
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Vui lòng vào tab Quản lý Đặt Phòng trước.</td></tr>';
+                return;
+            }
+
+            const withNotes = Object.values(grouped).filter(b => b.note && b.note.trim() !== '');
+            if (withNotes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">Không có yêu cầu đặc biệt nào từ khách hàng.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            withNotes.forEach(b => {
+                let statusHtml = '';
+                if (b.status === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
+                else if (b.status === 'AwaitingConfirmation') statusHtml = '<span class="role-badge" style="background:#e0e7ff; color:#4338ca;">Chờ xác nhận</span>';
+                else if (b.status === 'Confirmed') statusHtml = '<span class="role-badge" style="background:#dcfce3; color:#16a34a;">Thành công</span>';
+                else if (b.status === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
+                else statusHtml = b.status;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 500;">
+                        ${b.bookingCode}
+                        <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
+                    </td>
+                    <td>
+                        <strong>${b.contactName}</strong><br>
+                        <small class="text-muted">${b.contactPhone}</small>
+                    </td>
+                    <td>
+                        ${b.cruiseName}<br>
+                        <small class="text-muted">${b.departureDate ? new Date(b.departureDate).toLocaleDateString('vi-VN') : 'Chưa xác định'}</small>
+                    </td>
+                    <td>
+                        <div style="background: #f0fdfa; border-left: 3px solid #0d9488; padding: 10px 12px; border-radius: 6px; color: #0f172a; font-size: 0.95rem; line-height: 1.5;">
+                            📝 ${b.note}
+                        </div>
+                    </td>
+                    <td>${statusHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Trigger notes table load when tab-notes is clicked
+        document.querySelectorAll('.tab').forEach(tab => {
+            if (tab.getAttribute('data-target') === 'tab-notes') {
+                tab.addEventListener('click', () => loadNotesTable());
+            }
+        });
         
         window.updateBookingGroupStatus = async function(bookingCode, newStatus) {
             const grp = window.adminGroupedBookings[bookingCode];
@@ -526,7 +651,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                 <h3 class="cruise-title"><a href="/cruise-detail.html?id=${c.cruiseId}">${c.name}</a></h3>
                                 <div class="cruise-meta mb-3">
                                     <span class="rating">⭐ ${c.averageRating} (${c.reviewCount})</span>
-                                    <span class="destination">📍 ${c.destinationName}</span>
+                                    <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${c.destinationName}</span>
                                 </div>
                                 <div class="cruise-footer" style="display: flex; gap: 8px;">
                                     <a href="/admin/cruise-editor.html?id=${c.cruiseId}" style="flex: 1; text-align: center; border-radius: 6px; padding: 8px; border: none; font-size: 14px; cursor: pointer; background-color: var(--primary); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center;">Sửa</a>
@@ -787,7 +912,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 window.downloadInvoiceDirectly = function(code) {
     try {
-        const grp = window.adminGroupedBookings ? window.adminGroupedBookings[code] : null;
+        const grp = (window.adminGroupedBookings && window.adminGroupedBookings[code]) || 
+                    (window.customerGroupedBookings && window.customerGroupedBookings[code]) || null;
         if(!grp) {
             alert("Không tìm thấy dữ liệu hóa đơn. Vui lòng tải lại trang.");
             return;
@@ -817,6 +943,7 @@ window.downloadInvoiceDirectly = function(code) {
                 <div><strong>Ngày tạo:</strong> ${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</div>
                 <div><strong>Trạng thái:</strong> <span style="color:${firstItem.status === 'Confirmed' ? '#16a34a' : '#ea580c'}; font-weight:600;">${firstItem.status === 'Confirmed' ? 'Đã thanh toán' : (firstItem.status === 'Cancelled' ? 'Đã hủy' : 'Chờ xác nhận')}</span></div>
                 <div><strong>Xác nhận bởi:</strong> ${approver}</div>
+                ${grp.note ? `<div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;"><strong>📝 Ghi chú:</strong> <span style="font-style: italic; color: #475569;">${grp.note}</span></div>` : ''}
             </div>
             
             <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Chi tiết phòng</h4>

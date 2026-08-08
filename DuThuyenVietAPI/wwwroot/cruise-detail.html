@@ -6,17 +6,21 @@
     <title>Chi Tiết Du Thuyền - Du Thuyền Việt</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
 </head>
 <body>
-    <header class="main-header">
+    <header class="main-header"></header>
+
+    <div class="breadcrumbs-container">
         <div class="container">
-            <a href="/index.html" class="logo">DuThuyenViet</a>
-            <nav id="topNav">
-                <a href="/search.html">Tìm Du Thuyền</a>
-            </nav>
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li id="breadcrumb-search-item"><a href="/search.html">Du thuyền</a></li>
+                <li class="active" id="breadcrumb-cruise-name">Chi tiết du thuyền</li>
+            </ul>
         </div>
-    </header>
+    </div>
 
     <div class="container py-5">
         <div id="cruiseDetailContainer">
@@ -24,40 +28,12 @@
         </div>
     </div>
 
+    <footer class="main-footer"></footer>
+
     <script src="/js/popup.js"></script>
     <script src="/js/cruise.js"></script>
     <script src="/js/review.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCruiseDetail();
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('auth_token');
-            const nav = document.getElementById('topNav');
-            if (nav) {
-                if (token) {
-                    nav.innerHTML += `
-                        <a href="/history.html">Lịch sử</a>
-                        <a href="/profile.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">👤 Tài khoản</a>
-                        <a href="#" id="btnLogoutBtn" style="color: #ef4444;">Đăng xuất</a>
-                    `;
-                    document.getElementById('btnLogoutBtn').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        localStorage.removeItem('auth_token');
-                        window.location.reload();
-                    });
-                } else {
-                    nav.innerHTML += `
-                        <a href="/login.html" style="font-weight: 600;">Đăng nhập</a>
-                        <a href="/register.html" style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Đăng ký</a>
-                    `;
-                }
-            }
-        });
-    </script>
-
+    <script src="/js/cruise-detail-page.js"></script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

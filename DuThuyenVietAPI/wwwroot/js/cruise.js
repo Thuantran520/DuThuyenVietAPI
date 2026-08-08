@@ -174,12 +174,11 @@ async function loadCruiseDetail() {
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
             schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item mb-3 p-3" id="schedule-box-${s.scheduleId}" style="margin-bottom: 16px; transition: all 0.3s ease; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.selectSchedule(${s.scheduleId})">
-                    <div>
-                        <div style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 4px;">📅 ${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
-                        <div style="color: #64748b; font-size: 0.95rem;">⏱️ ${s.durationLabel}</div>
-                    </div>
-                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 8px 16px; font-size: 0.95rem; border-radius: 8px; border: 1px solid var(--primary); color: var(--primary); background: transparent; font-weight: 600; pointer-events: none;">Chọn</button>
+                <div class="schedule-item" id="schedule-box-${s.scheduleId}" style="position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; border-radius: 16px; cursor: pointer; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);" onclick="window.selectSchedule(${s.scheduleId})">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; border-top-left-radius: 16px; border-top-right-radius: 16px; background: linear-gradient(90deg, var(--primary), #34d399); opacity: 0; transition: opacity 0.3s;" class="schedule-highlight"></div>
+                    <div style="font-weight: 800; color: var(--primary); font-size: 1.4rem; margin-bottom: 8px; font-family: 'Playfair Display', serif; letter-spacing: 0.5px;">${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
+                    <div style="color: #475569; font-size: 0.9rem; margin-bottom: 20px; background: #f1f5f9; padding: 6px 14px; border-radius: 20px; font-weight: 600;">${s.durationLabel}</div>
+                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 10px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.95rem;">Chọn lịch này</button>
                 </div>
             `).join('');
         } else {
@@ -211,10 +210,10 @@ async function loadCruiseDetail() {
                 <div class="cruise-meta d-flex justify-content-center align-items-center" style="font-size: 1.1rem; gap: 20px; color: #555;">
                     <span class="rating">⭐ <strong>${cruise.averageRating}</strong> (${cruise.reviewCount} đánh giá)</span>
                     <span>•</span>
-                    <span class="destination">📍 ${cruise.destinationName}</span>
+                    <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${cruise.destinationName}</span>
                 </div>
                 <div class="cruise-itinerary mt-3" style="font-size: 1.15rem; color: var(--primary); font-weight: 500;">
-                    ⚓ ${cruise.shortDescription || 'Chưa cập nhật hành trình'}
+                    <img src="/images/Direction.svg" alt="Direction" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 6px;"> ${cruise.shortDescription || 'Chưa cập nhật hành trình'}
                 </div>
             </div>
             
@@ -269,9 +268,9 @@ async function loadCruiseDetail() {
 
                         <div class="schedule-section" style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #eee;">
                             <h4 class="mb-3" style="font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                📅 Chọn Lịch Khởi Hành
+                                Chọn Lịch Khởi Hành
                             </h4>
-                            <div class="schedule-list" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                            <div class="schedule-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; max-height: 450px; overflow-y: auto; padding: 4px; margin: 0 -4px;">
                                 ${schedulesHtml}
                             </div>
                         </div>
@@ -300,31 +299,49 @@ async function loadCruiseDetail() {
 window.selectedScheduleId = null;
 
 window.selectSchedule = function(scheduleId) {
-    window.selectedScheduleId = scheduleId;
+    const isDeselecting = window.selectedScheduleId === scheduleId;
     
     // Reset all
     document.querySelectorAll('.schedule-item').forEach(el => {
-        el.style.borderColor = '#e2e8f0';
-        el.style.background = 'transparent';
+        el.style.border = '1px solid #e2e8f0';
+        el.style.background = '#fff';
+        el.style.transform = 'translateY(0)';
+        el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+        const hl = el.querySelector('.schedule-highlight');
+        if (hl) hl.style.opacity = '0';
         const btn = el.querySelector('button');
         if(btn) {
             btn.className = 'btn-outline';
-            btn.innerText = 'Chọn';
+            btn.innerText = 'Chọn lịch này';
             btn.style.background = 'transparent';
-            btn.style.color = 'var(--primary)';
+            btn.style.color = '#475569';
+            btn.style.borderColor = '#cbd5e1';
         }
     });
+
+    if (isDeselecting) {
+        window.selectedScheduleId = null;
+        window.updateTotalSelectedPrice();
+        return;
+    }
+
+    window.selectedScheduleId = scheduleId;
 
     // Highlight selected
     const box = document.getElementById(`schedule-box-${scheduleId}`);
     const btn = document.getElementById(`btn-schedule-${scheduleId}`);
     if(box && btn) {
-        box.style.borderColor = 'var(--primary)';
-        box.style.background = '#f0fdf4';
+        box.style.border = '1px solid var(--primary)';
+        box.style.background = '#f8fafc';
+        box.style.transform = 'translateY(-6px)';
+        box.style.boxShadow = '0 12px 24px -8px rgba(16, 185, 129, 0.3)';
+        const hl = box.querySelector('.schedule-highlight');
+        if (hl) hl.style.opacity = '1';
         btn.className = 'btn-primary';
         btn.innerText = 'Đã chọn ✓';
         btn.style.background = 'var(--primary)';
         btn.style.color = 'white';
+        btn.style.borderColor = 'var(--primary)';
         
         // Update cabin availability based on schedule inventory
         const schedule = window.cruiseSchedules.find(s => s.scheduleId === scheduleId);
@@ -461,7 +478,7 @@ function renderCruiseCard(cruise) {
                 <h3 class="cruise-title"><a href="/cruise-detail.html?id=${cruise.cruiseId}">${cruise.name}</a></h3>
                 <div class="cruise-meta mb-3">
                     <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount})</span>
-                    <span class="destination">📍 ${cruise.destinationName}</span>
+                    <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${cruise.destinationName}</span>
                 </div>
                 <div class="cruise-footer">
                     <span class="price">Từ ${formatPrice(cruise.startingPrice)}</span>

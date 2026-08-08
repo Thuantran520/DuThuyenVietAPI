@@ -196,4 +196,29 @@ public class AccountController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        if (string.IsNullOrEmpty(email)) return Unauthorized();
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
+
+        if (string.IsNullOrEmpty(request.OldPassword) || string.IsNullOrEmpty(request.NewPassword))
+        {
+            return BadRequest(new { message = "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới." });
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, request.OldPassword, request.NewPassword);
+        if (result.Succeeded)
+        {
+            return Ok(new { message = "Đổi mật khẩu thành công!" });
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return BadRequest(new { message = $"Đổi mật khẩu thất bại: {errors}" });
+    }
 }

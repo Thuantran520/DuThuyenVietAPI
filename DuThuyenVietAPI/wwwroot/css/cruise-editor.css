@@ -1,0 +1,160 @@
+/* ==========================================================================
+   DuThuyenViet - Admin Cruise Editor Page Styles
+   ========================================================================== */
+
+body { background-color: #f8fafc; }
+
+.editable-field {
+    border: 1px dashed #cbd5e1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.6);
+    transition: all 0.2s;
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    font-weight: inherit;
+}
+.editable-field:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+}
+
+.admin-toolbar {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 14px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    z-index: 100;
+}
+
+.section-card {
+    background: white;
+    padding: 36px 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    margin-bottom: 28px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.form-group-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label-editor {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.form-input-editor {
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+.form-input-editor:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Modal styles overrides for cruise editor */
+.inline-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+.inline-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.inline-modal {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+.inline-modal-overlay.active .inline-modal {
+    transform: translateY(0);
+}
+.modal-title {
+    padding: 20px 24px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+}
+.modal-actions {
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+.form-group-modal {
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.form-row {
+    display: flex;
+    gap: 16px;
+    padding: 0 24px;
+}
+.form-row .form-group-modal {
+    flex: 1;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Badges for schedules list */
+.badge-available { background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+.badge-full { background: #fef9c3; color: #a16207; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+.badge-closed { background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
