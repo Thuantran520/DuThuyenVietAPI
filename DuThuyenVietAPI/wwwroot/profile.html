@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ Khách hàng - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <script>
+        // Instant check to prevent layout flash
+        if (!localStorage.getItem('auth_token')) { window.location.replace('/login.html'); }
+    </script>
+</head>
+<body>
+    <header class="main-header" id="main-header" style="opacity: 0; transition: opacity 0.3s ease;"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li class="active">Hồ sơ khách hàng</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="container">
+            <div id="loader">
+                <img src="/images/loading.gif" style="width: 48px; height: 48px; margin: 0 auto; display: block;" alt="Loading...">
+                <p style="margin-top: 16px; color: #6b7280; font-style: italic;">Đang chuẩn bị hành trình...</p>
+            </div>
+
+            <div id="main-content" style="display: none;">
+                <div class="tabs">
+                    <div class="tab active" data-target="tab-profile">Hồ sơ Cá nhân</div>
+                    <div class="tab" data-target="tab-password">Đổi Mật khẩu</div>
+                </div>
+
+                <!-- TAB: HỒ SƠ -->
+                <div class="tab-content active" id="tab-profile">
+                    <div class="card profile-layout">
+                        <div class="avatar-section">
+                            <label for="avatarUpload" class="avatar" id="avatarDisplay">
+                                <span id="avatarLetter">U</span>
+                                <img id="avatarImage" src="" alt="Avatar">
+                            </label>
+                            <input type="file" id="avatarUpload" accept="image/*">
+                            <div style="font-size: 13px; color: #6b7280; margin-top: 8px;" id="avatarStatus">Nhấn để thay ảnh</div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <div class="card-title">Thông tin cơ bản</div>
+                            <div class="info-row">
+                                <div class="info-label">Họ và tên</div>
+                                <div class="info-value">
+                                    <span id="val-fullname">Chưa cập nhật</span>
+                                    <div class="form-group" id="form-fullname">
+                                        <input type="text" id="input-fullname" placeholder="Nhập họ tên">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Tên đăng nhập</div>
+                                <div class="info-value"><span id="val-username">Đang tải...</span></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Email</div>
+                                <div class="info-value"><span id="val-email">email@domain.com</span></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Số điện thoại</div>
+                                <div class="info-value">
+                                    <span id="val-phone">Chưa cập nhật</span>
+                                    <div class="form-group" id="form-phone">
+                                        <input type="text" id="input-phone" placeholder="Nhập số điện thoại">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Loại tài khoản</div>
+                                <div class="info-value" id="val-roles">
+                                    <!-- Roles -->
+                                </div>
+                            </div>
+
+                            <div class="actions" id="view-actions">
+                                <button class="btn btn-primary" id="btnEditProfile">Chỉnh sửa hồ sơ</button>
+                            </div>
+                            <div class="actions" id="edit-actions" style="display: none;">
+                                <button class="btn btn-outline" id="btnCancelEdit">Hủy</button>
+                                <button class="btn btn-primary" id="btnSaveProfile">Lưu thay đổi</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: ĐỔI MẬT KHẨU -->
+                <div class="tab-content" id="tab-password">
+                    <div class="card" style="max-width: 500px; margin: 0 auto; padding: 30px;">
+                        <div class="card-title" style="margin-bottom: 20px;">Thay đổi mật khẩu</div>
+                        <form id="changePasswordForm" onsubmit="event.preventDefault(); window.changePasswordSubmit();">
+                            <div class="pw-form-group">
+                                <label>Mật khẩu hiện tại</label>
+                                <input type="password" id="oldPassword" required placeholder="Nhập mật khẩu hiện tại">
+                            </div>
+                            <div class="pw-form-group">
+                                <label>Mật khẩu mới</label>
+                                <input type="password" id="newPassword" required placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">
+                            </div>
+                            <div class="pw-form-group" style="margin-bottom: 24px;">
+                                <label>Xác nhận mật khẩu mới</label>
+                                <input type="password" id="confirmNewPassword" required placeholder="Nhập lại mật khẩu mới">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="padding: 12px; width: 100%; border-radius: 8px; font-size: 15px;">Lưu mật khẩu mới</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer"></footer>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/navigation.js"></script>
+</body>
+</html>

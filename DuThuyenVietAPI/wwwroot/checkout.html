@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/checkout.css">
+</head>
+<body>
+    <header class="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li id="breadcrumb-search-item"><a href="/search.html">Du thuyền</a></li>
+                <li><a href="#" id="bc-cruise-link">Chi tiết du thuyền</a></li>
+                <li class="active" id="bc-cruise-active">Thanh toán</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="checkout-box">
+            <h1 class="mb-2">Thanh Toán</h1>
+            <p class="text-muted mb-4" id="checkoutBookingCode">Mã đơn: ...</p>
+            
+            <div id="countdownTimer" style="display:none; background: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; padding: 12px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; font-size: 14px; text-align: center; align-items: center; justify-content: center;"></div>
+            
+            <div id="checkoutDetails" class="text-left mb-4" style="text-align: left; background: var(--bg-light); padding: 20px; border-radius: 8px;">
+                <!-- Info -->
+            </div>
+            
+            <p>Tổng tiền cần thanh toán</p>
+            <div class="price-total" id="checkoutTotal">0 ₫</div>
+            
+            <h3 class="mb-3 mt-4">Chọn phương thức thanh toán</h3>
+            <div class="payment-methods" id="paymentMethods">
+                <div class="payment-method selected" data-method="BankTransfer">Chuyển khoản NH</div>
+                <div class="payment-method" data-method="Cash">Tiền mặt / Thu hộ</div>
+            </div>
+            
+            <div id="paymentInstructions" class="text-left mb-4" style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px dashed #cbd5e1; display: none;">
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button id="btnCancelCheckout" class="btn-secondary" style="flex: 1; font-size: 1.1rem; padding: 15px; border-radius: 8px; font-weight: 600; color: #ef4444; border: 1px solid #fecaca; background: transparent; transition: all 0.2s; cursor: pointer; display: block; width: 100%;">Hủy đơn đặt phòng</button>
+                <button id="btnPay" class="btn-primary" style="flex: 1; font-size: 1.1rem; padding: 15px; border-radius: 8px; font-weight: 600; display: block; width: 100%;">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/checkout-page.js"></script>
+
+    <footer class="main-footer"></footer>
+
+    <script src="/js/navigation.js"></script>
+</body>
+</html>

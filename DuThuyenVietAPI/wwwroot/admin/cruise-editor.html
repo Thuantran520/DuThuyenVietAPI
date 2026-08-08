@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Du Thuyền - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/cruise-editor.css">
+</head>
+<body>
+    <header class="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Admin Dashboard</a></li>
+                <li class="active" id="breadcrumb-editor-title">Thêm Du Thuyền Mới</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- STICKY TOOLBAR -->
+    <div class="admin-toolbar">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="font-weight: 700; font-size: 1.1rem; color: #0f172a;" id="editor-title">Thêm Du Thuyền Mới</span>
+            </div>
+            <button class="btn btn-primary" id="btn-save-cruise" style="padding: 10px 28px; font-weight: 700; font-size: 0.95rem;">
+                💾 Lưu Thông Tin Cơ Bản
+            </button>
+        </div>
+    </div>
+
+    <div class="container py-5">
+
+        <!-- ===== SECTION 1: THÔNG TIN CHÍNH ===== -->
+        <div class="section-card">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+                <div>
+                    <div class="form-group-modal">
+                        <label class="form-label" style="font-size: 0.8rem;">TÊN DU THUYỀN</label>
+                        <input type="text" id="edit-name" class="editable-field" style="font-size: 2rem; font-family: 'Playfair Display', serif; font-weight: 700; color: #0f172a;" placeholder="VD: Ambassador Cruise">
+                    </div>
+
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 160px;">
+                            <label class="form-label" style="font-size: 0.8rem;"><img src="/images/Direction.svg" alt="Location" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"> KHU VỰC</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="edit-dest" class="editable-field" style="width: 100%;">
+                                    <option value="">Đang tải...</option>
+                                </select>
+                                <button id="btn-add-dest" title="Thêm khu vực mới" style="padding: 8px 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">+ Thêm</button>
+                                <button id="btn-del-dest" title="Xóa khu vực được chọn" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">Xóa</button>
+                            </div>
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label class="form-label" style="font-size: 0.8rem;">🛏️ TỔNG SỐ PHÒNG</label>
+                            <input type="number" id="edit-cabins" class="editable-field" value="20" min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-group-modal">
+                        <label class="form-label" style="font-size: 0.8rem;">📝 GIỚI THIỆU TÓM TẮT</label>
+                        <textarea id="edit-shortdesc" class="editable-field" rows="3" placeholder="Mô tả ngắn gọn, hấp dẫn về du thuyền..."></textarea>
+                    </div>
+
+                    <div class="form-group-modal">
+                        <label class="form-label" style="font-size: 0.8rem;">📄 MÔ TẢ CHI TIẾT (Hỗ trợ HTML)</label>
+                        <textarea id="edit-desc" class="editable-field" rows="10" placeholder="Bài viết chi tiết, hỗ trợ thẻ HTML như &lt;b&gt;, &lt;ul&gt;, &lt;h4&gt;..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Ảnh đại diện -->
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem;">🖼️ ẢNH ĐẠI DIỆN (URL)</label>
+                    <input type="text" id="edit-thumb" class="editable-field" style="margin-bottom: 12px; font-size: 13px;" placeholder="https://example.com/image.jpg"
+                        oninput="document.getElementById('preview-thumb').src = this.value || '/images/default-cruise.jpg'">
+                    <img id="preview-thumb" src="/images/default-cruise.jpg"
+                        style="width: 100%; height: 240px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);"
+                        onerror="this.src='/images/default-cruise.jpg'">
+                    <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 8px; text-align: center;">Xem trước ảnh đại diện</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SECTION 2: LOẠI PHÒNG ===== -->
+        <div class="section-card" id="section-cabins" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">🛏️ Loại Phòng (Cabin Types)</h2>
+                <button class="btn btn-primary" id="btn-add-cabin" style="padding: 9px 20px; font-size: 0.9rem;">+ Thêm Loại Phòng</button>
+            </div>
+            <div class="cabin-grid" id="cabin-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🛏️</div>
+                    <p>Chưa có loại phòng nào.<br>Nhấn <strong>"+ Thêm Loại Phòng"</strong> để bắt đầu.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SECTION 3: LỊCH TRÌNH ===== -->
+        <div class="section-card" id="section-schedules" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">🗓️ Lịch Trình Khởi Hành</h2>
+                <button class="btn btn-primary" id="btn-add-schedule" style="padding: 9px 20px; font-size: 0.9rem;">+ Thêm Lịch Trình</button>
+            </div>
+            <div class="table-responsive">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày Khởi Hành</th>
+                            <th>Ngày Trở Về</th>
+                            <th>Thời Gian</th>
+                            <th>Trạng Thái</th>
+                            <th style="text-align: right;">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-list">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 40px;">
+                                <div style="font-size: 2rem; margin-bottom: 8px;">🗓️</div>
+                                Chưa có lịch trình nào.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== MODAL: ADD DESTINATION ===== -->
+    <div class="inline-modal-overlay" id="dest-modal">
+        <div class="inline-modal" style="max-width: 420px;">
+            <div class="modal-title">➕ Thêm Khu Vực Mới</div>
+            <div class="form-group-modal">
+                <label class="form-label">Tên khu vực</label>
+                <input type="text" id="dest-name" class="form-input" placeholder="VD: Vịnh Bái Tử Long">
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Mô tả (tuỳ chọn)</label>
+                <textarea id="dest-desc" class="form-input" rows="2" placeholder="Mô tả ngắn về khu vực..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="document.getElementById('dest-modal').classList.remove('active')">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-dest">💾 Tạo Khu Vực</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CABIN TYPE ===== -->
+    <div class="inline-modal-overlay" id="cabin-modal">
+        <div class="inline-modal">
+            <div class="modal-title" id="cabin-modal-title">Thêm Loại Phòng</div>
+            <input type="hidden" id="cabin-id">
+            <div class="form-group-modal">
+                <label class="form-label">Tên loại phòng</label>
+                <input type="text" id="cabin-name" class="form-input" placeholder="VD: Phòng Deluxe, Suite, Standard...">
+            </div>
+            <div class="form-row">
+                <div class="form-group-modal">
+                    <label class="form-label">Số khách tối đa</label>
+                    <input type="number" id="cabin-occupancy" class="form-input" value="2" min="1">
+                </div>
+                <div class="form-group-modal">
+                    <label class="form-label">Tổng số phòng</label>
+                    <input type="number" id="cabin-rooms" class="form-input" value="5" min="1">
+                </div>
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Giá cơ bản (VNĐ/đêm)</label>
+                <input type="number" id="cabin-price" class="form-input" value="0" min="0" step="100000">
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Mô tả phòng</label>
+                <textarea id="cabin-desc" class="form-input" rows="3" placeholder="Mô tả tiện nghi, diện tích, view..."></textarea>
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Ảnh phòng (URL)</label>
+                <input type="text" id="cabin-image" class="form-input" placeholder="https://...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="document.getElementById('cabin-modal').classList.remove('active')">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-cabin">💾 Lưu Loại Phòng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: SCHEDULE ===== -->
+    <div class="inline-modal-overlay" id="schedule-modal">
+        <div class="inline-modal">
+            <div class="modal-title" id="schedule-modal-title">Thêm Lịch Trình</div>
+            <input type="hidden" id="schedule-id">
+            <div class="form-row">
+                <div class="form-group-modal">
+                    <label class="form-label">Ngày Khởi Hành</label>
+                    <input type="date" id="schedule-departure" class="form-input">
+                </div>
+                <div class="form-group-modal">
+                    <label class="form-label">Ngày Trở Về</label>
+                    <input type="date" id="schedule-return" class="form-input">
+                </div>
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Nhãn thời gian (VD: "2N1Đ", "3N2Đ")</label>
+                <input type="text" id="schedule-duration" class="form-input" placeholder="2N1Đ">
+            </div>
+            <div class="form-group-modal">
+                <label class="form-label">Trạng thái</label>
+                <select id="schedule-status" class="form-input">
+                    <option value="Available">Còn chỗ</option>
+                    <option value="Full">Đầy chỗ</option>
+                    <option value="Closed">Đã đóng</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="document.getElementById('schedule-modal').classList.remove('active')">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-schedule">💾 Lưu Lịch Trình</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer"></footer>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/admin-cruise-editor.js"></script>
+    <script src="/js/navigation.js"></script>
+</body>
+</html>
