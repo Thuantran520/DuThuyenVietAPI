@@ -99,9 +99,9 @@ public class PromotionsController : ControllerBase
     }
 
     /// <summary>
-    /// Thêm mới mã khuyến mãi (Admin/Staff)
+    /// Thêm mới mã khuyến mãi (Chỉ duy nhất Admin)
     /// </summary>
-    [Authorize(Roles = "Admin,Manager,Staff")]
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> CreatePromotion([FromBody] CreatePromotionDTO dto)
     {
@@ -145,9 +145,9 @@ public class PromotionsController : ControllerBase
     }
 
     /// <summary>
-    /// Lấy toàn bộ danh sách mã khuyến mãi (Admin/Staff)
+    /// Lấy toàn bộ danh sách mã khuyến mãi (Chỉ duy nhất Admin)
     /// </summary>
-    [Authorize(Roles = "Admin,Manager,Staff")]
+    [Authorize(Roles = "Admin")]
     [HttpGet("All")]
     public async Task<IActionResult> GetAllPromotions()
     {
