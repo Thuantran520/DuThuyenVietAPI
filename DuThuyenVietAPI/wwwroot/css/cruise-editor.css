@@ -4,23 +4,98 @@
 
 body { background-color: #f8fafc; }
 
-.editable-field {
-    border: 1px dashed #cbd5e1;
-    padding: 6px 10px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.6);
-    transition: all 0.2s;
+.editable-field, .form-input {
     width: 100%;
-    font-family: inherit;
-    font-size: inherit;
-    color: inherit;
-    font-weight: inherit;
+    padding: 12px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
-.editable-field:focus {
+
+.editable-field:hover, .form-input:hover {
+    border-color: #cbd5e1;
+    background-color: #ffffff;
+}
+
+.editable-field:focus, .form-input:focus {
     outline: none;
-    border-color: var(--primary);
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+    border-color: #0d9488;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.01);
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #334155;
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+
+/* Modern Premium Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    user-select: none;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: #ffffff;
+    color: #475569;
+    border: 1.5px solid #cbd5e1;
+}
+
+.btn-outline:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
 }
 
 .admin-toolbar {
@@ -112,25 +187,27 @@ body { background-color: #f8fafc; }
     background: white;
     width: 100%;
     max-width: 600px;
-    border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
-    transform: translateY(20px);
-    transition: transform 0.3s ease;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
 }
 .inline-modal-overlay.active .inline-modal {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 .modal-title {
-    padding: 20px 24px;
+    padding: 24px 28px;
     font-family: 'Playfair Display', serif;
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 700;
     border-bottom: 1px solid #f1f5f9;
     color: #0f172a;
+    background: #f8fafc;
 }
 .modal-actions {
-    padding: 16px 24px;
+    padding: 20px 28px;
     background: #f8fafc;
     border-top: 1px solid #f1f5f9;
     display: flex;
@@ -138,10 +215,10 @@ body { background-color: #f8fafc; }
     gap: 12px;
 }
 .form-group-modal {
-    padding: 12px 24px;
+    padding: 16px 28px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 .form-row {
     display: flex;
@@ -158,3 +235,211 @@ body { background-color: #f8fafc; }
 .badge-available { background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
 .badge-full { background: #fef9c3; color: #a16207; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
 .badge-closed { background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+
+/* ==========================================================================
+   CABIN CARD - HORIZONTAL PREMIUM UI
+   ========================================================================== */
+.cabin-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cabin-card-admin {
+    display: flex;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.cabin-card-admin:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+}
+
+.cabin-card-img-wrapper {
+    width: 240px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.cabin-card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cabin-card-content {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.cabin-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.cabin-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cabin-card-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: right;
+}
+
+.price-unit {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-left: 4px;
+}
+
+.cabin-card-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.detail-item {
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.detail-item strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.detail-divider {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+}
+
+.cabin-card-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    flex: 1;
+}
+
+/* ==========================================================================
+   CABIN CARD ACTIONS & BUTTONS - PREMIUM UI
+   ========================================================================== */
+.cabin-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.cabin-card-actions .btn-sm-action {
+    flex: 1;
+}
+
+.btn-sm-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+/* Edit Button - Soft Emerald Style */
+.btn-edit-sm {
+    background-color: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.btn-edit-sm:hover {
+    background-color: #16a34a;
+    color: white;
+    border-color: #16a34a;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Delete Button - Soft Rose Style */
+.btn-delete-sm {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.btn-delete-sm:hover {
+    background-color: #ef4444;
+    color: white;
+    border-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   SCHEDULE TABLE UI
+   ========================================================================== */
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.schedule-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 16px 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.schedule-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.schedule-table tr:last-child td {
+    border-bottom: none;
+}
+
+.schedule-table tr:hover td {
+    background: #f8fafc;
+}
+
+.schedule-table .btn-sm-action {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}

@@ -81,11 +81,21 @@ public class UsersController : ControllerBase
         bool targetIsAdmin = targetRoles.Contains("Admin");
         bool targetIsManager = targetRoles.Contains("Manager");
 
+        var callerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (callerId == id) return BadRequest(new { message = "Không thể tự xóa tài khoản của chính mình." });
+
         var callerRoles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
         bool isAdmin = callerRoles.Contains("Admin");
+        bool isManager = callerRoles.Contains("Manager");
 
-        if (!isAdmin && (targetIsAdmin || targetIsManager))
-            return Forbid();
+        if (isAdmin && targetIsAdmin) 
+            return StatusCode(403, new { message = "Quản trị viên không thể xóa một Quản trị viên khác." });
+            
+        if (!isAdmin && isManager && targetIsManager) 
+            return StatusCode(403, new { message = "Quản lý không thể xóa một Quản lý khác." });
+            
+        if (!isAdmin && targetIsAdmin) 
+            return StatusCode(403, new { message = "Không có quyền xóa Quản trị viên." });
 
         await _userManager.DeleteAsync(targetUser);
         return Ok(new { message = "Đã xóa user." });

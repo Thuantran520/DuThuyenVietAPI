@@ -23,10 +23,12 @@ Hiện tại toàn bộ code nền tảng đã được đồng bộ chuẩn xá
 **Nhiệm vụ trọng tâm:** Làm cho quy trình "xuống tiền" của khách hàng trở nên cực kỳ mượt mà và chuyên nghiệp.
 * **Về UI/UX (Giao diện):** 
   * Cải tiến trang `checkout.html`: Làm một thanh Tiến trình (Progress bar) ở trên cùng.
+  * Thiết kế form nhập thông tin khách hàng đẹp và có validate.
   * Tích hợp ô nhập mã giảm giá (**Promotions**) ở sidebar trang đặt vé và tự động tính trừ tiền.
 * **Về Backend & Cải tiến:** 
   * Tích hợp cổng thanh toán thực tế (VNPay, MoMo, hoặc PayPal).
   * Viết API tự động gửi **Email xác nhận mã vé** sau khi thanh toán.
+  * **(Cập nhật):** Tích hợp logic **Mã Giảm Giá (Promotions)** vào luồng thanh toán. Xác thực mã và tính lại tổng tiền trực tiếp trên trang Checkout.
 
 **Quy định File được phép chỉnh sửa:**
 * **Backend:** `Controllers/BookingsController.cs`, `Models/Booking.cs`, `DTOs/BookingDTO.cs`
@@ -41,8 +43,10 @@ Hiện tại toàn bộ code nền tảng đã được đồng bộ chuẩn xá
   * Xây dựng giao diện Admin **Quản lý Bài viết (`wwwroot/admin/blog.html`)**.
   * Xây dựng giao diện Admin **Quản lý Mã Khuyến Mãi (`wwwroot/admin/promotions.html`)** (Chỉ Admin có quyền).
 * **Về Backend & Cải tiến:** 
+  * Viết tính năng cho phép khách hàng **upload hình ảnh** khi đánh giá.
   * Xây dựng các API CRUD cho hệ thống Bài viết (`BlogPostsController.cs`).
   * Xây dựng các API CRUD cho hệ thống Mã Khuyến Mãi (`PromotionsController.cs`).
+  * **(Cập nhật):** Xây dựng giao diện Quản trị bài viết cho Admin (Thêm/Sửa/Xóa bài viết).
 
 **Quy định File được phép chỉnh sửa:**
 * **Backend:** `Controllers/ReviewsController.cs`, `Controllers/BlogPostsController.cs`, `Controllers/PromotionsController.cs`

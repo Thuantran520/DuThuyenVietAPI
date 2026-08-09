@@ -3,158 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Khuyến Mãi - Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Quản lý Mã Giảm Giá - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/layout.css">
-    <style>
-        .promo-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-            margin-top: 20px;
-        }
-        .promo-table th, .promo-table td {
-            padding: 16px 20px;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .promo-table th {
-            background: #f8fafc;
-            color: #475569;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-        .promo-badge {
-            background: #dcfce7;
-            color: #15803d;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-block;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/promotions.css">
 </head>
 <body>
     <header class="main-header"></header>
 
-    <div class="container py-5">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="font-size: 1.8rem; font-weight: 700; color: #0f172a;">🎟️ Quản Lý Mã Khuyến Mãi (Admin Only)</h1>
-                <p style="color: #64748b;">Tạo mã giảm giá ưu đãi cho du khách khi đặt tour du thuyền</p>
-            </div>
-            <button class="btn btn-primary" onclick="document.getElementById('promo-modal').classList.add('active')">+ Tạo Mã Mới</button>
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Admin Dashboard</a></li>
+                <li class="active">Quản lý Mã Giảm Giá</li>
+            </ul>
         </div>
-
-        <table class="promo-table">
-            <thead>
-                <tr>
-                    <th>Mã Đơn (Code)</th>
-                    <th>Mô Tả</th>
-                    <th>Giảm Giá (%)</th>
-                    <th>Ngày Bắt Đầu</th>
-                    <th>Ngày Hết Hạn</th>
-                    <th>Trạng Thái</th>
-                </tr>
-            </thead>
-            <tbody id="promo-list">
-                <!-- Render từ API -->
-            </tbody>
-        </table>
     </div>
 
-    <!-- MODAL TẠO MÃ -->
+    <!-- STICKY TOOLBAR -->
+    <div class="admin-toolbar">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="font-weight: 700; font-size: 1.25rem; color: #0f172a;">🎟️ Quản lý Mã Giảm Giá</span>
+            </div>
+            <button class="btn btn-primary" id="btn-add-promo">
+                + Thêm Mã Khuyến Mãi
+            </button>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="promo-grid" id="promo-list">
+            <!-- Loading state -->
+            <div style="text-align: center; padding: 40px; color: #64748b;">Đang tải danh sách...</div>
+        </div>
+    </div>
+
+    <!-- INLINE MODAL -->
     <div class="inline-modal-overlay" id="promo-modal">
-        <div class="inline-modal" style="max-width: 480px;">
-            <div class="modal-title">🎟️ Tạo Mã Khuyến Mãi Mới</div>
-            <div class="form-group-modal">
-                <label class="form-label">MÃ KHUYẾN MÃI (Viết hoa, viết liền)</label>
-                <input type="text" id="promo-code" class="form-input" placeholder="VD: SUMMER2026">
-            </div>
-            <div class="form-group-modal">
-                <label class="form-label">% GIẢM GIÁ (0 - 100%)</label>
-                <input type="number" id="promo-percent" class="form-input" value="10" min="1" max="100">
-            </div>
+        <div class="inline-modal">
+            <div class="modal-title" id="modal-title">✨ Thêm Mã Giảm Giá</div>
+            <input type="hidden" id="promo-id">
+            
             <div class="form-row">
                 <div class="form-group-modal">
-                    <label class="form-label">Ngày Bắt Đầu</label>
-                    <input type="date" id="promo-start" class="form-input">
+                    <label class="form-label">Mã Giảm Giá (Code)</label>
+                    <input type="text" id="promo-code" class="form-input" placeholder="VD: SUMMER2024" style="text-transform: uppercase; font-weight: 600; letter-spacing: 1px; color: #0f766e;">
                 </div>
                 <div class="form-group-modal">
-                    <label class="form-label">Ngày Kết Thúc</label>
-                    <input type="date" id="promo-end" class="form-input">
+                    <label class="form-label">Giảm giá (%)</label>
+                    <input type="number" id="promo-discount" class="form-input" placeholder="VD: 15" min="1" max="100">
                 </div>
             </div>
-            <div class="form-group-modal">
-                <label class="form-label">Mô tả ưu đãi</label>
-                <textarea id="promo-desc" class="form-input" rows="2" placeholder="Ưu đãi giảm giá đặc biệt..."></textarea>
+
+            <div class="form-row">
+                <div class="form-group-modal">
+                    <label class="form-label">Ngày bắt đầu</label>
+                    <input type="datetime-local" id="promo-start" class="form-input">
+                </div>
+                <div class="form-group-modal">
+                    <label class="form-label">Ngày kết thúc</label>
+                    <input type="datetime-local" id="promo-end" class="form-input">
+                </div>
             </div>
+
+            <div class="form-row">
+                <div class="form-group-modal" style="flex: 2;">
+                    <label class="form-label">Mô tả chi tiết</label>
+                    <input type="text" id="promo-desc" class="form-input" placeholder="VD: Giảm 15% cho tất cả khách hàng dịp hè...">
+                </div>
+                <div class="form-group-modal" style="flex: 1;">
+                    <label class="form-label">Trạng thái</label>
+                    <select id="promo-status" class="form-input">
+                        <option value="1">Đang kích hoạt</option>
+                        <option value="0">Tạm khóa</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="modal-actions">
-                <button class="btn btn-outline" onclick="document.getElementById('promo-modal').classList.remove('active')">Hủy</button>
-                <button class="btn btn-primary" onclick="savePromotion()">💾 Tạo Mã Giảm Giá</button>
+                <button class="btn btn-outline" id="btn-cancel-promo">Hủy bỏ</button>
+                <button class="btn btn-primary" id="btn-save-promo">💾 Lưu Khuyến Mãi</button>
             </div>
         </div>
     </div>
 
-    <footer class="main-footer"></footer>
-    <script src="/js/navigation.js"></script>
-    <script>
-        async function loadPromotions() {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/api/Promotions/All', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) {
-                document.getElementById('promo-list').innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Bạn không có quyền Admin để xem danh sách này.</td></tr>';
-                return;
-            }
-            const data = await res.json();
-            document.getElementById('promo-list').innerHTML = data.map(p => `
-                <tr>
-                    <td><strong style="color:var(--primary); font-size:1.1rem;">${p.code}</strong></td>
-                    <td>${p.description || 'Không có mô tả'}</td>
-                    <td><span class="promo-badge">Giảm ${p.discountPercent}%</span></td>
-                    <td>${new Date(p.startDate).toLocaleDateString('vi-VN')}</td>
-                    <td>${new Date(p.endDate).toLocaleDateString('vi-VN')}</td>
-                    <td>${p.isActive ? '✅ Đang chạy' : '❌ Hết hạn/Khóa'}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function savePromotion() {
-            const code = document.getElementById('promo-code').value;
-            const discountPercent = parseInt(document.getElementById('promo-percent').value);
-            const startDate = document.getElementById('promo-start').value;
-            const endDate = document.getElementById('promo-end').value;
-            const description = document.getElementById('promo-desc').value;
-            const token = localStorage.getItem('token');
-
-            const res = await fetch('/api/Promotions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ code, discountPercent, startDate, endDate, description, isActive: true })
-            });
-
-            if (res.ok) {
-                alert('Tạo mã thành công!');
-                document.getElementById('promo-modal').classList.remove('active');
-                loadPromotions();
-            } else {
-                const err = await res.json();
-                alert('Lỗi: ' + (err.message || 'Không thành công'));
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadPromotions);
-    </script>
+    <script src="/js/popup.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/promotions.js"></script>
 </body>
 </html>

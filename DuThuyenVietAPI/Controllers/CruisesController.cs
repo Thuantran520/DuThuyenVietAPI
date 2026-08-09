@@ -155,6 +155,7 @@ public class CruisesController : ControllerBase
         public string ShortDescription { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string ThumbnailUrl { get; set; } = string.Empty;
+        public bool? IsActive { get; set; }
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]
@@ -192,6 +193,7 @@ public class CruisesController : ControllerBase
         cruise.ShortDescription = dto.ShortDescription;
         cruise.Description = dto.Description;
         cruise.ThumbnailUrl = dto.ThumbnailUrl;
+        if (dto.IsActive.HasValue) cruise.IsActive = dto.IsActive.Value;
         cruise.UpdatedAt = DateTime.Now;
         
         // Also update CruiseImages to reflect the new ThumbnailUrl as primary
