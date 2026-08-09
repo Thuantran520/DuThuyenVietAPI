@@ -3,8 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!token) { window.location.replace('/login.html'); return; }
 
     const urlParams = new URLSearchParams(window.location.search);
-    let cruiseId = urlParams.get('id') || null;
+    const cruiseId = urlParams.get('id');
     const isEdit = !!cruiseId;
+    let isCruiseActive = true; // Mặc định là đang hoạt động
 
     const formatPrice = p => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
 
@@ -131,6 +132,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-save-cruise').addEventListener('click', saveCruise);
 
+    // Toggle Maintenance
+    document.getElementById('btn-toggle-maintenance').addEventListener('click', () => {
+        isCruiseActive = !isCruiseActive;
+        updateMaintenanceBtn();
+        Popup.show('Đã đổi trạng thái', 'Vui lòng nhấn "Lưu Thông Tin" để xác nhận trạng thái mới trên máy chủ.', 'success');
+    });
+
+    function updateMaintenanceBtn() {
+        const btn = document.getElementById('btn-toggle-maintenance');
+        if (!isEdit) {
+            btn.style.display = 'none';
+            return;
+        }
+        btn.style.display = 'inline-flex';
+        if (isCruiseActive) {
+            btn.className = 'btn btn-outline';
+            btn.innerHTML = '🔴 Đưa vào Bảo Trì';
+            btn.style.background = '';
+            btn.style.color = '';
+        } else {
+            btn.className = 'btn btn-primary';
+            btn.innerHTML = '🟢 Bật Hoạt Động Lại';
+            btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+            btn.style.color = 'white';
+        }
+    }
+
     // Start init
     initPage();
 
@@ -148,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const thumbUrl = c.thumbnailUrl || (c.images && c.images.length > 0 ? c.images[0] : '');
             document.getElementById('edit-thumb').value = thumbUrl;
             document.getElementById('preview-thumb').src = thumbUrl || '/images/default-cruise.jpg';
+            
+            isCruiseActive = c.isActive !== undefined ? c.isActive : true;
+            updateMaintenanceBtn();
         } catch (err) {
             Popup.show('Lỗi', 'Lỗi tải dữ liệu du thuyền.', 'error');
         }
@@ -164,7 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
             totalCabins: parseInt(document.getElementById('edit-cabins').value) || 20,
             shortDescription: document.getElementById('edit-shortdesc').value.trim(),
             description: document.getElementById('edit-desc').value.trim(),
-            thumbnailUrl: document.getElementById('edit-thumb').value.trim()
+            thumbnailUrl: document.getElementById('edit-thumb').value.trim(),
+            isActive: isCruiseActive
         };
 
         if (!data.name) { Popup.show('Thiếu thông tin', 'Vui lòng nhập tên du thuyền.', 'error'); btn.innerText = origText; btn.disabled = false; return; }
@@ -204,10 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. CABIN TYPES
     // ==========================================
     async function loadCabins() {
+        if (!cruiseId) return;
         try {
             const res = await fetch(`/api/CabinTypes?cruiseId=${cruiseId}`);
             if (!res.ok) return;
             const cabins = await res.json();
+            window.currentCabins = cabins; // Lưu lại để validate
             renderCabins(cabins);
         } catch {}
     }
@@ -219,14 +253,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         grid.innerHTML = cabins.map(c => `
-            <div class="cabin-card">
-                <img src="${c.imageUrl || '/images/default-cruise.jpg'}" alt="${c.name}" onerror="this.src='/images/default-cruise.jpg'">
-                <div class="cabin-card-body">
-                    <div class="cabin-card-name">${c.name}</div>
-                    <div class="cabin-card-meta">👥 ${c.maxOccupancy} khách • 🏠 ${c.totalRooms} phòng</div>
-                    <div class="cabin-card-price">${formatPrice(c.basePrice)}<span style="font-size:0.8rem; font-weight:400; color:#64748b;">/đêm</span></div>
+            <div class="cabin-card-admin">
+                <div class="cabin-card-img-wrapper">
+                    <img src="${c.imageUrl || '/images/default-cruise.jpg'}" alt="${c.name}" onerror="this.src='/images/default-cruise.jpg'">
+                </div>
+                <div class="cabin-card-content">
+                    <div class="cabin-card-header">
+                        <div class="cabin-card-title">${c.name}</div>
+                        <div class="cabin-card-price">${formatPrice(c.basePrice)}<span class="price-unit">/đêm</span></div>
+                    </div>
+                    <div class="cabin-card-details">
+                        <span class="detail-item">👥 Sức chứa: <strong>${c.maxOccupancy} khách</strong></span>
+                        <span class="detail-divider">•</span>
+                        <span class="detail-item">🚪 Tổng: <strong>${c.totalRooms} phòng</strong></span>
+                    </div>
+                    <div class="cabin-card-desc">${c.description ? c.description.substring(0, 120) + '...' : '<span style="color:#94a3b8;font-style:italic;">Chưa có mô tả</span>'}</div>
                     <div class="cabin-card-actions">
-                        <button class="btn-sm-action btn-edit-sm" onclick="openEditCabin(${JSON.stringify(c).replace(/"/g, '&quot;')})">✏️ Sửa</button>
+                        <button class="btn-sm-action btn-edit-sm" onclick="openEditCabin(${JSON.stringify(c).replace(/"/g, '&quot;')})">✏️ Sửa thông tin</button>
                         <button class="btn-sm-action btn-delete-sm" onclick="deleteCabin(${c.cabinTypeId})">🗑️ Xóa</button>
                     </div>
                 </div>
@@ -273,6 +316,20 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (!data.name) { Popup.show('Thiếu thông tin', 'Vui lòng nhập tên loại phòng.', 'error'); return; }
+
+        // Kiểm tra hợp lệ tổng số phòng (Validation)
+        const maxCruiseRooms = parseInt(document.getElementById('edit-cabins').value) || 0;
+        let currentTotalRooms = 0;
+        if (window.currentCabins) {
+            currentTotalRooms = window.currentCabins
+                .filter(c => c.cabinTypeId != cabinId) // Không cộng dồn phòng đang sửa
+                .reduce((sum, c) => sum + c.totalRooms, 0);
+        }
+        
+        if (currentTotalRooms + data.totalRooms > maxCruiseRooms) {
+            Popup.show('Lỗi dữ liệu', `Tổng số phòng của các loại phòng (${currentTotalRooms + data.totalRooms}) vượt quá số phòng của Du thuyền (${maxCruiseRooms}). Vui lòng điều chỉnh lại!`, 'error');
+            return;
+        }
 
         const method = cabinId ? 'PUT' : 'POST';
         const url = cabinId ? `/api/CabinTypes/${cabinId}` : '/api/CabinTypes';

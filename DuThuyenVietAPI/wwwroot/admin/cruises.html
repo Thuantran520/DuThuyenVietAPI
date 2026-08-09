@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Du Thuyền - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+</head>
+<body>
+    <header class="main-header" id="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Admin Dashboard</a></li>
+                <li class="active">Quản lý Du Thuyền</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="container">
+            <div id="main-content">
+                <div class="card" id="tab-cruises">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;">Quản lý Danh mục Du Thuyền</div>
+                            <div style="font-size: 14px; color: #6b7280;">Thêm, sửa, xóa các du thuyền trên hệ thống.</div>
+                        </div>
+                        <a href="/admin/cruise-editor.html" class="btn btn-primary" style="text-decoration: none;">+ Thêm Du Thuyền Mới</a>
+                    </div>
+                    
+                    <div id="cruises-grid-container" class="cruise-grid" style="margin-top: 20px;">
+                        <p style="text-align:center; grid-column: 1/-1;">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden nav elements for auth.js compatibility -->
+    <div id="tab-cruises-nav" style="display:none;"></div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>

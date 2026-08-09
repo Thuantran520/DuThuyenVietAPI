@@ -22,9 +22,9 @@ Hiện tại toàn bộ code nền tảng đã được đồng bộ chuẩn xá
 * **Về UI/UX (Giao diện):** 
   * Cải tiến trang `checkout.html`: Làm một thanh Tiến trình (Progress bar) ở trên cùng.
   * Thiết kế form nhập thông tin khách hàng đẹp và có validate.
-* **Về Backend & Cải tiến:** 
   * Tích hợp cổng thanh toán thực tế (VNPay, MoMo, hoặc PayPal).
   * Viết API tự động gửi **Email xác nhận mã vé** sau khi thanh toán.
+  * **(Cập nhật):** Tích hợp logic **Mã Giảm Giá (Promotions)** vào luồng thanh toán. Xác thực mã và tính lại tổng tiền trực tiếp trên trang Checkout.
 
 **Quy định File được phép chỉnh sửa:**
 * **Backend:** `Controllers/BookingsController.cs`, `Models/Booking.cs`, `Models/BookingDetail.cs`
@@ -40,6 +40,7 @@ Hiện tại toàn bộ code nền tảng đã được đồng bộ chuẩn xá
 * **Về Backend & Cải tiến:** 
   * Viết tính năng cho phép khách hàng **upload hình ảnh** khi đánh giá.
   * Xây dựng các API CRUD cho hệ thống Bài viết (Blog Posts).
+  * **(Cập nhật):** Xây dựng giao diện Quản trị bài viết cho Admin (Thêm/Sửa/Xóa bài viết).
 
 **Quy định File được phép chỉnh sửa:**
 * **Backend:** `Controllers/ReviewsController.cs`, `Models/Review.cs`, Khởi tạo `Controllers/BlogsController.cs`

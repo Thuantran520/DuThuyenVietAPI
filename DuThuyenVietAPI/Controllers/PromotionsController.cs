@@ -164,4 +164,39 @@ public class PromotionsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
         }
     }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePromotion(int id, [FromBody] CreatePromotionDTO dto)
+    {
+        var promotion = await _context.Promotions.FindAsync(id);
+        if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
+
+        if (dto.DiscountPercent < 0 || dto.DiscountPercent > 100)
+            return BadRequest(new { message = "Phần trăm giảm giá phải từ 0% đến 100%." });
+        if (dto.EndDate <= dto.StartDate)
+            return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
+
+        promotion.Code = dto.Code.ToUpper();
+        promotion.Description = dto.Description;
+        promotion.DiscountPercent = dto.DiscountPercent;
+        promotion.StartDate = dto.StartDate;
+        promotion.EndDate = dto.EndDate;
+        promotion.IsActive = dto.IsActive;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Đã cập nhật mã khuyến mãi." });
+    }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePromotion(int id)
+    {
+        var promotion = await _context.Promotions.FindAsync(id);
+        if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
+
+        _context.Promotions.Remove(promotion);
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Đã xóa mã khuyến mãi." });
+    }
 }

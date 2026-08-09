@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Đặt Phòng - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+</head>
+<body>
+    <header class="main-header" id="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Admin Dashboard</a></li>
+                <li class="active">Quản lý Đặt Phòng</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="container">
+            <div id="main-content">
+                <div class="card" id="tab-bookings">
+                    <div class="card-title">Quản lý Yêu cầu Đặt Phòng</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Duyệt hoặc từ chối các yêu cầu thanh toán chuyển khoản/tiền mặt từ khách hàng.</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #166534; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG DOANH THU</div>
+                            <div id="dash-revenue" style="color: #15803d; font-size: 24px; font-weight: 800;">0 ₫</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #1e40af; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG KHÁCH HÀNG</div>
+                            <div id="dash-customers" style="color: #1d4ed8; font-size: 24px; font-weight: 800;">0</div>
+                        </div>
+                        <div style="background: #fefce8; border: 1px solid #fef08a; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #854d0e; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG ĐƠN ĐẶT</div>
+                            <div id="dash-bookings" style="color: #a16207; font-size: 24px; font-weight: 800;">0</div>
+                        </div>
+                        <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="color: #9d174d; font-size: 14px; font-weight: 600; margin-bottom: 8px;">YÊU CẦU ĐẶC BIỆT</div>
+                            <div id="dash-notes" style="color: #be185d; font-size: 24px; font-weight: 800;">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Du thuyền & Phòng</th>
+                                    <th>Tổng tiền</th>
+                                    <th style="min-width: 120px;">Trạng thái</th>
+                                    <th style="text-align: right;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table-body">
+                                <tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" id="tab-notes" style="margin-top: 24px;">
+                    <div class="card-title">Yêu cầu đặc biệt từ khách hàng</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Theo dõi các ghi chú và yêu cầu riêng biệt của khách để chuẩn bị chu đáo.</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Du thuyền & Lịch trình</th>
+                                    <th>Ghi chú / Yêu cầu</th>
+                                    <th style="min-width: 120px;">Trạng thái đơn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notes-table-body">
+                                <tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden nav elements for auth.js compatibility -->
+    <div id="tab-bookings-nav" style="display:none;"></div>
+    <div id="tab-notes-nav" class="tab" data-target="tab-notes" style="display:none;"></div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        // Trigger notes loading after auth.js runs
+        setTimeout(() => {
+            const notesNav = document.getElementById('tab-notes-nav');
+            if (notesNav) notesNav.click();
+        }, 1000);
+    </script>
+</body>
+</html>

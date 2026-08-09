@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Nhân Sự & Phân Quyền - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+</head>
+<body>
+    <header class="main-header" id="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Admin Dashboard</a></li>
+                <li class="active">Hệ thống Nhân sự</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="container">
+            <div id="main-content">
+                <div class="card" id="tab-admin">
+                    <div class="card-title">Hệ thống Nhân sự & Phân quyền</div>
+                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Tại đây Quản trị viên có thể quản lý nhân viên và cấp quyền Quản lý hệ thống đặt Du Thuyền.</div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID Người dùng</th>
+                                    <th>Họ Tên / Username</th>
+                                    <th>Email</th>
+                                    <th>Quyền hiện tại</th>
+                                    <th style="text-align: right;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body">
+                                <tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden nav elements for auth.js compatibility -->
+    <div id="tab-admin-nav" style="display:none;"></div>
+
+    <script src="/js/popup.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>
