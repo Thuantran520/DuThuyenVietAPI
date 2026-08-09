@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cẩm Nang Du Lịch - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <style>
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .blog-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+        }
+        .blog-card:hover { transform: translateY(-5px); }
+        .blog-thumb { width: 100%; height: 200px; object-fit: cover; }
+        .blog-content { padding: 24px; }
+        .blog-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+        .blog-summary { color: #64748b; font-size: 0.9rem; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <header class="main-header"></header>
+
+    <div class="container py-5">
+        <div style="text-align: center; max-width: 600px; margin: 0 auto 40px;">
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; color: #0f172a;">📰 Cẩm Nang & Kinh Nghiệm Du Thuyền</h1>
+            <p style="color: #64748b; font-size: 1.05rem;">Khám phá các bí kíp du lịch Vịnh Hạ Long, Vịnh Lan Hạ và trải nghiệm du thuyền đẳng cấp nhất.</p>
+        </div>
+
+        <div class="blog-grid" id="blog-container">
+            <!-- Render bài viết từ API -->
+        </div>
+    </div>
+
+    <footer class="main-footer"></footer>
+    <script src="/js/navigation.js"></script>
+    <script>
+        async function loadBlogs() {
+            try {
+                const res = await fetch('/api/BlogPosts');
+                const data = await res.json();
+                const container = document.getElementById('blog-container');
+                if (!data.posts || data.posts.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;grid-column:1/-1;color:#64748b;">Chưa có bài viết nào được đăng.</p>';
+                    return;
+                }
+                container.innerHTML = data.posts.map(p => `
+                    <div class="blog-card">
+                        <img src="${p.thumbnailUrl || '/images/default-cruise.jpg'}" class="blog-thumb" onerror="this.src='/images/default-cruise.jpg'">
+                        <div class="blog-content">
+                            <div style="font-size:0.8rem;color:var(--primary);font-weight:600;margin-bottom:6px;">📅 ${new Date(p.publishedAt).toLocaleDateString('vi-VN')}</div>
+                            <h3 class="blog-title">${p.title}</h3>
+                            <p class="blog-summary">${p.summary || ''}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+        document.addEventListener('DOMContentLoaded', loadBlogs);
+    </script>
+</body>
+</html>
