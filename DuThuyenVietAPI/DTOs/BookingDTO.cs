@@ -31,4 +31,7 @@ public class CreateBookingDTO
     public string ContactEmail { get; set; } = null!;
 
     public string? Note { get; set; }
+
+    public string? PromotionCode { get; set; }
+    public int? PromotionId { get; set; }
 }
