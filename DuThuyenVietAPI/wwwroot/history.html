@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch Sử Đặt Vé - Du Thuyền Việt</title>
+
+    <!-- Bootstrap 5 CSS (Đã đưa vào trong head để modal nhận style popup) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/layout.css">
@@ -29,11 +33,60 @@
         </div>
     </div>
 
+    <!-- MODAL XÁC NHẬN HỦY VÉ & CHỌN LÝ DO -->
+    <div class="modal fade" id="cancelReasonModal" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold fs-6 mb-0">⚠️ Mẫu Xác Nhận Hủy Vé</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-2">Bạn đang yêu cầu hủy đơn hàng mã: <strong id="cancelBookingCodeDisplay" class="text-danger"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vui lòng chọn lý do hủy vé:</label>
+                        <select class="form-select" id="cancelReasonSelect" onchange="toggleOtherReasonInput()">
+                            <option value="Thay đổi kế hoạch / Lịch trình">Thay đổi kế hoạch / Lịch trình cá nhân</option>
+                            <option value="Tìm được tour / du thuyền khác phù hợp hơn">Tìm được tour / du thuyền khác phù hợp hơn</option>
+                            <option value="Sự cố thời tiết / Lý do sức khỏe">Sự cố thời tiết / Lý do sức khỏe</option>
+                            <option value="Đặt nhầm ngày / Nhầm loại phòng">Đặt nhầm ngày / Nhầm loại phòng</option>
+                            <option value="Other">Lý do khác...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="otherReasonGroup">
+                        <textarea class="form-control" id="customReasonText" rows="2" placeholder="Nhập lý do chi tiết của bạn..."></textarea>
+                    </div>
+                    <div class="alert alert-warning py-2 small mb-0">
+                        💡 Lưu ý: Việc hủy đơn sẽ được gửi lên hệ thống và cập nhật trạng thái ngay lập tức.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold" onclick="submitCancelBookingWithReason()">Xác Nhận Hủy Vé</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle (Cực kỳ quan trọng để bật/tắt Modal Popup) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Các file JS gốc của nhóm -->
     <script src="/js/popup.js"></script>
     <script src="/js/history-page.js"></script>
-
     <footer class="main-footer"></footer>
-
     <script src="/js/navigation.js"></script>
+
+    <script>
+        function toggleOtherReasonInput() {
+            const select = document.getElementById('cancelReasonSelect');
+            const otherGroup = document.getElementById('otherReasonGroup');
+            if (select && select.value === 'Other') {
+                otherGroup.classList.remove('d-none');
+            } else if (otherGroup) {
+                otherGroup.classList.add('d-none');
+            }
+        }
+    </script>
 </body>
 </html>

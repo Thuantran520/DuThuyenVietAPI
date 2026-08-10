@@ -15,46 +15,98 @@ const checkAuth = () => {
     return true;
 };
 
-window.cancelBooking = function(bookingCode) {
-    const grp = window.customerGroupedBookings[bookingCode];
+// Variable lưu tạm mã đơn hàng đang chọn hủy
+let selectedBookingCodeToCancel = null;
+
+// 1. Hàm mở Modal hỏi lý do hủy
+window.openCancelModal = function (bookingCode) {
+    selectedBookingCodeToCancel = bookingCode;
+    const displayEl = document.getElementById('cancelBookingCodeDisplay');
+    if (displayEl) displayEl.innerText = bookingCode;
+
+    const selectEl = document.getElementById('cancelReasonSelect');
+    if (selectEl) selectEl.value = 'Thay đổi kế hoạch / Lịch trình cá nhân';
+
+    const otherGroup = document.getElementById('otherReasonGroup');
+    if (otherGroup) otherGroup.classList.add('d-none');
+
+    const customText = document.getElementById('customReasonText');
+    if (customText) customText.value = '';
+
+    const modalEl = document.getElementById('cancelReasonModal');
+    if (modalEl) {
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+};
+
+// 2. Hàm bấm Xác nhận hủy vé từ Modal
+window.submitCancelBookingWithReason = async function () {
+    if (!selectedBookingCodeToCancel) return;
+
+    const grp = window.customerGroupedBookings ? window.customerGroupedBookings[selectedBookingCodeToCancel] : null;
     if (!grp || !grp.items || grp.items.length === 0) return;
 
-    window.Popup.confirm('Xác nhận hủy', 'Bạn có chắc chắn muốn hủy toàn bộ đơn đặt vé này không?', async () => {
-        try {
-            let successCount = 0;
-            for (const item of grp.items) {
-                const res = await fetch(`${API_URL}/Bookings/${item.bookingId}/Cancel`, {
+    // Lấy lý do hủy từ form Modal
+    const selectVal = document.getElementById('cancelReasonSelect')?.value;
+    const customText = document.getElementById('customReasonText')?.value.trim();
+    const finalReason = selectVal === 'Other' ? (customText || 'Lý do khác') : selectVal;
+
+    // Ẩn Modal
+    const modalEl = document.getElementById('cancelReasonModal');
+    if (modalEl) {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+    }
+
+    try {
+        let successCount = 0;
+        for (const item of grp.items) {
+            // Thử gửi qua Query String trước, nếu Backend không nhận thì fallback về PUT chuẩn
+            let res = await fetch(`${API_URL}/Bookings/${item.bookingId}/Cancel?reason=${encodeURIComponent(finalReason)}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            });
+
+            if (!res.ok) {
+                res = await fetch(`${API_URL}/Bookings/${item.bookingId}/Cancel`, {
                     method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
                 });
-                if (res.ok) successCount++;
             }
-            if (successCount > 0) {
-                window.Popup.show('Thành công', 'Hủy đơn thành công', 'success');
-                initHistoryPage();
-            } else {
-                window.Popup.show('Lỗi', 'Không thể hủy đơn', 'error');
-            }
-        } catch (e) {
-            window.Popup.show('Lỗi', 'Lỗi kết nối', 'error');
+
+            if (res.ok) successCount++;
         }
-    }, true, 'Đồng ý hủy');
+
+        if (successCount > 0) {
+            window.Popup.show('Thành công', `Đã hủy đơn thành công!`, 'success');
+            initHistoryPage(); // Reload lại danh sách
+        } else {
+            window.Popup.show('Lỗi', 'Không thể hủy đơn. Đơn hàng có thể đã được Admin xác nhận hoặc xử lý.', 'error');
+        }
+    } catch (e) {
+        window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ', 'error');
+    }
 };
 
 async function initHistoryPage() {
     if (!checkAuth()) return;
 
     const container = document.getElementById('historyList');
-    
+
     try {
         const res = await fetch(`${API_URL}/Bookings/MyBookings`, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
-        
+
         if (!res.ok) throw new Error('Failed to load');
-        
+
         const data = await res.json();
-        
+
         if (data.length === 0) {
             container.innerHTML = '<p>Bạn chưa có lịch sử đặt vé nào.</p>';
             return;
@@ -71,7 +123,7 @@ async function initHistoryPage() {
         });
         window.customerGroupedBookings = grouped;
 
-        window.copyToClipboard = function(text) {
+        window.copyToClipboard = function (text) {
             navigator.clipboard.writeText(text).then(() => {
                 window.Popup.show('Đã sao chép', 'Mã thanh toán đã được lưu vào bộ nhớ tạm!', 'success');
             });
@@ -79,8 +131,15 @@ async function initHistoryPage() {
 
         container.innerHTML = Object.values(grouped).map(b => {
             const isPending = b.status === 'Pending';
-            const statusText = isPending ? 'Chờ thanh toán' : (b.status === 'AwaitingConfirmation' ? 'Đang xử lý' : (b.status === 'Confirmed' ? 'Thành công' : 'Đã hủy'));
-            
+            const isAwaiting = b.status === 'AwaitingConfirmation';
+            const isConfirmed = b.status === 'Confirmed';
+            const isCancelled = b.status === 'Cancelled';
+
+            // Điều kiện cho phép hủy vé: Chỉ khi chưa bị hủy và CHƯA được Admin xác nhận (Confirmed)
+            const canCancel = (isPending || isAwaiting) && !isConfirmed && !isCancelled;
+
+            const statusText = isPending ? 'Chờ thanh toán' : (isAwaiting ? 'Đang xử lý' : (isConfirmed ? 'Thành công' : 'Đã hủy'));
+
             let paymentInfo = '';
             if (b.payments && b.payments.length > 0) {
                 const p = b.payments[0];
@@ -118,15 +177,23 @@ async function initHistoryPage() {
                     </div>
                     <div class="text-right" style="text-align: right; min-width: 150px; margin-left: 20px; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;">
                         <span class="status-badge status-${b.status}" style="display: inline-block;">${statusText}</span>
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px; align-items: flex-end;">
                             ${isPending ? `<a href="/checkout.html?bookingCode=${b.bookingCode}" class="btn-primary text-center" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; text-decoration: none;">Thanh toán</a>` : ''}
-                            ${isPending ? `<button onclick="cancelBooking('${b.bookingCode}')" class="btn-secondary" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px;">Hủy vé</button>` : ''}
+                            
+                            <!-- ĐIỀU KIỆN HIỂN THỊ NÚT HỦY VÉ HOẶC THÔNG BÁO TRẠNG THÁI -->
+                            ${canCancel ? `
+                                <button onclick="openCancelModal('${b.bookingCode}')" class="btn-secondary" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; border: 1px solid #dc2626; color: #dc2626; background: transparent;">🚫 Hủy vé</button>
+                            ` : (isConfirmed ? `
+                                <span class="text-success small" style="font-weight: 500;">✓ Đã xác nhận (Không thể hủy)</span>
+                            ` : `
+                                <span class="text-muted small">Đơn đã hủy</span>
+                            `)}
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
-        
+
         // Start active countdown timer ticking
         startPendingCountdowns();
 
@@ -136,14 +203,13 @@ async function initHistoryPage() {
 }
 
 function startPendingCountdowns() {
-    // Clear any existing intervals
     if (window.pendingCountdownInterval) clearInterval(window.pendingCountdownInterval);
-    
+
     function tick() {
         document.querySelectorAll('.pending-countdown').forEach(el => {
             const createdStr = el.getAttribute('data-created');
             const createdTime = new Date(createdStr).getTime();
-            const limitTime = createdTime + 30 * 60 * 1000; // 30 mins
+            const limitTime = createdTime + 30 * 60 * 1000;
             const now = new Date().getTime();
             const diff = limitTime - now;
             if (diff <= 0) {

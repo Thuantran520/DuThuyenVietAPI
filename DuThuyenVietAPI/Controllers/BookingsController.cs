@@ -33,8 +33,8 @@ public class BookingsController : ControllerBase
             var schedule = await _context.Schedules.FindAsync(dto.ScheduleId);
             var cabin = await _context.CabinTypes.FindAsync(dto.CabinTypeId);
 
-            bool isStatusValid = schedule != null && schedule.Status != null && 
-                                 (schedule.Status.Equals("Open", StringComparison.OrdinalIgnoreCase) || 
+            bool isStatusValid = schedule != null && schedule.Status != null &&
+                                 (schedule.Status.Equals("Open", StringComparison.OrdinalIgnoreCase) ||
                                   schedule.Status.Equals("Available", StringComparison.OrdinalIgnoreCase));
 
             if (schedule == null || !isStatusValid || cabin == null || cabin.CruiseId != schedule.CruiseId)
@@ -63,13 +63,28 @@ public class BookingsController : ControllerBase
 
             // Tính tiền (ưu tiên PriceOverride từ tồn kho nếu có, nếu không dùng giá gốc)
             decimal unitPrice = inventory?.PriceOverride ?? cabin.BasePrice;
-            decimal totalPrice = unitPrice * dto.NumberOfRooms;
+            decimal rawTotalPrice = unitPrice * dto.NumberOfRooms;
+            decimal finalTotalPrice = rawTotalPrice;
+            int? appliedPromotionId = dto.PromotionId;
+
+            // Xử lý mã giảm giá (Promotion)
+            if (!string.IsNullOrEmpty(dto.PromotionCode))
+            {
+                var promotion = await _context.Promotions
+                    .FirstOrDefaultAsync(p => p.Code.ToUpper() == dto.PromotionCode.ToUpper() && p.IsActive);
+
+                if (promotion != null && DateTime.Now >= promotion.StartDate && DateTime.Now <= promotion.EndDate)
+                {
+                    appliedPromotionId = promotion.PromotionId;
+                    decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
+                    finalTotalPrice = rawTotalPrice - discountAmount;
+                }
+            }
 
             // Sử dụng mã booking từ frontend nếu có, nếu không thì tạo mới
             string bookingCode = !string.IsNullOrEmpty(dto.BookingCode)
                 ? dto.BookingCode
                 : "BKG" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(100, 999);
-
 
             var booking = new Booking
             {
@@ -83,7 +98,8 @@ public class BookingsController : ControllerBase
                 ContactPhone = dto.ContactPhone,
                 ContactEmail = dto.ContactEmail,
                 Note = dto.Note ?? "",
-                TotalPrice = totalPrice,
+                TotalPrice = finalTotalPrice,
+                PromotionId = appliedPromotionId,
                 Status = "Pending", // Đợi thanh toán
                 CreatedAt = DateTime.Now
             };
@@ -297,9 +313,23 @@ public class BookingsController : ControllerBase
 
             if (booking.UserId != userId) return Forbid();
 
-            if (booking.Status != "Pending")
+            // CHỈ CHO PHÉP HỦY KHI ĐƠN CHƯA ĐƯỢC ADMIN XÁC NHẬN (Status: Pending hoặc AwaitingConfirmation)
+            if (booking.Status == "Confirmed")
             {
-                return BadRequest(new { message = "Chỉ có thể hủy đơn đang chờ thanh toán." });
+                return BadRequest(new { message = "Đơn hàng đã được Admin xác nhận thành công, khách hàng không thể tự hủy!" });
+            }
+
+            if (booking.Status == "Cancelled")
+            {
+                return BadRequest(new { message = "Đơn hàng đã bị hủy trước đó." });
+            }
+
+            // Hoàn lại số phòng vào tồn kho khi hủy thành công
+            var inventory = await _context.ScheduleCabinInventories
+                .FirstOrDefaultAsync(i => i.ScheduleId == booking.ScheduleId && i.CabinTypeId == booking.CabinTypeId);
+            if (inventory != null)
+            {
+                inventory.AvailableRooms += booking.NumberOfRooms;
             }
 
             booking.Status = "Cancelled";
