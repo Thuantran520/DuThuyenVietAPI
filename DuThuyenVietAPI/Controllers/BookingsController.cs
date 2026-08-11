@@ -68,17 +68,38 @@ public class BookingsController : ControllerBase
             int? appliedPromotionId = dto.PromotionId;
 
             // Xử lý mã giảm giá (Promotion)
-            if (!string.IsNullOrEmpty(dto.PromotionCode))
+            if (!string.IsNullOrWhiteSpace(dto.PromotionCode))
             {
                 var promotion = await _context.Promotions
                     .FirstOrDefaultAsync(p => p.Code.ToUpper() == dto.PromotionCode.ToUpper() && p.IsActive);
 
-                if (promotion != null && DateTime.Now >= promotion.StartDate && DateTime.Now <= promotion.EndDate)
+                if (promotion == null)
                 {
-                    appliedPromotionId = promotion.PromotionId;
-                    decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
-                    finalTotalPrice = rawTotalPrice - discountAmount;
+                    return BadRequest(new { message = "Mã giảm giá không tồn tại hoặc đã bị khóa." });
                 }
+
+                var now = DateTime.Now;
+
+                // 1. Kiểm tra thời điểm bấm đặt phòng
+                if (now < promotion.StartDate)
+                {
+                    return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:dd/MM/yyyy}." });
+                }
+
+                if (now > promotion.EndDate)
+                {
+                    return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
+                }
+
+                // 2. Kiểm tra ngày khởi hành của chuyến đi (Lịch trình)
+                if (schedule.DepartureDate < promotion.StartDate || schedule.DepartureDate > promotion.EndDate)
+                {
+                    return BadRequest(new { message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:dd/MM/yyyy} đến {promotion.EndDate:dd/MM/yyyy}." });
+                }
+
+                appliedPromotionId = promotion.PromotionId;
+                decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
+                finalTotalPrice = rawTotalPrice - discountAmount;
             }
 
             // Sử dụng mã booking từ frontend nếu có, nếu không thì tạo mới
