@@ -173,14 +173,19 @@ async function loadCruiseDetail() {
 
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
-            schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item" id="schedule-box-${s.scheduleId}" style="position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; border-radius: 16px; cursor: pointer; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);" onclick="window.selectSchedule(${s.scheduleId})">
+            schedulesHtml = cruise.schedules.map(s => {
+                const depStr = new Date(s.departureDate).toLocaleDateString('vi-VN');
+                const retStr = s.returnDate ? new Date(s.returnDate).toLocaleDateString('vi-VN') : null;
+                return `
+                <div class="schedule-item" id="schedule-box-${s.scheduleId}" style="position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; border-radius: 16px; cursor: pointer; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);" onclick="window.selectSchedule(${s.scheduleId})">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; border-top-left-radius: 16px; border-top-right-radius: 16px; background: linear-gradient(90deg, var(--primary), #34d399); opacity: 0; transition: opacity 0.3s;" class="schedule-highlight"></div>
-                    <div style="font-weight: 800; color: var(--primary); font-size: 1.4rem; margin-bottom: 8px; font-family: 'Playfair Display', serif; letter-spacing: 0.5px;">${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
-                    <div style="color: #475569; font-size: 0.9rem; margin-bottom: 20px; background: #f1f5f9; padding: 6px 14px; border-radius: 20px; font-weight: 600;">${s.durationLabel}</div>
-                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 10px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.95rem;">Chọn lịch này</button>
+                    <div style="font-weight: 700; color: var(--primary); font-size: 1.1rem; margin-bottom: 4px;">📅 Đi: ${depStr}</div>
+                    ${retStr ? `<div style="font-weight: 600; color: #475569; font-size: 0.95rem; margin-bottom: 8px;">🏁 Về: ${retStr}</div>` : ''}
+                    <div style="color: #475569; font-size: 0.85rem; margin-bottom: 15px; background: #f1f5f9; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-block;">⏱️ ${s.durationLabel || '2 ngày 1 đêm'}</div>
+                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 8px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.9rem;">Chọn lịch này</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         } else {
             schedulesHtml = '<p>Chưa có lịch trình mở nào.</p>';
         }
