@@ -988,9 +988,6 @@ window.downloadInvoiceDirectly = function(code, btnEl) {
     '<tfoot><tr class="total-row"><td colspan="3">TỔNG THANH TOÁN</td><td style="text-align:right">'+fmt(total)+'</td></tr></tfoot>' +
     '</table>' +
     '<p class="footer">Cảm ơn quý khách đã tin tưởng sử dụng dịch vụ của Du Thuyền Việt!</p>' +
-    '<div style="margin:16px 0;padding:10px 14px;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;font-size:12px;color:#856404;">' +
-    '⚠️ Để ẩn dòng tiêu đề và URL: trong hộp thoại In → bỏ chọn <b>"Tiêu đề và chân trang"</b> (Headers and footers)' +
-    '</div>' +
     '<div style="text-align:center;margin-top:10px;">' +
     '<button onclick="window.print()" style="padding:10px 28px;font-size:14px;cursor:pointer;background:#000;color:#fff;border:none;border-radius:4px;">🖨️ In / Lưu PDF</button>' +
     '</div>' +
