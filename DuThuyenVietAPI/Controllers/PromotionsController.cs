@@ -80,15 +80,8 @@ public class PromotionsController : ControllerBase
                     });
                 }
 
-                // Chặn nếu Ngày khởi hành nằm ngoài khoảng thời gian cho phép của Mã giảm giá
-                if (targetDepartureDate.Value.Date < promotion.StartDate.Date ||
-                    targetDepartureDate.Value.Date > promotion.EndDate.Date)
-                {
-                    return BadRequest(new
-                    {
-                        message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:dd/MM/yyyy} đến {promotion.EndDate:dd/MM/yyyy}."
-                    });
-                }
+                // Đã loại bỏ ràng buộc ngày khởi hành phải nằm trong thời gian khuyến mãi theo yêu cầu người dùng.
+                // Mã giảm giá chỉ phụ thuộc vào thời điểm đặt vé (real-time).
             }
 
             return Ok(new
@@ -205,6 +198,7 @@ public class PromotionsController : ControllerBase
         {
             var promotions = await _context.Promotions
                 .AsNoTracking()
+                .Where(p => p.Description == null || !p.Description.StartsWith("[DELETED]"))
                 .OrderByDescending(p => p.PromotionId)
                 .ToListAsync();
 
@@ -265,8 +259,16 @@ public class PromotionsController : ControllerBase
     {
         try
         {
-            var promotion = await _context.Promotions.FindAsync(id);
+            var promotion = await _context.Promotions.Include(p => p.Bookings).FirstOrDefaultAsync(p => p.PromotionId == id);
             if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
+
+            if (promotion.Bookings.Any())
+            {
+                promotion.IsActive = false;
+                promotion.Description = "[DELETED] " + promotion.Description;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Mã khuyến mãi đã có người dùng, đã được đưa vào lưu trữ lịch sử thay vì xóa hoàn toàn." });
+            }
 
             _context.Promotions.Remove(promotion);
             await _context.SaveChangesAsync();

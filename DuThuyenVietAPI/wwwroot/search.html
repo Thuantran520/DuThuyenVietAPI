@@ -32,7 +32,21 @@
                 </div>
                 <div class="filter-group">
                     <label>Tên du thuyền</label>
-                    <input type="text" name="keyword" id="filterKeyword" placeholder="Nhập tên...">
+                    <input type="text" name="keyword" id="filterKeyword" placeholder="VD: Heritage, Ambassador...">
+                </div>
+                <div class="filter-group">
+                    <label>Khoảng giá</label>
+                    <select name="priceRange" id="filterPriceRange">
+                        <option value="">Tất cả mức giá</option>
+                        <option value="0-2000000">Dưới 2.000.000 đ</option>
+                        <option value="2000000-5000000">2.000.000 đ - 5.000.000 đ</option>
+                        <option value="5000000-10000000">5.000.000 đ - 10.000.000 đ</option>
+                        <option value="10000000">Trên 10.000.000 đ</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Thời gian xuất phát</label>
+                    <input type="date" name="departureDate" id="filterDepartureDate">
                 </div>
                 <button type="submit" class="btn-primary w-100">Áp dụng lọc</button>
             </form>
@@ -52,7 +66,7 @@
     <footer class="main-footer"></footer>
 
     <script src="/js/popup.js"></script>
-    <script src="/js/cruise.js"></script>
+    <script src="/js/cruise.js?v=2"></script>
     <script src="/js/search-page.js"></script>
     <script src="/js/navigation.js"></script>
 </body>

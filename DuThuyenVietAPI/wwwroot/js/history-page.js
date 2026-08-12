@@ -165,7 +165,7 @@ async function initHistoryPage() {
                         <div style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.95rem;">
                             <p class="mb-1"><strong>Khách hàng:</strong> ${b.contactName} - ${b.contactPhone}</p>
                             <p class="mb-1"><strong>Phòng:</strong> ${roomsSummary}</p>
-                            <p class="mb-1"><strong>Lịch đi:</strong> ${new Date(b.departureDate).toLocaleDateString('vi-VN')}</p>
+                            <p class="mb-1"><strong>Lịch trình:</strong> ${new Date(b.departureDate).toLocaleDateString('vi-VN')}${b.returnDate ? ` ➔ ${new Date(b.returnDate).toLocaleDateString('vi-VN')}` : ''}</p>
                             ${b.note ? `<p class="mb-1" style="color: #4b5563; font-style: italic; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px;"><strong>📝 Ghi chú:</strong> ${b.note}</p>` : ''}
                         </div>
                         
@@ -180,11 +180,11 @@ async function initHistoryPage() {
                         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px; align-items: flex-end;">
                             ${isPending ? `<a href="/checkout.html?bookingCode=${b.bookingCode}" class="btn-primary text-center" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; text-decoration: none;">Thanh toán</a>` : ''}
                             
-                            <!-- ĐIỀU KIỆN HIỂN THỊ NÚT HỦY VÉ HOẶC THÔNG BÁO TRẠNG THÁI -->
                             ${canCancel ? `
                                 <button onclick="openCancelModal('${b.bookingCode}')" class="btn-secondary" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; border: 1px solid #dc2626; color: #dc2626; background: transparent;">🚫 Hủy vé</button>
                             ` : (isConfirmed ? `
-                                <span class="text-success small" style="font-weight: 500;">✓ Đã xác nhận (Không thể hủy)</span>
+                                <button onclick="openTicketModal('${b.bookingCode}')" class="btn-primary" style="padding: 6px 15px; font-size: 13px; min-width: 120px; border-radius: 6px; background: #0f172a; border: none; color: white;">🎫 Xem vé</button>
+                                <span class="text-success small" style="font-weight: 500; display: block; text-align: center; margin-top: 5px;">✓ Đã xác nhận</span>
                             ` : `
                                 <span class="text-muted small">Đơn đã hủy</span>
                             `)}
@@ -238,3 +238,98 @@ function startPendingCountdowns() {
 document.addEventListener('DOMContentLoaded', () => {
     initHistoryPage();
 });
+// TICKET FUNCTIONS
+window.openTicketModal = function(bookingCode) {
+    if (!window.customerGroupedBookings) return;
+    const booking = window.customerGroupedBookings[bookingCode];
+    if (!booking) return;
+
+    window.currentTicketCode = bookingCode;
+
+    const container = document.getElementById('ticketContainer');
+    if (!container) return;
+
+    const b = booking.items[0]; // Thông tin chung
+    const roomsSummary = booking.items.map(i => `${i.cabinName} (x${i.numberOfRooms})`).join(', ');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(b.bookingCode)}`;
+
+    container.innerHTML = `
+        <div class="ticket-main">
+            <div class="ticket-stamp">CONFIRMED</div>
+            <div class="ticket-header">
+                <span style="font-size: 2rem; margin-right: 15px;">🚢</span>
+                <h2>Du Thuyền Việt</h2>
+            </div>
+            
+            <div class="ticket-info-grid">
+                <div>
+                    <div class="ticket-label">Tên hành khách</div>
+                    <div class="ticket-value">${b.contactName}</div>
+                </div>
+                <div>
+                    <div class="ticket-label">Số điện thoại</div>
+                    <div class="ticket-value">${b.contactPhone}</div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <div class="ticket-label">Du thuyền</div>
+                    <div class="ticket-value" style="color: #0d9488; font-size: 1.2rem;">${b.cruiseName}</div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <div class="ticket-label">Hạng phòng</div>
+                    <div class="ticket-value">${roomsSummary}</div>
+                </div>
+                <div>
+                    <div class="ticket-label">Ngày khởi hành</div>
+                    <div class="ticket-value">${new Date(b.departureDate).toLocaleDateString('vi-VN')}</div>
+                </div>
+                <div>
+                    <div class="ticket-label">Ngày về</div>
+                    <div class="ticket-value">${new Date(b.returnDate).toLocaleDateString('vi-VN')}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ticket-stub">
+            <div class="ticket-label" style="color: #94a3b8; margin-bottom: 5px;">Scan để Check-in</div>
+            <img src="${qrUrl}" alt="QR Code" class="qr-code-img">
+            
+            <div class="ticket-label" style="color: #94a3b8; margin-top: 10px;">Booking Code</div>
+            <div class="ticket-stub-code">${b.bookingCode}</div>
+            
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 15px; font-style: italic;">
+                Chúc quý khách<br>chuyến đi vui vẻ!
+            </div>
+        </div>
+    `;
+
+    const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
+    ticketModal.show();
+};
+
+window.printTicket = function() {
+    const code = window.currentTicketCode;
+    if (!code) return;
+
+    const container = document.getElementById('ticketContainer');
+    if (!container) { alert('Không tìm thấy thông tin vé.'); return; }
+
+    if (typeof html2canvas === 'undefined') {
+        alert('Thư viện tải ảnh chưa sẵn sàng. Vui lòng tải lại trang.');
+        return;
+    }
+
+    html2canvas(container, { scale: 2, useCORS: true, backgroundColor: null, logging: false })
+        .then(canvas => {
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const a = document.createElement('a');
+            a.href = imgData;
+            a.download = `Ve_${code}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        })
+        .catch(err => {
+            console.error('Lỗi tải vé:', err);
+            alert('Lỗi tải vé: ' + err.message);
+        });
+};
