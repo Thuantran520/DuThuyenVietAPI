@@ -20,6 +20,8 @@ public class CruisesController : ControllerBase
     public async Task<IActionResult> GetCruises(
         [FromQuery] int? destinationId,
         [FromQuery] string? keyword,
+        [FromQuery] string? priceRange,
+        [FromQuery] DateTime? departureDate,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
@@ -29,6 +31,7 @@ public class CruisesController : ControllerBase
                 .Include(c => c.Destination)
                 .Include(c => c.CabinTypes)
                 .Include(c => c.CruiseImages)
+                .Include(c => c.Schedules)
                 .Where(c => c.IsActive)
                 .AsQueryable();
 
@@ -40,6 +43,25 @@ public class CruisesController : ControllerBase
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(c => c.Name.Contains(keyword) || c.Destination.Name.Contains(keyword));
+            }
+
+            if (!string.IsNullOrEmpty(priceRange))
+            {
+                var parts = priceRange.Split('-');
+                if (parts.Length == 2 && decimal.TryParse(parts[0], out var minPrice) && decimal.TryParse(parts[1], out var maxPrice))
+                {
+                    query = query.Where(c => c.CabinTypes.Any(cb => cb.BasePrice >= minPrice && cb.BasePrice <= maxPrice));
+                }
+                else if (parts.Length == 1 && decimal.TryParse(parts[0], out var minP))
+                {
+                    query = query.Where(c => c.CabinTypes.Any(cb => cb.BasePrice >= minP));
+                }
+            }
+
+            if (departureDate.HasValue)
+            {
+                var targetDate = departureDate.Value.Date;
+                query = query.Where(c => c.Schedules.Any(s => s.DepartureDate.Date == targetDate));
             }
 
             int totalItems = await query.CountAsync();
@@ -122,7 +144,10 @@ public class CruisesController : ControllerBase
                     cb.Description,
                     cb.TotalRooms
                 }).ToList(),
-                Schedules = cruise.Schedules.OrderByDescending(s => s.DepartureDate).Select(s => new
+                Schedules = cruise.Schedules
+                    .Where(s => s.DepartureDate.Date > DateTime.Now.Date)
+                    .OrderBy(s => s.DepartureDate)
+                    .Select(s => new
                 {
                     s.ScheduleId,
                     s.DepartureDate,

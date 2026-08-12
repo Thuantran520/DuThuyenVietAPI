@@ -5,6 +5,13 @@ const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
+window.generateSlug = window.generateSlug || function(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+};
+
 async function loadDestinations(selectId) {
     try {
         const response = await fetch(`${API_URL}/Destinations`);
@@ -60,20 +67,35 @@ window.loadHomeCruises = async function(page = 1) {
 
 async function initSearchPage() {
     const form = document.getElementById('filterForm');
+    if (!form) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     
     if (urlParams.has('keyword')) {
-        document.getElementById('filterKeyword').value = urlParams.get('keyword');
+        const el = document.getElementById('filterKeyword');
+        if (el) el.value = urlParams.get('keyword');
+    }
+    if (urlParams.has('priceRange')) {
+        const el = document.getElementById('filterPriceRange');
+        if (el) el.value = urlParams.get('priceRange');
+    }
+    if (urlParams.has('departureDate')) {
+        const el = document.getElementById('filterDepartureDate');
+        if (el) el.value = urlParams.get('departureDate');
     }
     
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const keyword = document.getElementById('filterKeyword').value;
-        const destinationId = document.getElementById('filterDestination').value;
+        const keyword = document.getElementById('filterKeyword')?.value || '';
+        const destinationId = document.getElementById('filterDestination')?.value || '';
+        const priceRange = document.getElementById('filterPriceRange')?.value || '';
+        const departureDate = document.getElementById('filterDepartureDate')?.value || '';
         
         let query = [];
         if (keyword) query.push(`keyword=${encodeURIComponent(keyword)}`);
         if (destinationId) query.push(`destinationId=${destinationId}`);
+        if (priceRange) query.push(`priceRange=${priceRange}`);
+        if (departureDate) query.push(`departureDate=${departureDate}`);
         
         const queryString = query.length ? `?${query.join('&')}` : '';
         window.history.pushState({}, '', `/search.html${queryString}`);
@@ -99,6 +121,8 @@ window.performSearch = async function(page = 1) {
         
         if (urlParams.has('keyword')) url += `&keyword=${encodeURIComponent(urlParams.get('keyword'))}`;
         if (urlParams.has('destinationId')) url += `&destinationId=${urlParams.get('destinationId')}`;
+        if (urlParams.has('priceRange')) url += `&priceRange=${urlParams.get('priceRange')}`;
+        if (urlParams.has('departureDate')) url += `&departureDate=${urlParams.get('departureDate')}`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -125,7 +149,13 @@ window.performSearch = async function(page = 1) {
 
 async function loadCruiseDetail() {
     const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+    let id = urlParams.get('id');
+    
+    if (!id) {
+        const match = window.location.pathname.match(/\/du-thuyen\/(\d+)/i);
+        if (match) id = match[1];
+    }
+    
     const container = document.getElementById('cruiseDetailContainer');
     
     if (!id) {
@@ -173,16 +203,23 @@ async function loadCruiseDetail() {
 
         let schedulesHtml = '';
         if (cruise.schedules && cruise.schedules.length > 0) {
-            schedulesHtml = cruise.schedules.map(s => `
-                <div class="schedule-item" id="schedule-box-${s.scheduleId}" style="position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; border-radius: 16px; cursor: pointer; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);" onclick="window.selectSchedule(${s.scheduleId})">
+            schedulesHtml = cruise.schedules.map(s => {
+                const depStr = new Date(s.departureDate).toLocaleDateString('vi-VN');
+                const retStr = s.returnDate ? new Date(s.returnDate).toLocaleDateString('vi-VN') : null;
+                return `
+                <div class="schedule-item" id="schedule-box-${s.scheduleId}" style="position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; border-radius: 16px; cursor: pointer; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);" onclick="window.selectSchedule(${s.scheduleId})">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; border-top-left-radius: 16px; border-top-right-radius: 16px; background: linear-gradient(90deg, var(--primary), #34d399); opacity: 0; transition: opacity 0.3s;" class="schedule-highlight"></div>
-                    <div style="font-weight: 800; color: var(--primary); font-size: 1.4rem; margin-bottom: 8px; font-family: 'Playfair Display', serif; letter-spacing: 0.5px;">${new Date(s.departureDate).toLocaleDateString('vi-VN')}</div>
-                    <div style="color: #475569; font-size: 0.9rem; margin-bottom: 20px; background: #f1f5f9; padding: 6px 14px; border-radius: 20px; font-weight: 600;">${s.durationLabel}</div>
-                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 10px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.95rem;">Chọn lịch này</button>
+                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; width: 100%;">
+                        <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem; background: rgba(13, 148, 136, 0.08); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(13, 148, 136, 0.2);">${depStr}</div>
+                        ${retStr ? `<div style="color: #94a3b8; font-size: 0.8rem;">➔</div><div style="font-weight: 600; color: #475569; font-size: 0.95rem; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">${retStr}</div>` : ''}
+                    </div>
+                    <div style="color: #475569; font-size: 0.85rem; margin-bottom: 15px; background: #f1f5f9; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-block;">⏱️ ${s.durationLabel || '2 ngày 1 đêm'}</div>
+                    <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 8px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.9rem;">Chọn lịch này</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         } else {
-            schedulesHtml = '<p>Chưa có lịch trình mở nào.</p>';
+            schedulesHtml = '<p class="no-schedule-msg" style="padding: 15px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; font-weight: 500; text-align: center;">Chưa có lịch trình có sẵn, vui lòng liên hệ SĐT <strong>1900 1234</strong> để được hỗ trợ.</p>';
         }
 
         // Reviews section sẽ được load động từ API (feature/review)
@@ -466,7 +503,11 @@ window.bookMultipleCabins = function() {
     if (selected.length === 0) return;
     
     const urlParams = new URLSearchParams(window.location.search);
-    const cruiseId = urlParams.get('id');
+    let cruiseId = urlParams.get('id');
+    if (!cruiseId) {
+        const match = window.location.pathname.match(/\/du-thuyen\/(\d+)/i);
+        if (match) cruiseId = match[1];
+    }
     window.location.href = `/booking.html?cruiseId=${cruiseId}&scheduleId=${window.selectedScheduleId}&cabins=${selected.join(',')}`;
 };
 
@@ -475,14 +516,14 @@ function renderCruiseCard(cruise) {
         <div class="cruise-card">
             <img src="${cruise.thumbnailUrl || '/images/default-cruise.jpg'}" alt="${cruise.name}" class="cruise-img" onerror="this.src='/images/default-cruise.jpg'">
             <div class="cruise-card-body">
-                <h3 class="cruise-title"><a href="/cruise-detail.html?id=${cruise.cruiseId}">${cruise.name}</a></h3>
+                <h3 class="cruise-title"><a href="/du-thuyen/${cruise.cruiseId}-${window.generateSlug(cruise.name)}">${cruise.name}</a></h3>
                 <div class="cruise-meta mb-3">
                     <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount})</span>
                     <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${cruise.destinationName}</span>
                 </div>
                 <div class="cruise-footer">
                     <span class="price">Từ ${formatPrice(cruise.startingPrice)}</span>
-                    <a href="/cruise-detail.html?id=${cruise.cruiseId}" class="btn-secondary">Xem Chi Tiết</a>
+                    <a href="/du-thuyen/${cruise.cruiseId}-${window.generateSlug(cruise.name)}" class="btn-secondary">Xem Chi Tiết</a>
                 </div>
             </div>
         </div>

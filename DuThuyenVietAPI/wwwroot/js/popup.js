@@ -216,6 +216,26 @@ window.Popup = (function() {
             modalOverlay.classList.add('show');
         },
 
+        info: function(title, htmlMessage) {
+            if(!modalOverlay) init();
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = htmlMessage;
+            
+            const btnConfirm = document.getElementById('modal-confirm');
+            if (btnConfirm) btnConfirm.style.display = 'none';
+            
+            const btnCancel = document.getElementById('modal-cancel');
+            if (btnCancel) btnCancel.innerText = 'Đóng';
+            
+            const input = document.getElementById('modal-input');
+            if (input) input.style.display = 'none';
+
+            activeCancelCallback = () => { close(); };
+            activeConfirmCallback = null;
+
+            modalOverlay.classList.add('show');
+        },
+
         prompt: function(title, message, placeholder, onComplete) {
             if(!modalOverlay) init();
             document.getElementById('modal-title').innerText = title;

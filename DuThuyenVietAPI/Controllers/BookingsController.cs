@@ -68,17 +68,34 @@ public class BookingsController : ControllerBase
             int? appliedPromotionId = dto.PromotionId;
 
             // Xử lý mã giảm giá (Promotion)
-            if (!string.IsNullOrEmpty(dto.PromotionCode))
+            if (!string.IsNullOrWhiteSpace(dto.PromotionCode))
             {
                 var promotion = await _context.Promotions
                     .FirstOrDefaultAsync(p => p.Code.ToUpper() == dto.PromotionCode.ToUpper() && p.IsActive);
 
-                if (promotion != null && DateTime.Now >= promotion.StartDate && DateTime.Now <= promotion.EndDate)
+                if (promotion == null)
                 {
-                    appliedPromotionId = promotion.PromotionId;
-                    decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
-                    finalTotalPrice = rawTotalPrice - discountAmount;
+                    return BadRequest(new { message = "Mã giảm giá không tồn tại hoặc đã bị khóa." });
                 }
+
+                var now = DateTime.Now;
+
+                // 1. Kiểm tra thời điểm bấm đặt phòng
+                if (now < promotion.StartDate)
+                {
+                    return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:MM/dd/yyyy}." });
+                }
+
+                if (now > promotion.EndDate)
+                {
+                    return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
+                }
+
+                // 2. Đã loại bỏ ràng buộc ngày khởi hành phải nằm trong khoảng thời gian khuyến mãi.
+
+                appliedPromotionId = promotion.PromotionId;
+                decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
+                finalTotalPrice = rawTotalPrice - discountAmount;
             }
 
             // Sử dụng mã booking từ frontend nếu có, nếu không thì tạo mới
@@ -143,6 +160,7 @@ public class BookingsController : ControllerBase
                     CruiseName = b.Schedule != null && b.Schedule.Cruise != null ? b.Schedule.Cruise.Name : "Không xác định",
                     CabinName = b.CabinType != null ? b.CabinType.Name : "Không xác định",
                     DepartureDate = b.Schedule != null ? b.Schedule.DepartureDate : (DateTime?)null,
+                    ReturnDate = b.Schedule != null ? b.Schedule.ReturnDate : (DateTime?)null,
                     b.NumberOfRooms,
                     b.TotalPrice,
                     b.Status,

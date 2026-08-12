@@ -136,3 +136,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         searchItem.remove();
     }
 });
+
+// Global Helper to Generate SEO Slugs
+window.generateSlug = function(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+        .normalize('NFD') 
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[đĐ]/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '') // Keep letters, numbers, spaces, hyphens
+        .trim()
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-'); // Remove duplicate hyphens
+};

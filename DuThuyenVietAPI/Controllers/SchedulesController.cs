@@ -17,7 +17,7 @@ public class SchedulesController : ControllerBase
     public async Task<IActionResult> GetByCruise([FromQuery] int cruiseId)
     {
         var schedules = await _context.Schedules
-            .Where(s => s.CruiseId == cruiseId)
+            .Where(s => s.CruiseId == cruiseId && s.Status != "Deleted")
             .OrderByDescending(s => s.DepartureDate)
             .Select(s => new
             {
@@ -79,10 +79,27 @@ public class SchedulesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _context.Schedules
+            .Include(s => s.Bookings)
+            .Include(s => s.ScheduleCabinInventories)
+            .FirstOrDefaultAsync(s => s.ScheduleId == id);
+
         if (schedule == null) return NotFound();
+
+        if (schedule.Bookings != null && schedule.Bookings.Any())
+        {
+            schedule.Status = "Deleted";
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Lịch trình đã có người đặt, đã được đưa vào lưu trữ lịch sử thay vì xóa hoàn toàn." });
+        }
+
+        if (schedule.ScheduleCabinInventories != null && schedule.ScheduleCabinInventories.Any())
+        {
+            _context.ScheduleCabinInventories.RemoveRange(schedule.ScheduleCabinInventories);
+        }
+
         _context.Schedules.Remove(schedule);
         await _context.SaveChangesAsync();
-        return Ok(new { Message = "Đã xóa lịch trình" });
+        return Ok(new { message = "Đã xóa lịch trình" });
     }
 }
