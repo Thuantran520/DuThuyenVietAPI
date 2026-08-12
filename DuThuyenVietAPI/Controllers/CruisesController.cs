@@ -122,7 +122,10 @@ public class CruisesController : ControllerBase
                     cb.Description,
                     cb.TotalRooms
                 }).ToList(),
-                Schedules = cruise.Schedules.OrderByDescending(s => s.DepartureDate).Select(s => new
+                Schedules = cruise.Schedules
+                    .Where(s => s.DepartureDate.Date > DateTime.Now.Date)
+                    .OrderBy(s => s.DepartureDate)
+                    .Select(s => new
                 {
                     s.ScheduleId,
                     s.DepartureDate,

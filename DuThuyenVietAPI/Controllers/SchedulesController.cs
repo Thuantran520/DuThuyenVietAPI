@@ -79,10 +79,25 @@ public class SchedulesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _context.Schedules
+            .Include(s => s.Bookings)
+            .Include(s => s.ScheduleCabinInventories)
+            .FirstOrDefaultAsync(s => s.ScheduleId == id);
+
         if (schedule == null) return NotFound();
+
+        if (schedule.Bookings != null && schedule.Bookings.Any())
+        {
+            return BadRequest(new { message = "Không thể xóa lịch trình vì đã có khách đặt." });
+        }
+
+        if (schedule.ScheduleCabinInventories != null && schedule.ScheduleCabinInventories.Any())
+        {
+            _context.ScheduleCabinInventories.RemoveRange(schedule.ScheduleCabinInventories);
+        }
+
         _context.Schedules.Remove(schedule);
         await _context.SaveChangesAsync();
-        return Ok(new { Message = "Đã xóa lịch trình" });
+        return Ok(new { message = "Đã xóa lịch trình" });
     }
 }
