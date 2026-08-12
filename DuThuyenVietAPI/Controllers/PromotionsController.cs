@@ -18,29 +18,77 @@ public class PromotionsController : ControllerBase
 
     /// <summary>
     /// Kiểm tra tính hợp lệ của mã giảm giá (Khách hàng)
+    /// Hỗ trợ kiểm tra theo Ngày khởi hành chuyến đi (truyền scheduleId hoặc departureDate)
     /// </summary>
     [HttpGet("Validate/{code}")]
-    public async Task<IActionResult> ValidatePromotion(string code)
+    public async Task<IActionResult> ValidatePromotion(
+        string code,
+        [FromQuery] int? scheduleId = null,
+        [FromQuery] DateTime? departureDate = null)
     {
         try
         {
+            // Lấy thông tin mã giảm giá (AsNoTracking để truy vấn trực tiếp từ DB)
             var promotion = await _context.Promotions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Code.ToUpper() == code.ToUpper() && p.IsActive);
 
             if (promotion == null)
             {
-                return NotFound(new { message = "Mã giảm giá không tồn tại hoặc đã bị vĩnh viễn khóa." });
+                return NotFound(new { message = "Mã giảm giá không tồn tại hoặc đã bị khóa." });
             }
 
             var now = DateTime.Now;
-            if (now < promotion.StartDate)
+
+            // 1. Kiểm tra ngày đặt hàng (thời điểm người dùng bấm áp mã)
+            if (now.Date < promotion.StartDate.Date)
             {
                 return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:dd/MM/yyyy}." });
             }
 
-            if (now > promotion.EndDate)
+            if (now.Date > promotion.EndDate.Date)
             {
                 return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
+            }
+
+            // 2. Xác định ngày khởi hành để kiểm tra
+            DateTime? targetDepartureDate = departureDate;
+
+            if (scheduleId.HasValue)
+            {
+                var schedule = await _context.Schedules
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.ScheduleId == scheduleId.Value);
+
+                if (schedule == null)
+                {
+                    return NotFound(new { message = "Lịch trình chuyến đi không tồn tại trên hệ thống." });
+                }
+
+                targetDepartureDate = schedule.DepartureDate;
+            }
+
+            // 3. Kiểm tra Ngày khởi hành với điều kiện mã
+            if (targetDepartureDate.HasValue)
+            {
+                // Chặn nếu chuyến đi đã khởi hành trong quá khứ
+                if (targetDepartureDate.Value.Date < now.Date)
+                {
+                    return BadRequest(new
+                    {
+                        message = $"Chuyến đi này đã khởi hành từ ngày {targetDepartureDate.Value:dd/MM/yyyy}. Không thể áp dụng mã hoặc đặt vé."
+                    });
+                }
+
+                // Chặn nếu Ngày khởi hành nằm ngoài khoảng thời gian cho phép của Mã giảm giá
+                if (targetDepartureDate.Value.Date < promotion.StartDate.Date ||
+                    targetDepartureDate.Value.Date > promotion.EndDate.Date)
+                {
+                    return BadRequest(new
+                    {
+                        message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:dd/MM/yyyy} đến {promotion.EndDate:dd/MM/yyyy}."
+                    });
+                }
             }
 
             return Ok(new
@@ -49,7 +97,8 @@ public class PromotionsController : ControllerBase
                 promotion.Code,
                 promotion.Description,
                 promotion.DiscountPercent,
-                promotion.EndDate
+                promotion.EndDate,
+                isValid = true
             });
         }
         catch (Exception ex)
@@ -68,7 +117,8 @@ public class PromotionsController : ControllerBase
         {
             var now = DateTime.Now;
             var promotions = await _context.Promotions
-                .Where(p => p.IsActive && p.StartDate <= now && p.EndDate >= now)
+                .AsNoTracking()
+                .Where(p => p.IsActive && p.StartDate.Date <= now.Date && p.EndDate.Date >= now.Date)
                 .Select(p => new
                 {
                     p.PromotionId,
@@ -154,6 +204,7 @@ public class PromotionsController : ControllerBase
         try
         {
             var promotions = await _context.Promotions
+                .AsNoTracking()
                 .OrderByDescending(p => p.PromotionId)
                 .ToListAsync();
 
@@ -165,38 +216,65 @@ public class PromotionsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Cập nhật mã khuyến mãi
+    /// </summary>
     [Authorize(Roles = "Admin,Manager,Staff")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePromotion(int id, [FromBody] CreatePromotionDTO dto)
     {
-        var promotion = await _context.Promotions.FindAsync(id);
-        if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
+        try
+        {
+            var promotion = await _context.Promotions.FindAsync(id);
+            if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
 
-        if (dto.DiscountPercent < 0 || dto.DiscountPercent > 100)
-            return BadRequest(new { message = "Phần trăm giảm giá phải từ 0% đến 100%." });
-        if (dto.EndDate <= dto.StartDate)
-            return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
+            if (dto.DiscountPercent < 0 || dto.DiscountPercent > 100)
+                return BadRequest(new { message = "Phần trăm giảm giá phải từ 0% đến 100%." });
 
-        promotion.Code = dto.Code.ToUpper();
-        promotion.Description = dto.Description;
-        promotion.DiscountPercent = dto.DiscountPercent;
-        promotion.StartDate = dto.StartDate;
-        promotion.EndDate = dto.EndDate;
-        promotion.IsActive = dto.IsActive;
+            if (dto.EndDate <= dto.StartDate)
+                return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
 
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Đã cập nhật mã khuyến mãi." });
+            bool codeExists = await _context.Promotions.AnyAsync(p => p.Code.ToUpper() == dto.Code.ToUpper() && p.PromotionId != id);
+            if (codeExists)
+            {
+                return BadRequest(new { message = "Mã khuyến mãi này đã trùng với một mã khác trên hệ thống." });
+            }
+
+            promotion.Code = dto.Code.ToUpper();
+            promotion.Description = dto.Description;
+            promotion.DiscountPercent = dto.DiscountPercent;
+            promotion.StartDate = dto.StartDate;
+            promotion.EndDate = dto.EndDate;
+            promotion.IsActive = dto.IsActive;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đã cập nhật mã khuyến mãi." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
+        }
     }
 
+    /// <summary>
+    /// Xóa mã khuyến mãi
+    /// </summary>
     [Authorize(Roles = "Admin,Manager,Staff")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePromotion(int id)
     {
-        var promotion = await _context.Promotions.FindAsync(id);
-        if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
+        try
+        {
+            var promotion = await _context.Promotions.FindAsync(id);
+            if (promotion == null) return NotFound(new { message = "Không tìm thấy mã khuyến mãi." });
 
-        _context.Promotions.Remove(promotion);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Đã xóa mã khuyến mãi." });
+            _context.Promotions.Remove(promotion);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đã xóa mã khuyến mãi." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi server: " + ex.Message });
+        }
     }
 }
