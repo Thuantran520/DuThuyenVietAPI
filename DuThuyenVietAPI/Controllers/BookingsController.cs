@@ -91,11 +91,7 @@ public class BookingsController : ControllerBase
                     return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
                 }
 
-                // 2. Kiểm tra ngày khởi hành của chuyến đi (Lịch trình)
-                if (schedule.DepartureDate < promotion.StartDate || schedule.DepartureDate > promotion.EndDate)
-                {
-                    return BadRequest(new { message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:MM/dd/yyyy} đến {promotion.EndDate:dd/MM/yyyy}." });
-                }
+                // 2. Đã loại bỏ ràng buộc ngày khởi hành phải nằm trong khoảng thời gian khuyến mãi.
 
                 appliedPromotionId = promotion.PromotionId;
                 decimal discountAmount = rawTotalPrice * promotion.DiscountPercent / 100m;
@@ -164,6 +160,7 @@ public class BookingsController : ControllerBase
                     CruiseName = b.Schedule != null && b.Schedule.Cruise != null ? b.Schedule.Cruise.Name : "Không xác định",
                     CabinName = b.CabinType != null ? b.CabinType.Name : "Không xác định",
                     DepartureDate = b.Schedule != null ? b.Schedule.DepartureDate : (DateTime?)null,
+                    ReturnDate = b.Schedule != null ? b.Schedule.ReturnDate : (DateTime?)null,
                     b.NumberOfRooms,
                     b.TotalPrice,
                     b.Status,

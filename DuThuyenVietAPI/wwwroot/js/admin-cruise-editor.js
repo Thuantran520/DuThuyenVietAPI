@@ -462,7 +462,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (res.ok) { Popup.show('Đã xóa', 'Xóa lịch trình thành công.', 'success'); loadSchedules(); }
-                else Popup.show('Lỗi', 'Không thể xóa lịch trình.', 'error');
+                else {
+                    let msg = 'Không thể xóa lịch trình.';
+                    try {
+                        const data = await res.json();
+                        if (data.message) msg = data.message;
+                    } catch {}
+                    Popup.show('Lỗi', msg, 'error');
+                }
             } catch { Popup.show('Lỗi', 'Lỗi kết nối.', 'error'); }
         });
     };
