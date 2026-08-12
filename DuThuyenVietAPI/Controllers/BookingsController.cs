@@ -83,7 +83,7 @@ public class BookingsController : ControllerBase
                 // 1. Kiểm tra thời điểm bấm đặt phòng
                 if (now < promotion.StartDate)
                 {
-                    return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:dd/MM/yyyy}." });
+                    return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:MM/dd/yyyy}." });
                 }
 
                 if (now > promotion.EndDate)
@@ -94,7 +94,7 @@ public class BookingsController : ControllerBase
                 // 2. Kiểm tra ngày khởi hành của chuyến đi (Lịch trình)
                 if (schedule.DepartureDate < promotion.StartDate || schedule.DepartureDate > promotion.EndDate)
                 {
-                    return BadRequest(new { message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:dd/MM/yyyy} đến {promotion.EndDate:dd/MM/yyyy}." });
+                    return BadRequest(new { message = $"Mã giảm giá này chỉ áp dụng cho chuyến đi khởi hành từ {promotion.StartDate:MM/dd/yyyy} đến {promotion.EndDate:dd/MM/yyyy}." });
                 }
 
                 appliedPromotionId = promotion.PromotionId;

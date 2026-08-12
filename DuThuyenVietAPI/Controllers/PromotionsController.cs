@@ -28,7 +28,9 @@ public class PromotionsController : ControllerBase
     {
         try
         {
+            // Lấy thông tin mã giảm giá (AsNoTracking để truy vấn trực tiếp từ DB)
             var promotion = await _context.Promotions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Code.ToUpper() == code.ToUpper() && p.IsActive);
 
             if (promotion == null)
@@ -38,7 +40,7 @@ public class PromotionsController : ControllerBase
 
             var now = DateTime.Now;
 
-            // 1. Kiểm tra ngày đặt hàng (thời điểm bấm áp mã)
+            // 1. Kiểm tra ngày đặt hàng (thời điểm người dùng bấm áp mã)
             if (now.Date < promotion.StartDate.Date)
             {
                 return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:dd/MM/yyyy}." });
@@ -49,21 +51,36 @@ public class PromotionsController : ControllerBase
                 return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
             }
 
-            // 2. Xác định ngày khởi hành để kiểm tra (nếu có truyền scheduleId hoặc departureDate)
+            // 2. Xác định ngày khởi hành để kiểm tra
             DateTime? targetDepartureDate = departureDate;
 
-            if (!targetDepartureDate.HasValue && scheduleId.HasValue)
+            if (scheduleId.HasValue)
             {
-                var schedule = await _context.Schedules.FindAsync(scheduleId.Value);
-                if (schedule != null)
+                var schedule = await _context.Schedules
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.ScheduleId == scheduleId.Value);
+
+                if (schedule == null)
                 {
-                    targetDepartureDate = schedule.DepartureDate;
+                    return NotFound(new { message = "Lịch trình chuyến đi không tồn tại trên hệ thống." });
                 }
+
+                targetDepartureDate = schedule.DepartureDate;
             }
 
-            // 3. Kiểm tra Ngày khởi hành với thời hạn của mã
+            // 3. Kiểm tra Ngày khởi hành với điều kiện mã
             if (targetDepartureDate.HasValue)
             {
+                // Chặn nếu chuyến đi đã khởi hành trong quá khứ
+                if (targetDepartureDate.Value.Date < now.Date)
+                {
+                    return BadRequest(new
+                    {
+                        message = $"Chuyến đi này đã khởi hành từ ngày {targetDepartureDate.Value:dd/MM/yyyy}. Không thể áp dụng mã hoặc đặt vé."
+                    });
+                }
+
+                // Chặn nếu Ngày khởi hành nằm ngoài khoảng thời gian cho phép của Mã giảm giá
                 if (targetDepartureDate.Value.Date < promotion.StartDate.Date ||
                     targetDepartureDate.Value.Date > promotion.EndDate.Date)
                 {
@@ -80,7 +97,8 @@ public class PromotionsController : ControllerBase
                 promotion.Code,
                 promotion.Description,
                 promotion.DiscountPercent,
-                promotion.EndDate
+                promotion.EndDate,
+                isValid = true
             });
         }
         catch (Exception ex)
@@ -99,7 +117,8 @@ public class PromotionsController : ControllerBase
         {
             var now = DateTime.Now;
             var promotions = await _context.Promotions
-                .Where(p => p.IsActive && p.StartDate <= now && p.EndDate >= now)
+                .AsNoTracking()
+                .Where(p => p.IsActive && p.StartDate.Date <= now.Date && p.EndDate.Date >= now.Date)
                 .Select(p => new
                 {
                     p.PromotionId,
@@ -185,6 +204,7 @@ public class PromotionsController : ControllerBase
         try
         {
             var promotions = await _context.Promotions
+                .AsNoTracking()
                 .OrderByDescending(p => p.PromotionId)
                 .ToListAsync();
 
@@ -213,6 +233,12 @@ public class PromotionsController : ControllerBase
 
             if (dto.EndDate <= dto.StartDate)
                 return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
+
+            bool codeExists = await _context.Promotions.AnyAsync(p => p.Code.ToUpper() == dto.Code.ToUpper() && p.PromotionId != id);
+            if (codeExists)
+            {
+                return BadRequest(new { message = "Mã khuyến mãi này đã trùng với một mã khác trên hệ thống." });
+            }
 
             promotion.Code = dto.Code.ToUpper();
             promotion.Description = dto.Description;
