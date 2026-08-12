@@ -17,7 +17,7 @@ public class SchedulesController : ControllerBase
     public async Task<IActionResult> GetByCruise([FromQuery] int cruiseId)
     {
         var schedules = await _context.Schedules
-            .Where(s => s.CruiseId == cruiseId)
+            .Where(s => s.CruiseId == cruiseId && s.Status != "Deleted")
             .OrderByDescending(s => s.DepartureDate)
             .Select(s => new
             {
@@ -88,7 +88,9 @@ public class SchedulesController : ControllerBase
 
         if (schedule.Bookings != null && schedule.Bookings.Any())
         {
-            return BadRequest(new { message = "Không thể xóa lịch trình vì đã có khách đặt." });
+            schedule.Status = "Deleted";
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Lịch trình đã có người đặt, đã được đưa vào lưu trữ lịch sử thay vì xóa hoàn toàn." });
         }
 
         if (schedule.ScheduleCabinInventories != null && schedule.ScheduleCabinInventories.Any())

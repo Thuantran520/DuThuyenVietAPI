@@ -15,12 +15,12 @@
         <div class="container text-center">
             <h1>Khám Phá Vẻ Đẹp Vịnh Hạ Long</h1>
             <p>Trải nghiệm nghỉ dưỡng đẳng cấp trên những du thuyền sang trọng bậc nhất.</p>
-            <form action="/search.html" method="GET" class="search-form">
-                <input type="text" name="keyword" placeholder="Nhập tên du thuyền...">
-                <select name="destinationId" id="destinationSelectHome">
+            <form action="/search.html" method="GET" class="search-form" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <input type="text" name="keyword" placeholder="Nhập tên du thuyền..." style="flex: 1; min-width: 150px;">
+                <select name="destinationId" id="destinationSelectHome" style="flex: 1; min-width: 150px;">
                     <option value="">Tất cả vịnh</option>
                 </select>
-                <button type="submit" class="btn-primary">Tìm Kiếm</button>
+                <button type="submit" class="btn-primary" style="flex: 0 0 auto; min-width: 120px;">Tìm Kiếm</button>
             </form>
         </div>
     </section>
@@ -35,7 +35,7 @@
         </div>
     </section>
 
-    <script src="/js/cruise.js"></script>
+    <script src="/js/cruise.js?v=2"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadDestinations('destinationSelectHome');
