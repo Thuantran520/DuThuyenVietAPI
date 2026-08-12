@@ -1,0 +1,328 @@
+/* ==========================================================================
+   PROMOTIONS UI - PREMIUM TICKET STYLE
+   ========================================================================== */
+
+body {
+    background-color: #f8fafc;
+}
+
+.admin-toolbar {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 16px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+}
+
+.promo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+/* Ticket Card Design */
+.promo-ticket {
+    display: flex;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+}
+
+.promo-ticket:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.12);
+    border-color: #cbd5e1;
+}
+
+/* Left side - Discount Value */
+.promo-left {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    color: white;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 130px;
+    position: relative;
+}
+
+.promo-left::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-image: linear-gradient(to bottom, transparent 50%, white 50%);
+    background-size: 2px 14px;
+}
+
+.promo-left::before {
+    content: '';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background-color: #f8fafc;
+    border-radius: 50%;
+    box-shadow: inset 1px 0 2px rgba(0,0,0,0.1);
+    z-index: 2;
+}
+
+.discount-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+    font-family: 'Playfair Display', serif;
+}
+
+.discount-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+/* Right side - Details */
+.promo-right {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.promo-code-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.promo-code {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+    border-bottom: 2px dashed #cbd5e1;
+    padding-bottom: 4px;
+}
+
+.promo-status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.status-active { background: #dcfce7; color: #15803d; }
+.status-expired { background: #f1f5f9; color: #64748b; }
+.status-inactive { background: #fee2e2; color: #b91c1c; }
+
+.promo-desc {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    flex: 1;
+}
+
+.promo-dates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.promo-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+}
+
+/* Modals and Forms */
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #0d9488;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.inline-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.inline-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.inline-modal {
+    background: white;
+    width: 100%;
+    max-width: 650px;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+}
+
+.inline-modal-overlay.active .inline-modal {
+    transform: translateY(0) scale(1);
+}
+
+.modal-title {
+    padding: 24px 28px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+    background: #f8fafc;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    padding: 0 28px;
+    margin-bottom: 8px;
+}
+
+.form-row:first-of-type { margin-top: 16px; }
+
+.form-group-modal {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-actions {
+    padding: 20px 28px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: #ffffff;
+    color: #475569;
+    border: 1.5px solid #cbd5e1;
+}
+.btn-outline:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+.btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-sm-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+.btn-edit-sm { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.btn-edit-sm:hover { background: #16a34a; color: white; border-color: #16a34a; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); }
+.btn-delete-sm { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.btn-delete-sm:hover { background: #ef4444; color: white; border-color: #ef4444; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }

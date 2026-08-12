@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 if (response.ok) {
                     Popup.show('Thành công', 'Đăng ký thành công! Hãy đăng nhập.', 'success');
-                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+                    setTimeout(() => { window.location.href = '/login.html'; }, 1500);
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     const errMsg = errorData.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại.';
@@ -129,12 +129,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         const token = localStorage.getItem('auth_token');
         if (!token) {
             alert('Vui lòng đăng nhập để xem trang này!');
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
             return;
         }
 
         const loader = document.getElementById('loader');
-        loader.style.display = 'block';
+        if (loader) loader.style.display = 'block';
 
         let isAdmin = false;
         let isManager = false;
@@ -157,40 +157,60 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const phone = data.phoneNumber || data.PhoneNumber || 'Chưa cập nhật';
                     const avatarUrl = data.avatarUrl || data.AvatarUrl;
 
-                    document.getElementById('val-username').innerText = userName;
-                    document.getElementById('val-email').innerText = email;
-                    document.getElementById('val-fullname').innerText = fullName;
-                    document.getElementById('val-phone').innerText = phone;
-                    document.getElementById('input-fullname').value = fullName === 'Chưa cập nhật' ? '' : fullName;
-                    document.getElementById('input-phone').value = phone === 'Chưa cập nhật' ? '' : phone;
+                    const elUsername = document.getElementById('val-username');
+                    if (elUsername) elUsername.innerText = userName;
+
+                    const elEmail = document.getElementById('val-email');
+                    if (elEmail) elEmail.innerText = email;
+
+                    const elFullname = document.getElementById('val-fullname');
+                    if (elFullname) elFullname.innerText = fullName;
+
+                    const elPhone = document.getElementById('val-phone');
+                    if (elPhone) elPhone.innerText = phone;
+
+                    const inputFullname = document.getElementById('input-fullname');
+                    if (inputFullname) inputFullname.value = fullName === 'Chưa cập nhật' ? '' : fullName;
+
+                    const inputPhone = document.getElementById('input-phone');
+                    if (inputPhone) inputPhone.value = phone === 'Chưa cập nhật' ? '' : phone;
 
                     // Avatar logic
                     const letter = document.getElementById('avatarLetter');
                     const img = document.getElementById('avatarImage');
-                    if (avatarUrl) {
-                        img.src = avatarUrl;
-                        img.style.display = 'block';
-                        letter.style.display = 'none';
-                    } else {
-                        img.style.display = 'none';
-                        letter.style.display = 'block';
-                        letter.innerText = (fullName !== 'Chưa cập nhật' ? fullName : email).charAt(0).toUpperCase();
+                    if (letter && img) {
+                        if (avatarUrl) {
+                            img.src = avatarUrl;
+                            img.style.display = 'block';
+                            letter.style.display = 'none';
+                        } else {
+                            img.style.display = 'none';
+                            letter.style.display = 'block';
+                            letter.innerText = (fullName !== 'Chưa cập nhật' ? fullName : email).charAt(0).toUpperCase();
+                        }
                     }
 
                     // Roles
                     const userRoles = data.roles || data.Roles || [];
                     const rolesContainer = document.getElementById('val-roles');
-                    rolesContainer.innerHTML = '';
+                    if (rolesContainer) {
+                        rolesContainer.innerHTML = '';
+                        if (userRoles.length > 0) {
+                            userRoles.forEach(role => {
+                                rolesContainer.innerHTML += `<span class="role-badge ${role.toLowerCase() === 'admin' ? 'admin' : ''}">${role}</span>`;
+                            });
+                        } else {
+                            rolesContainer.innerHTML = `<span style="color: #9ca3af">Customer</span>`;
+                        }
+                    }
+
+                    // Determine roles (we still need this even if no rolesContainer)
                     if (userRoles.length > 0) {
                         userRoles.forEach(role => {
                             if (role.toLowerCase() === 'admin') isAdmin = true;
                             if (role.toLowerCase() === 'manager') isManager = true;
                             if (role.toLowerCase() === 'staff') isStaff = true;
-                            
-                            rolesContainer.innerHTML += `<span class="role-badge ${role.toLowerCase() === 'admin' ? 'admin' : ''}">${role}</span>`;
                         });
-                    } else {
-                        rolesContainer.innerHTML = `<span style="color: #9ca3af">Customer</span>`;
                     }
 
                     // Router & Access Control
@@ -220,6 +240,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                         tabAdminNav.style.display = 'block';
                         loadAdminUsers();
                     }
+
+                    const tabPromotionsNav = document.getElementById('tab-promotions-nav');
+                    if (tabPromotionsNav && (isAdmin || isManager || isStaff)) {
+                        tabPromotionsNav.style.display = 'block';
+                    }
                     
                     const tabBookingsNav = document.getElementById('tab-bookings-nav');
                     if (tabBookingsNav && (isAdmin || isManager || isStaff)) {
@@ -238,15 +263,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                         loadAdminCruises();
                     }
 
-                    loader.style.display = 'none';
+                    if (loader) loader.style.display = 'none';
                     mainContent.style.display = 'block';
                 } else {
                     localStorage.removeItem('auth_token');
-                    window.location.href = 'login.html';
+                    window.location.href = '/login.html';
                 }
             } catch (error) {
                 console.error(error);
-                Popup.show('Lỗi', 'Lỗi lấy thông tin.', 'error');
+                Popup.show('Lỗi', 'Lỗi lấy thông tin: ' + (error.stack || error.message), 'error');
             }
         }
         
@@ -281,23 +306,28 @@ document.addEventListener('DOMContentLoaded', async function () {
         const formFullname = document.getElementById('form-fullname');
         const formPhone = document.getElementById('form-phone');
 
-        btnEdit.addEventListener('click', () => {
-            valFullname.style.display = 'none'; formFullname.style.display = 'block';
-            valPhone.style.display = 'none'; formPhone.style.display = 'block';
-            viewActions.style.display = 'none'; editActions.style.display = 'flex';
-        });
+        if (btnEdit) {
+            btnEdit.addEventListener('click', () => {
+                valFullname.style.display = 'none'; formFullname.style.display = 'block';
+                valPhone.style.display = 'none'; formPhone.style.display = 'block';
+                viewActions.style.display = 'none'; editActions.style.display = 'flex';
+            });
+        }
 
-        btnCancel.addEventListener('click', () => {
-            valFullname.style.display = 'block'; formFullname.style.display = 'none';
-            valPhone.style.display = 'block'; formPhone.style.display = 'none';
-            viewActions.style.display = 'flex'; editActions.style.display = 'none';
-        });
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                valFullname.style.display = 'block'; formFullname.style.display = 'none';
+                valPhone.style.display = 'block'; formPhone.style.display = 'none';
+                viewActions.style.display = 'flex'; editActions.style.display = 'none';
+            });
+        }
 
         // --- Save Profile ---
         const btnSave = document.getElementById('btnSaveProfile');
         const inputFullname = document.getElementById('input-fullname');
         const inputPhone = document.getElementById('input-phone');
-        btnSave.addEventListener('click', async () => {
+        if (btnSave) {
+            btnSave.addEventListener('click', async () => {
             const fullName = inputFullname.value;
             const phoneNumber = inputPhone.value;
             
@@ -333,13 +363,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                 btnSave.disabled = false;
                 btnSave.innerText = "Lưu thay đổi";
             }
-        });
+            });
+        }
 
         // --- Upload Avatar ---
         const avatarUpload = document.getElementById('avatarUpload');
         const avatarStatus = document.getElementById('avatarStatus');
         
-        avatarUpload.addEventListener('change', async (e) => {
+        if (avatarUpload) {
+            avatarUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -368,7 +400,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             } catch (error) {
                 avatarStatus.innerText = "Lỗi kết nối.";
             }
-        });
+            });
+        }
 
         // --- Change Password Form Submit ---
         window.changePasswordSubmit = async () => {
@@ -795,6 +828,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (response.ok) {
                     const users = await response.json();
                     const tbody = document.getElementById('user-table-body');
+                    if (!tbody) return;
                     tbody.innerHTML = '';
 
                     users.forEach(u => {

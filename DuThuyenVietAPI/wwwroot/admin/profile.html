@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/promotions.css">
     <script>
         // Instant check to prevent layout flash
         if (!localStorage.getItem('auth_token')) { window.location.replace('/login.html'); }
@@ -41,6 +42,7 @@
                 <div class="tab" id="tab-notes-nav" data-target="tab-notes" style="display: none;">Yêu cầu & Ghi chú</div>
                 <div class="tab" id="tab-cruises-nav" data-target="tab-cruises" style="display: none;">Quản lý Du Thuyền</div>
                 <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
+                <div class="tab" id="tab-promotions-nav" data-target="tab-promotions" style="display: none;">Mã Giảm Giá</div>
             </div>
 
             <!-- TAB: HỒ SƠ -->
@@ -235,6 +237,24 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB: MÃ GIẢM GIÁ -->
+            <div class="tab-content" id="tab-promotions">
+                <div class="card" style="position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;">🎟️ Quản lý Mã Giảm Giá</div>
+                            <div style="font-size: 14px; color: #6b7280;">Tạo và quản lý các coupon khuyến mãi cho hệ thống.</div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="btn-add-promo">+ Thêm Khuyến Mãi</button>
+                    </div>
+
+                    <div class="promo-grid" id="promo-list">
+                        <!-- Loading state -->
+                        <div style="text-align: center; padding: 40px; color: #64748b; grid-column: 1/-1;">Đang tải danh sách...</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -319,6 +339,54 @@
     </div>
     </div>
 
+    <!-- PROMO MODAL -->
+    <div class="inline-modal-overlay" id="promo-modal">
+        <div class="inline-modal" style="background: white; width: 95%; max-width: 600px; border-radius: 12px; padding: 24px;">
+            <div class="modal-title" id="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 20px;">✨ Thêm Mã Giảm Giá</div>
+            <input type="hidden" id="promo-id">
+            
+            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Mã Giảm Giá (Code)</label>
+                    <input type="text" id="promo-code" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;" placeholder="VD: SUMMER2024">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Giảm giá (%)</label>
+                    <input type="number" id="promo-discount" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="VD: 15" min="1" max="100">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Ngày bắt đầu</label>
+                    <input type="datetime-local" id="promo-start" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Ngày kết thúc</label>
+                    <input type="datetime-local" id="promo-end" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                <div style="flex: 2;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Mô tả chi tiết</label>
+                    <input type="text" id="promo-desc" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="VD: Giảm 15%...">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Trạng thái</label>
+                    <select id="promo-status" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="1">Đang kích hoạt</option>
+                        <option value="0">Tạm khóa</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                <button type="button" class="btn btn-outline" id="btn-cancel-promo">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary" id="btn-save-promo">💾 Lưu Khuyến Mãi</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="main-footer"></footer>
 
@@ -327,5 +395,6 @@
     <script src="/js/popup.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/navigation.js"></script>
+    <script src="/js/promotions.js"></script>
 </body>
 </html>
