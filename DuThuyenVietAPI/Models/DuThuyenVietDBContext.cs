@@ -16,7 +16,6 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
 
     public virtual DbSet<Amenity> Amenities { get; set; }
 
-
     public virtual DbSet<BlogPost> BlogPosts { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -52,6 +51,12 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Cruise>().Property(e => e.AverageRating).HasColumnType("decimal(3,1)");
         modelBuilder.Entity<Payment>().Property(e => e.Amount).HasColumnType("decimal(18,2)");
         modelBuilder.Entity<ScheduleCabinInventory>().Property(e => e.PriceOverride).HasColumnType("decimal(18,2)");
+
+        // 🟢 TẮT TẤT CẢ CASCADE DELETE ĐỂ BẢO ĐẢM KHÔNG BAO GIỜ BỊ LỖI MULTIPLE CASCADE PATHS
+        foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+        {
+            relationship.DeleteBehavior = DeleteBehavior.NoAction;
+        }
 
         OnModelCreatingPartial(modelBuilder);
     }

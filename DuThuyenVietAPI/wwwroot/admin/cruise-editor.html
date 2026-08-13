@@ -79,15 +79,34 @@
                     </div>
                 </div>
 
-                <!-- Ảnh đại diện -->
+                <!-- Ảnh đại diện & Thư viện ảnh -->
                 <div>
-                    <label class="form-label" style="font-size: 0.8rem;">🖼️ ẢNH ĐẠI DIỆN (URL)</label>
-                    <input type="text" id="edit-thumb" class="editable-field" style="margin-bottom: 12px; font-size: 13px;" placeholder="https://example.com/image.jpg"
-                        oninput="document.getElementById('preview-thumb').src = this.value || '/images/default-cruise.jpg'">
-                    <img id="preview-thumb" src="/images/default-cruise.jpg"
-                        style="width: 100%; height: 240px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);"
-                        onerror="this.src='/images/default-cruise.jpg'">
-                    <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 8px; text-align: center;">Xem trước ảnh đại diện</p>
+                    <div style="margin-bottom: 20px;">
+                        <label class="form-label" style="font-size: 0.8rem;">🖼️ ẢNH ĐẠI DIỆN (URL)</label>
+                        <input type="text" id="edit-thumb" class="editable-field" style="margin-bottom: 12px; font-size: 13px;" placeholder="https://example.com/image.jpg"
+                               oninput="document.getElementById('preview-thumb').src = this.value || '/images/default-cruise.jpg'">
+
+                        <div style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 0.75rem; color: #475569; margin-bottom: 4px;">TẢI LÊN ẢNH ĐẠI DIỆN MỚI (&le; 5MB):</label>
+                            <input type="file" id="input-thumbnail" accept="image/*" class="form-input" style="padding: 6px; font-size: 12px;">
+                        </div>
+
+                        <img id="preview-thumb" src="/images/default-cruise.jpg" alt="Xem trước ảnh đại diện"
+                             style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);"
+                             onerror="this.src='/images/default-cruise.jpg'">
+                        <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 8px; text-align: center;">Xem trước ảnh đại diện</p>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">📸 THƯ VIỆN ẢNH (TỐI ĐA 5 ẢNH)</label>
+                        <input type="file" id="input-gallery" accept="image/*" multiple class="form-input" style="padding: 6px; font-size: 12px; margin-bottom: 6px;">
+                        <small style="display: block; font-size: 0.75rem; color: #64748b; line-height: 1.3;">
+                            - Cho phép chọn từ 1 đến 5 ảnh.<br>
+                            - Tổng dung lượng không quá 50MB.
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
