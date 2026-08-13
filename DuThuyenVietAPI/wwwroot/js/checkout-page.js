@@ -15,6 +15,13 @@ const checkAuth = () => {
     return true;
 };
 
+window.generateSlug = window.generateSlug || function(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     const token = getToken();
     if (!checkAuth()) return;
@@ -104,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bcCruiseActive = document.getElementById('bc-cruise-active');
         if (bcCruiseLink && bcCruiseActive) {
             if (firstBooking.cruiseId) {
-                bcCruiseLink.href = `/cruise-detail.html?id=${firstBooking.cruiseId}`;
+                bcCruiseLink.href = `/du-thuyen/${firstBooking.cruiseId}-${window.generateSlug(firstBooking.cruiseName)}`;
             } else {
                 bcCruiseLink.removeAttribute('href');
             }

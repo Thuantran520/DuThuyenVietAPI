@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Rewrite;
 using System.Text;
 using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
@@ -71,6 +72,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Rewrite Rules for Friendly URLs
+var rewriteOptions = new RewriteOptions()
+    .AddRewrite(@"^du-thuyen/(\d+)(?:-[a-zA-Z0-9-]+)?/?$", "cruise-detail.html?id=$1", skipRemainingRules: true);
+app.UseRewriter(rewriteOptions);
+
 app.UseDefaultFiles(); // Allow index.html/login.html by default if needed
 app.UseStaticFiles();  // Serve files from wwwroot
 

@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
-    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/popup.css?v=2">
     <link rel="stylesheet" href="/css/promotions.css">
     <script>
         // Instant check to prevent layout flash
@@ -39,7 +39,6 @@
                 <div class="tab active" data-target="tab-profile">Hồ sơ Cá nhân</div>
                 <div class="tab" data-target="tab-password">Đổi Mật khẩu</div>
                 <div class="tab" id="tab-bookings-nav" data-target="tab-bookings" style="display: none;">Quản lý Đặt Phòng</div>
-                <div class="tab" id="tab-notes-nav" data-target="tab-notes" style="display: none;">Yêu cầu & Ghi chú</div>
                 <div class="tab" id="tab-cruises-nav" data-target="tab-cruises" style="display: none;">Quản lý Du Thuyền</div>
                 <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
                 <div class="tab" id="tab-promotions-nav" data-target="tab-promotions" style="display: none;">Mã Giảm Giá</div>
@@ -128,7 +127,13 @@
             <!-- TAB: BOOKINGS QUẢN LÝ ĐẶT PHÒNG -->
             <div class="tab-content" id="tab-bookings">
                 <div class="card">
-                    <div class="card-title">Quản lý Yêu cầu Đặt Phòng</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="card-title" style="margin-bottom: 0;">Quản lý Yêu cầu Đặt Phòng</div>
+                        <a href="/admin/bookings.html" target="_blank" class="btn-outline" style="text-decoration: none; font-size: 13px; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border-color: var(--primary); color: var(--primary);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14L21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+                            Mở chế độ Toàn trang 
+                        </a>
+                    </div>
                     <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Duyệt hoặc từ chối các yêu cầu thanh toán chuyển khoản/tiền mặt từ khách hàng.</div>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
@@ -144,11 +149,21 @@
                             <div style="color: #854d0e; font-size: 14px; font-weight: 600; margin-bottom: 8px;">TỔNG ĐƠN ĐẶT</div>
                             <div id="dash-bookings" style="color: #a16207; font-size: 24px; font-weight: 800;">0</div>
                         </div>
-                        <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer;" onclick="document.querySelector('[data-target=tab-notes]').click()">
+                        <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 20px; border-radius: 12px; text-align: center;">
                             <div style="color: #9d174d; font-size: 14px; font-weight: 600; margin-bottom: 8px;">YÊU CẦU ĐẶC BIỆT</div>
                             <div id="dash-notes" style="color: #be185d; font-size: 24px; font-weight: 800;">0</div>
-                            <div style="color: #9d174d; font-size: 11px; margin-top: 4px;">Nhấn để xem →</div>
                         </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, hoặc Ghi chú..." style="flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
+                        <select id="adminBookingStatusFilter" style="padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 180px;" onchange="filterAdminBookings()">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="Pending">Chờ thanh toán</option>
+                            <option value="AwaitingConfirmation">Chờ xác nhận</option>
+                            <option value="Confirmed">Thành công</option>
+                            <option value="Cancelled">Đã hủy</option>
+                        </select>
                     </div>
                     
                     <div class="table-responsive">
@@ -165,31 +180,6 @@
                             </thead>
                             <tbody id="bookings-table-body">
                                 <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: YÊU CẦU & GHI CHÚ -->
-            <div class="tab-content" id="tab-notes">
-                <div class="card">
-                    <div class="card-title">Yêu Cầu Đặc Biệt từ Khách Hàng</div>
-                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Danh sách các ghi chú, yêu cầu đặc biệt của hành khách đối với các đơn đặt phòng.</div>
-                    
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Mã đơn</th>
-                                    <th>Khách hàng</th>
-                                    <th>Chuyến đi & Ngày khởi hành</th>
-                                    <th>Nội dung Yêu cầu / Ghi chú</th>
-                                    <th style="min-width: 120px;">Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody id="notes-table-body">
-                                <tr><td colspan="5" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -390,10 +380,11 @@
 
     <footer class="main-footer"></footer>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <script src="/js/popup.js"></script>
-    <script src="/js/auth.js"></script>
+    <script src="/js/popup.js?v=2"></script>
+    <script src="/js/auth.js?v=25"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/promotions.js"></script>
 </body>

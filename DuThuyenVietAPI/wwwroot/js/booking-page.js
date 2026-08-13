@@ -15,6 +15,13 @@ const checkAuth = () => {
     return true;
 };
 
+window.generateSlug = window.generateSlug || function(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+};
+
 // Biến toàn cục lưu thông tin mã giảm giá được áp dụng
 let appliedPromotion = null;
 
@@ -85,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (selectedCabins.length === 0) {
-        window.location.href = `/cruise-detail.html?id=${cruiseId}`;
+        window.location.href = `/du-thuyen/${cruiseId}`;
         return;
     }
 
@@ -174,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bcCruiseLink = document.getElementById('bc-cruise-link');
         const bcCruiseActive = document.getElementById('bc-cruise-active');
         if (bcCruiseLink && bcCruiseActive) {
-            bcCruiseLink.href = `/cruise-detail.html?id=${cruiseId}`;
+            bcCruiseLink.href = `/du-thuyen/${cruiseId}-${window.generateSlug(cruise.name)}`;
             bcCruiseLink.innerText = cruise.name || 'Chi tiết du thuyền';
             bcCruiseActive.innerText = 'Đặt phòng';
         }

@@ -448,6 +448,286 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         };
+        
+        window.revenueChartInstance = null;
+        window.statusChartInstance = null;
+        window.ordersChartInstance = null;
+        window.topCruiseChartInstance = null;
+
+        function renderAdminCharts(grouped) {
+            if (typeof Chart === 'undefined') return;
+            
+            const bookings = Object.values(grouped);
+            
+            const filterEl = document.getElementById('biFilter');
+            const days = filterEl ? parseInt(filterEl.value) || 7 : 7;
+            
+            const titleEl = document.getElementById('revenueChartTitle');
+            const titleOrdersEl = document.getElementById('ordersChartTitle');
+            if (titleEl) {
+                if (days === 7) {
+                    titleEl.innerText = 'Doanh thu 7 ngày qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 7 ngày qua';
+                }
+                else if (days === 30) {
+                    titleEl.innerText = 'Doanh thu 30 ngày qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 30 ngày qua';
+                }
+                else if (days === 180) {
+                    titleEl.innerText = 'Doanh thu 6 tháng qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 6 tháng qua';
+                }
+                else if (days === 365) {
+                    titleEl.innerText = 'Doanh thu 1 năm qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 1 năm qua';
+                }
+            }
+            
+            // 1. Status Chart (Lọc theo số ngày)
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            const filteredBookings = bookings.filter(b => {
+                if (!b.createdAt) return false;
+                return new Date(b.createdAt) >= cutoffDate;
+            });
+            
+            const statusCounts = { Pending: 0, AwaitingConfirmation: 0, Confirmed: 0, Cancelled: 0 };
+            filteredBookings.forEach(b => {
+                if (statusCounts[b.status] !== undefined) statusCounts[b.status]++;
+                else statusCounts[b.status] = 1;
+            });
+            
+            const ctxStatus = document.getElementById('statusChart');
+            if (ctxStatus) {
+                if (window.statusChartInstance) window.statusChartInstance.destroy();
+                
+                // Đăng ký plugin datalabels nếu có
+                const plugins = [];
+                if (typeof ChartDataLabels !== 'undefined') {
+                    Chart.register(ChartDataLabels);
+                    plugins.push(ChartDataLabels);
+                }
+                
+                window.statusChartInstance = new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Chờ thanh toán', 'Chờ xác nhận', 'Thành công', 'Đã hủy'],
+                        datasets: [{
+                            data: [statusCounts.Pending || 0, statusCounts.AwaitingConfirmation || 0, statusCounts.Confirmed || 0, statusCounts.Cancelled || 0],
+                            backgroundColor: ['#fef3c7', '#e0e7ff', '#dcfce3', '#fee2e2'],
+                            borderColor: ['#d97706', '#4338ca', '#16a34a', '#dc2626'],
+                            borderWidth: 1
+                        }]
+                    },
+                    plugins: plugins,
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            datalabels: {
+                                formatter: (value, ctx) => {
+                                    let sum = 0;
+                                    let dataArr = ctx.chart.data.datasets[0].data;
+                                    dataArr.map(data => { sum += data; });
+                                    if (sum === 0 || value === 0) return '';
+                                    let percentage = Math.round((value * 100) / sum) + "%";
+                                    return percentage;
+                                },
+                                color: '#1e293b',
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        let value = context.parsed;
+                                        let sum = 0;
+                                        let dataArr = context.dataset.data;
+                                        dataArr.map(data => { sum += data; });
+                                        let percentage = sum > 0 ? Math.round((value * 100) / sum) + "%" : "0%";
+                                        return label + value + ' đơn (' + percentage + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 2 & 3. Revenue Chart & Orders Chart
+            const dates = [];
+            const revenues = [];
+            const orderCounts = [];
+            
+            if (days <= 30) {
+                // Group by day
+                for (let i = days - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
+                    revenues.push(0);
+                    orderCounts.push(0);
+                }
+                
+                filteredBookings.forEach(b => {
+                    if (b.createdAt) {
+                        const bDate = new Date(b.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                        const idx = dates.indexOf(bDate);
+                        if (idx !== -1) {
+                            if (b.status === 'Confirmed') revenues[idx] += b.totalPrice;
+                            orderCounts[idx] += 1;
+                        }
+                    }
+                });
+            } else {
+                // Group by month
+                const monthsToShow = days === 180 ? 6 : 12;
+                for (let i = monthsToShow - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    dates.push(d.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }));
+                    revenues.push(0);
+                    orderCounts.push(0);
+                }
+                
+                filteredBookings.forEach(b => {
+                    if (b.createdAt) {
+                        const bDate = new Date(b.createdAt).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
+                        const idx = dates.indexOf(bDate);
+                        if (idx !== -1) {
+                            if (b.status === 'Confirmed') revenues[idx] += b.totalPrice;
+                            orderCounts[idx] += 1;
+                        }
+                    }
+                });
+            }
+            
+            const ctxRev = document.getElementById('revenueChart');
+            if (ctxRev) {
+                if (window.revenueChartInstance) window.revenueChartInstance.destroy();
+                window.revenueChartInstance = new Chart(ctxRev, {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: revenues,
+                            backgroundColor: 'rgba(5, 150, 105, 0.7)',
+                            borderColor: 'rgba(5, 150, 105, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            datalabels: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const ctxOrders = document.getElementById('ordersChart');
+            if (ctxOrders) {
+                if (window.ordersChartInstance) window.ordersChartInstance.destroy();
+                window.ordersChartInstance = new Chart(ctxOrders, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Số lượng đơn đặt',
+                            data: orderCounts,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { datalabels: { display: false } }
+                    }
+                });
+            }
+            
+            // 4. Top Cruises Chart (Horizontal Bar)
+            const cruiseStats = {};
+            filteredBookings.forEach(b => {
+                if (b.status === 'Confirmed') {
+                    const name = b.cruiseName || 'Khác';
+                    if (!cruiseStats[name]) cruiseStats[name] = 0;
+                    cruiseStats[name] += 1;
+                }
+            });
+            const sortedCruises = Object.entries(cruiseStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const cruiseLabels = sortedCruises.map(x => x[0]);
+            const cruiseData = sortedCruises.map(x => x[1]);
+
+            const ctxTop = document.getElementById('topCruiseChart');
+            if (ctxTop) {
+                if (window.topCruiseChartInstance) window.topCruiseChartInstance.destroy();
+                window.topCruiseChartInstance = new Chart(ctxTop, {
+                    type: 'bar',
+                    data: {
+                        labels: cruiseLabels.length > 0 ? cruiseLabels : ['Chưa có dữ liệu'],
+                        datasets: [{
+                            label: 'Số đơn thành công',
+                            data: cruiseData.length > 0 ? cruiseData : [0],
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        indexAxis: 'y',
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { datalabels: { display: false } }
+                    }
+                });
+            }
+        }
+        
+        window.updateBICharts = function() {
+            if (window.adminGroupedBookings) {
+                renderAdminCharts(window.adminGroupedBookings);
+            }
+        };
 
         // --- Fetch Admin Bookings Data ---
         async function loadAdminBookings() {
@@ -507,41 +787,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const elNotes = document.getElementById('dash-notes');
                     if (elNotes) elNotes.innerText = totalNotes.toString();
 
-                    Object.values(grouped).forEach(b => {
-                        let statusHtml = '';
-                        if (b.status === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
-                        else if (b.status === 'AwaitingConfirmation') statusHtml = '<span class="role-badge" style="background:#e0e7ff; color:#4338ca;">Chờ xác nhận</span>';
-                        else if (b.status === 'Confirmed') statusHtml = '<span class="role-badge" style="background:#dcfce3; color:#16a34a;">Thành công</span>';
-                        else if (b.status === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
-                        else statusHtml = b.status;
+                    // Cập nhật biểu đồ BI Dashboard
+                    renderAdminCharts(grouped);
 
-                        let actionsHtml = `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-                        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#0d9488; color:#0d9488;" onclick="downloadInvoiceDirectly('${b.bookingCode}')">📥 Tải PDF</button>`;
-                        
-                        if (b.status === 'AwaitingConfirmation' || b.status === 'Pending') {
-                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
-                            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Cancelled')">Hủy</button>`;
-                        }
-                        actionsHtml += `</div>`;
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td style="font-weight: 500;">
-                                ${b.bookingCode}
-                                <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
-                            </td>
-                            <td>
-                                ${b.contactName}<br>
-                                <small class="text-muted">${b.contactPhone}</small>
-                                ${b.note ? `<br><small style="color:#0d9488; font-style:italic;">📝 ${b.note}</small>` : ''}
-                            </td>
-                            <td>${b.cruiseName}<br><small class="text-muted">${b.items.length} loại phòng</small></td>
-                            <td style="font-weight: 600; color: #ef4444;">${formatPrice(b.totalPrice)}</td>
-                            <td>${statusHtml}</td>
-                            <td style="text-align: right; white-space: nowrap;">${actionsHtml}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                    // Sử dụng hàm lọc để render thay vì render trực tiếp
+                    filterAdminBookings();
                 } else {
                     const errorText = await response.text();
                     document.getElementById('bookings-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Lỗi tải dữ liệu: ${errorText || response.statusText}</td></tr>`;
@@ -681,7 +931,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         div.innerHTML = `
                             <img src="${c.thumbnailUrl || '/images/default-cruise.jpg'}" alt="${c.name}" class="cruise-img" onerror="this.src='/images/default-cruise.jpg'">
                             <div class="cruise-card-body">
-                                <h3 class="cruise-title"><a href="/cruise-detail.html?id=${c.cruiseId}">${c.name}</a></h3>
+                                <h3 class="cruise-title"><a href="/du-thuyen/${c.cruiseId}-${window.generateSlug(c.name)}">${c.name}</a></h3>
                                 <div class="cruise-meta mb-3">
                                     <span class="rating">⭐ ${c.averageRating} (${c.reviewCount})</span>
                                     <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${c.destinationName}</span>
@@ -944,93 +1194,245 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 });
 
-window.downloadInvoiceDirectly = function(code) {
-    try {
-        const grp = (window.adminGroupedBookings && window.adminGroupedBookings[code]) || 
-                    (window.customerGroupedBookings && window.customerGroupedBookings[code]) || null;
-        if(!grp) {
-            alert("Không tìm thấy dữ liệu hóa đơn. Vui lòng tải lại trang.");
-            return;
+window.downloadInvoiceDirectly = function(code, btnEl) {
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Đang tạo...'; }
+    const restore = () => { if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Tải hóa đơn'; } };
+
+    const grp = (window.adminGroupedBookings && window.adminGroupedBookings[code]) ||
+                (window.customerGroupedBookings && window.customerGroupedBookings[code]) || null;
+    if (!grp) { restore(); alert('Dữ liệu chưa tải xong. Vui lòng đợi vài giây rồi thử lại.'); return; }
+
+    const fmt = p => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    const items  = (grp.items && grp.items.length > 0) ? grp.items : [grp];
+    const first  = items[0];
+    const name   = esc(grp.contactName   || first.contactName   || '');
+    const phone  = esc(grp.contactPhone  || first.contactPhone  || '');
+    const cruise = esc(grp.cruiseName    || first.cruiseName    || '');
+    const depD   = grp.departureDate || first.departureDate || '';
+    const note   = esc(grp.note          || first.note          || '');
+    const cAt    = grp.createdAt     || first.createdAt     || '';
+    const status = grp.status        || first.status        || '';
+    const total  = grp.totalPrice    || items.reduce((s,i) => s+(i.totalPrice||0), 0);
+    const stLabel= status==='Confirmed' ? 'Đã thanh toán' : status==='Cancelled' ? 'Đã hủy' : 'Chờ xác nhận';
+
+    const jwtD = (() => { try { const t=localStorage.getItem('auth_token'); return t?JSON.parse(atob(t.split('.')[1])):null; } catch{return null;} })();
+    const staff = jwtD?(jwtD['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']||jwtD['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email']||'Admin'):'Admin';
+    const approver = (status==='Confirmed'||status==='Cancelled') ? staff : 'Chưa duyệt';
+
+    const allPay = items.reduce((a,i)=>a.concat(i.payments||[]),[]);
+    const payStr = allPay.length>0
+        ? (allPay[0].paymentMethod==='BankTransfer'?'Chuyển khoản':allPay[0].paymentMethod==='Cash'?'Tiền mặt':esc(allPay[0].paymentMethod||''))
+          + (allPay[0].transactionCode ? ' – Mã GD: '+esc(allPay[0].transactionCode) : '')
+        : 'Chưa thanh toán';
+
+    let roomRows = '';
+    items.forEach(item => {
+        const r = item.numberOfRooms||1;
+        const t = item.totalPrice||0;
+        const u = r>0?t/r:t;
+        roomRows += '<tr><td>'+esc(item.cabinName||'Phòng')+'</td><td style="text-align:center">'+r+'</td><td style="text-align:right">'+fmt(u)+'</td><td style="text-align:right;font-weight:bold">'+fmt(t)+'</td></tr>';
+    });
+
+    const html = '<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">' +
+    '<title>Hóa đơn '+code+'</title>' +
+    '<style>' +
+    'body{font-family:Arial,sans-serif;font-size:13px;color:#000;margin:20px;background:#fff}' +
+    'h1{font-size:18px;text-align:center;margin:0 0 4px}' +
+    '.sub{text-align:center;font-size:12px;margin:0 0 16px}' +
+    'hr{border:1px solid #000;margin:10px 0}' +
+    '.info td{padding:3px 8px;vertical-align:top}' +
+    '.info td:first-child{width:38%;color:#333;white-space:nowrap}' +
+    'table.items{width:100%;border-collapse:collapse;margin:12px 0}' +
+    'table.items th,table.items td{border:1px solid #000;padding:6px 8px;font-size:13px}' +
+    'table.items th{background:#f0f0f0;font-weight:bold}' +
+    '.total-row td{font-weight:bold;font-size:15px;padding:10px 8px;border-top:2px solid #000}' +
+    '.footer{text-align:center;font-size:11px;font-style:italic;margin-top:14px;color:#444}' +
+    '@media print{body{margin:0} button{display:none}} @page{margin:15mm; size:A4;}' +
+    '</style></head><body>' +
+    '<h1>HÓA ĐƠN ĐẶT PHÒNG</h1>' +
+    '<p class="sub">Du Thuyền Việt &nbsp;—&nbsp; Mã đơn: <b>'+code+'</b></p>' +
+    '<hr>' +
+    '<table class="info"><tbody>' +
+    '<tr><td>Khách hàng</td><td><b>'+name+'</b></td></tr>' +
+    '<tr><td>Điện thoại</td><td>'+phone+'</td></tr>' +
+    '<tr><td>Du thuyền</td><td><b>'+cruise+'</b></td></tr>' +
+    '<tr><td>Ngày khởi hành</td><td>'+(depD?new Date(depD).toLocaleDateString('vi-VN'):'')+'</td></tr>' +
+    '<tr><td>Ngày đặt</td><td>'+(cAt?new Date(cAt).toLocaleString('vi-VN'):'')+'</td></tr>' +
+    '<tr><td>Trạng thái</td><td><b>'+stLabel+'</b></td></tr>' +
+    '<tr><td>Thanh toán</td><td>'+payStr+'</td></tr>' +
+    '<tr><td>Xác nhận bởi</td><td>'+approver+'</td></tr>' +
+    (note?'<tr><td style="vertical-align:top">Ghi chú</td><td><i>'+note+'</i></td></tr>':'') +
+    '</tbody></table>' +
+    '<hr>' +
+    '<table class="items"><thead><tr><th style="text-align:left">Loại phòng</th><th>Số phòng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>' +
+    '<tbody>'+roomRows+'</tbody>' +
+    '<tfoot><tr class="total-row"><td colspan="3">TỔNG THANH TOÁN</td><td style="text-align:right">'+fmt(total)+'</td></tr></tfoot>' +
+    '</table>' +
+    '<p class="footer">Cảm ơn quý khách đã tin tưởng sử dụng dịch vụ của Du Thuyền Việt!</p>' +
+    '<div style="text-align:center;margin-top:10px;">' +
+    '<button onclick="window.print()" style="padding:10px 28px;font-size:14px;cursor:pointer;background:#000;color:#fff;border:none;border-radius:4px;">🖨️ In / Lưu PDF</button>' +
+    '</div>' +
+    '</body></html>';
+
+    // Mở cửa sổ mới, in thẳng — không dùng thư viện, không tích lũy state
+    const win = window.open('', '_blank', 'width=820,height=900,scrollbars=yes');
+    if (!win) { restore(); alert('Trình duyệt chặn popup. Vui lòng cho phép popup rồi thử lại.'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    // Đợi render xong rồi mở hộp thoại in
+    setTimeout(() => {
+        win.print();
+        restore();
+    }, 600);
+};
+
+window.filterAdminBookings = function() {
+    const searchEl = document.getElementById('adminBookingSearch');
+    const statusEl = document.getElementById('adminBookingStatusFilter');
+    
+    const searchTerm = (searchEl ? searchEl.value : '').toLowerCase();
+    const statusFilter = statusEl ? statusEl.value : 'all';
+    
+    const tbody = document.getElementById('bookings-table-body');
+    if (!tbody) return;
+
+    if (!window.adminGroupedBookings) return;
+
+    const filtered = Object.values(window.adminGroupedBookings).filter(b => {
+        let firstItem = (b.items && b.items.length > 0) ? b.items[0] : b;
+        let bStatus = firstItem.status;
+        
+        // Check Status
+        if (statusFilter !== 'all' && bStatus !== statusFilter) return false;
+        
+        // Check Search (BookingCode, Name, Phone, Note)
+        if (searchTerm) {
+            const matchesCode = (b.bookingCode || '').toLowerCase().includes(searchTerm);
+            const matchesName = (b.contactName || '').toLowerCase().includes(searchTerm);
+            const matchesPhone = (b.contactPhone || '').toLowerCase().includes(searchTerm);
+            const matchesNote = (b.note || '').toLowerCase().includes(searchTerm);
+            if (!matchesCode && !matchesName && !matchesPhone && !matchesNote) return false;
+        }
+        
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#6b7280; padding:20px;">Không tìm thấy đơn nào phù hợp.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    
+    // Sắp xếp các đơn mới nhất lên đầu (theo createdAt)
+    filtered.sort((a, b) => {
+        let aDate = (a.items && a.items.length > 0 && a.items[0].createdAt) ? new Date(a.items[0].createdAt) : new Date(0);
+        let bDate = (b.items && b.items.length > 0 && b.items[0].createdAt) ? new Date(b.items[0].createdAt) : new Date(0);
+        return bDate - aDate;
+    });
+
+    filtered.forEach(b => {
+        let firstItem = (b.items && b.items.length > 0) ? b.items[0] : b;
+        let bStatus = firstItem.status;
+        
+        let statusHtml = '';
+        if (bStatus === 'Pending') statusHtml = '<span class="role-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>';
+        else if (bStatus === 'AwaitingConfirmation') statusHtml = '<span class="role-badge" style="background:#e0e7ff; color:#4338ca;">Chờ xác nhận</span>';
+        else if (bStatus === 'Confirmed') statusHtml = '<span class="role-badge" style="background:#dcfce3; color:#16a34a;">Thành công</span>';
+        else if (bStatus === 'Cancelled') statusHtml = '<span class="role-badge" style="background:#fee2e2; color:#dc2626;">Đã hủy</span>';
+        else statusHtml = bStatus;
+
+        // Check if departed
+        let hasDeparted = false;
+        if (b.departureDate) {
+            let depDate = new Date(b.departureDate);
+            depDate.setHours(0,0,0,0);
+            let today = new Date();
+            today.setHours(0,0,0,0);
+            if (depDate < today) hasDeparted = true;
         }
 
-        const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-        let firstItem = (grp.items && grp.items.length > 0) ? grp.items[0] : grp;
+        let actionsHtml = `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
+
+        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#0d9488; color:#0d9488;" onclick="downloadInvoiceDirectly('${b.bookingCode}', this)">Tải hóa đơn</button>`;
         
-        // Decode JWT to get staff's name
-        const jwtData = (() => {
-            const token = localStorage.getItem('auth_token');
-            if (!token) return null;
-            try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
-        })();
-        const staffName = jwtData ? (jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || jwtData['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/email'] || 'Admin') : 'Admin (Hệ thống)';
-        let approver = (firstItem.status === 'Confirmed' || firstItem.status === 'Cancelled') ? staffName : 'Chưa duyệt';
+        if (bStatus === 'AwaitingConfirmation' || bStatus === 'Pending') {
+            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;
+            actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Cancelled')">Hủy</button>`;
+        }
+        actionsHtml += `</div>`;
+
+        const tr = document.createElement('tr');
+        if (hasDeparted) tr.style.backgroundColor = '#fafafa';
         
-        let html = `
-        <div style="padding: 30px; font-family: 'Inter', sans-serif; color: #0f172a; max-width: 800px; margin: 0 auto;">
-            <h2 style="text-align: center; color: #0f172a; margin-bottom: 24px;">HÓA ĐƠN ĐẶT PHÒNG</h2>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; font-size:14px;">
-                <div><strong>Mã đơn:</strong> ${code}</div>
-                <div><strong>Khách hàng:</strong> ${grp.contactName || ''}</div>
-                <div><strong>Điện thoại:</strong> ${grp.contactPhone || ''}</div>
-                <div><strong>Du thuyền:</strong> ${grp.cruiseName || ''}</div>
-                <div><strong>Khởi hành:</strong> ${grp.departureDate ? new Date(grp.departureDate).toLocaleDateString('vi-VN') : ''}</div>
-                <div><strong>Ngày tạo:</strong> ${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</div>
-                <div><strong>Trạng thái:</strong> <span style="color:${firstItem.status === 'Confirmed' ? '#16a34a' : '#ea580c'}; font-weight:600;">${firstItem.status === 'Confirmed' ? 'Đã thanh toán' : (firstItem.status === 'Cancelled' ? 'Đã hủy' : 'Chờ xác nhận')}</span></div>
-                <div><strong>Xác nhận bởi:</strong> ${approver}</div>
-                ${grp.note ? `<div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;"><strong>📝 Ghi chú:</strong> <span style="font-style: italic; color: #475569;">${grp.note}</span></div>` : ''}
-            </div>
-            
-            <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Chi tiết phòng</h4>
+        const opc = hasDeparted ? 'opacity: 0.6;' : '';
+        tr.innerHTML = `
+            <td style="font-weight: 500;">
+                <div style="${opc}">
+                    ${b.bookingCode}
+                    <button onclick="copyToClipboard('${b.bookingCode}')" style="background:none; border:none; cursor:pointer; font-size:1rem; padding:0 5px;" title="Sao chép">📋</button>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${firstItem.createdAt ? new Date(firstItem.createdAt).toLocaleString('vi-VN') : ''}</div>
+                </div>
+            </td>
+            <td>
+                <div style="${opc}">
+                    ${b.contactName}<br>
+                    <small class="text-muted">${b.contactPhone}</small>
+                    ${b.note ? `
+                    <div onclick="window.showNotePopup('${b.bookingCode}')" style="cursor: pointer; margin-top: 12px; padding: 12px; background: ${hasDeparted ? '#f8fafc' : '#fff1f2'}; border: 1px solid ${hasDeparted ? '#e2e8f0' : '#fecdd3'}; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); min-width: 200px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 14px;">${hasDeparted ? '📝' : '📌'}</span>
+                                <span style="font-size: 11px; font-weight: 700; color: ${hasDeparted ? '#64748b' : '#e11d48'}; letter-spacing: 0.5px;">YÊU CẦU ĐẶC BIỆT</span>
+                            </div>
+                            <span style="font-size: 10px; color: ${hasDeparted ? '#94a3b8' : '#fda4af'}; font-weight: 600;">Chi tiết ↗</span>
+                        </div>
+                        <div style="color: ${hasDeparted ? '#64748b' : '#881337'}; font-size: 13px; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap;">${b.note.replace(/</g, '&lt;')}</div>
+                    </div>` : ''}
+                </div>
+            </td>
+            <td>
+                <div style="${opc}">
+                    ${b.cruiseName} 
+                    ${hasDeparted ? '<span style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:4px;">🛳️ Đã khởi hành</span>' : ''}
+                    <br>
+                    <small class="text-muted">Ngày đi: ${b.departureDate ? new Date(b.departureDate).toLocaleDateString('vi-VN') : ''}</small>
+                </div>
+            </td>
+            <td style="font-weight: 600; color: #ef4444;"><div style="${opc}">${formatPrice(b.totalPrice)}</div></td>
+            <td><div style="${opc}">${statusHtml}</div></td>
+            <td style="text-align: right; white-space: nowrap;">${actionsHtml}</td>
         `;
+        tbody.appendChild(tr);
+    });
+};
 
-        if (grp.items) {
-            grp.items.forEach(item => {
-                const unitPrice = item.numberOfRooms > 0 ? item.totalPrice / item.numberOfRooms : item.totalPrice;
-                html += `
-                <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px;">
-                    <div>
-                        <div style="font-weight:600;">${item.cabinName || ''}</div>
-                        <div style="color:#64748b;">${formatPrice(unitPrice)} × ${item.numberOfRooms || 0} phòng</div>
-                    </div>
-                    <div style="font-weight:600;">${formatPrice(item.totalPrice || 0)}</div>
-                </div>`;
-            });
+
+
+// Show Note Popup
+window.showNotePopup = function(bookingCode) {
+    if (!window.adminGroupedBookings) return;
+    const b = window.adminGroupedBookings[bookingCode];
+    if (b && b.note && window.Popup && window.Popup.info) {
+        let hasDeparted = false;
+        if (b.departureDate) {
+            let depDate = new Date(b.departureDate);
+            depDate.setHours(0,0,0,0);
+            let today = new Date();
+            today.setHours(0,0,0,0);
+            if (depDate < today) hasDeparted = true;
         }
 
-        const allPayments = (grp.items || []).reduce((acc, i) => acc.concat(i.payments || []), []);
-        if (allPayments.length > 0) {
-            const p = allPayments[0];
-            const pMethod = p.paymentMethod === 'BankTransfer' ? 'Chuyển khoản NH' : p.paymentMethod === 'Cash' ? 'Tiền mặt' : p.paymentMethod;
-            html += `
-            <div style="margin-top:20px; font-size:14px;">
-                <h4 style="margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Thanh toán</h4>
-                <div><strong>Phương thức:</strong> ${pMethod}</div>
-                ${p.transactionCode ? `<div><strong>Mã GD:</strong> ${p.transactionCode}</div>` : ''}
-            </div>`;
-        }
-
-        html += `
-            <div style="margin-top:24px; padding:16px; background:#f8fafc; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:600;">Tổng cộng:</span>
-                <span style="font-size:18px; font-weight:700; color:#ef4444;">${formatPrice(grp.totalPrice || 0)}</span>
+        let html = `
+            <div style="font-size: 14px; line-height: 1.6; color: #334155;">
+                <div style="color: #0f172a; font-weight: 500; margin-bottom: 8px;">Khách hàng: <span style="color: #3b82f6;">${b.contactName}</span></div>
+                <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #0f172a; white-space: pre-wrap;">${b.note.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
             </div>
-        </div>`;
-
-        if (typeof html2pdf === 'undefined') {
-            alert("Thư viện tải PDF chưa sẵn sàng. Vui lòng đợi hoặc thử lại.");
-            return;
-        }
-
-        html2pdf().set({
-            margin: 10,
-            filename: `HoaDon_${code}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(html).save();
-
-    } catch (err) {
-        console.error("Lỗi khi tải PDF:", err);
-        alert("Lỗi tải hóa đơn: " + err.message);
+        `;
+        window.Popup.info('📌 Yêu cầu đặc biệt: ' + bookingCode, html);
     }
 };

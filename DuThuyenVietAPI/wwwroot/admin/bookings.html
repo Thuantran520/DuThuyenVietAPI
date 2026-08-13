@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
-    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/popup.css?v=2">
 </head>
 <body>
     <header class="main-header" id="main-header"></header>
@@ -48,6 +48,57 @@
                         </div>
                     </div>
                     
+                    <!-- BI Dashboard Charts -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 style="font-size: 18px; margin: 0; color: #0f172a;">Tổng quan dữ liệu</h2>
+                        <select id="biFilter" style="padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; background: white; cursor: pointer; font-weight: 500;" onchange="window.updateBICharts && window.updateBICharts()">
+                            <option value="7">7 ngày qua</option>
+                            <option value="30">30 ngày qua</option>
+                            <option value="180">6 tháng qua</option>
+                            <option value="365">1 năm qua</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <h3 id="revenueChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Doanh thu 7 ngày qua</h3>
+                            <div style="position: relative; width: 100%; height: 250px;">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Tỷ lệ trạng thái đơn</h3>
+                            <div style="position: relative; width: 100%; height: 250px;">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <h3 id="ordersChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Số lượng đơn đặt 7 ngày qua</h3>
+                            <div style="position: relative; width: 100%; height: 250px;">
+                                <canvas id="ordersChart"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Top 5 Du thuyền (Đơn thành công)</h3>
+                            <div style="position: relative; width: 100%; height: 250px;">
+                                <canvas id="topCruiseChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, hoặc Ghi chú..." style="flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
+                        <select id="adminBookingStatusFilter" style="padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 180px;" onchange="filterAdminBookings()">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="Pending">Chờ thanh toán</option>
+                            <option value="AwaitingConfirmation">Chờ xác nhận</option>
+                            <option value="Confirmed">Thành công</option>
+                            <option value="Cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -67,43 +118,30 @@
                     </div>
                 </div>
 
-                <div class="card" id="tab-notes" style="margin-top: 24px;">
-                    <div class="card-title">Yêu cầu đặc biệt từ khách hàng</div>
-                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Theo dõi các ghi chú và yêu cầu riêng biệt của khách để chuẩn bị chu đáo.</div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Mã đơn</th>
-                                    <th>Khách hàng</th>
-                                    <th>Du thuyền & Lịch trình</th>
-                                    <th>Ghi chú / Yêu cầu</th>
-                                    <th style="min-width: 120px;">Trạng thái đơn</th>
-                                </tr>
-                            </thead>
-                            <tbody id="notes-table-body">
-                                <tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- Hidden nav elements for auth.js compatibility -->
     <div id="tab-bookings-nav" style="display:none;"></div>
-    <div id="tab-notes-nav" class="tab" data-target="tab-notes" style="display:none;"></div>
 
-    <script src="/js/popup.js"></script>
+    <footer class="main-footer"></footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <script src="/js/popup.js?v=2"></script>
     <script src="/js/main.js"></script>
-    <script src="/js/auth.js"></script>
+    <script src="/js/auth.js?v=29"></script>
+    <script src="/js/navigation.js"></script>
     <script>
-        // Trigger notes loading after auth.js runs
+        // Trigger bookings tab manually to load stats
         setTimeout(() => {
-            const notesNav = document.getElementById('tab-notes-nav');
-            if (notesNav) notesNav.click();
-        }, 1000);
+            const btn = document.getElementById('tab-bookings-nav');
+            if (btn) btn.click();
+        }, 100);
     </script>
 </body>
 </html>
