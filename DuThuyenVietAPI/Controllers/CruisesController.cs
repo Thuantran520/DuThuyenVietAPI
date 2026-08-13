@@ -181,6 +181,7 @@ public class CruisesController : ControllerBase
         public string Description { get; set; } = string.Empty;
         public string ThumbnailUrl { get; set; } = string.Empty;
         public bool? IsActive { get; set; }
+        public List<string>? GalleryUrls { get; set; }
     }
 
     [Authorize(Roles = "Admin,Manager,Staff")]
@@ -201,6 +202,22 @@ public class CruisesController : ControllerBase
         };
         _context.Cruises.Add(cruise);
         await _context.SaveChangesAsync();
+        
+        if (dto.GalleryUrls != null && dto.GalleryUrls.Any())
+        {
+            int order = 2;
+            foreach (var url in dto.GalleryUrls)
+            {
+                _context.CruiseImages.Add(new CruiseImage
+                {
+                    CruiseId = cruise.CruiseId,
+                    ImageUrl = url,
+                    DisplayOrder = order++
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
+        
         return Ok(new { cruise.CruiseId, cruise.Name, cruise.Slug, cruise.ThumbnailUrl, cruise.IsActive });
     }
     
@@ -235,6 +252,22 @@ public class CruisesController : ControllerBase
                 {
                     ImageUrl = dto.ThumbnailUrl,
                     DisplayOrder = 1
+                });
+            }
+        }
+        
+        if (dto.GalleryUrls != null)
+        {
+            var existingGallery = cruise.CruiseImages.Where(i => i.DisplayOrder > 1).ToList();
+            _context.CruiseImages.RemoveRange(existingGallery);
+            
+            int order = 2;
+            foreach (var url in dto.GalleryUrls)
+            {
+                cruise.CruiseImages.Add(new CruiseImage
+                {
+                    ImageUrl = url,
+                    DisplayOrder = order++
                 });
             }
         }

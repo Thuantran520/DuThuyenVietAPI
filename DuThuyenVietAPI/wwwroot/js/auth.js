@@ -448,6 +448,286 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         };
+        
+        window.revenueChartInstance = null;
+        window.statusChartInstance = null;
+        window.ordersChartInstance = null;
+        window.topCruiseChartInstance = null;
+
+        function renderAdminCharts(grouped) {
+            if (typeof Chart === 'undefined') return;
+            
+            const bookings = Object.values(grouped);
+            
+            const filterEl = document.getElementById('biFilter');
+            const days = filterEl ? parseInt(filterEl.value) || 7 : 7;
+            
+            const titleEl = document.getElementById('revenueChartTitle');
+            const titleOrdersEl = document.getElementById('ordersChartTitle');
+            if (titleEl) {
+                if (days === 7) {
+                    titleEl.innerText = 'Doanh thu 7 ngày qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 7 ngày qua';
+                }
+                else if (days === 30) {
+                    titleEl.innerText = 'Doanh thu 30 ngày qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 30 ngày qua';
+                }
+                else if (days === 180) {
+                    titleEl.innerText = 'Doanh thu 6 tháng qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 6 tháng qua';
+                }
+                else if (days === 365) {
+                    titleEl.innerText = 'Doanh thu 1 năm qua';
+                    if (titleOrdersEl) titleOrdersEl.innerText = 'Số lượng đơn đặt 1 năm qua';
+                }
+            }
+            
+            // 1. Status Chart (Lọc theo số ngày)
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            const filteredBookings = bookings.filter(b => {
+                if (!b.createdAt) return false;
+                return new Date(b.createdAt) >= cutoffDate;
+            });
+            
+            const statusCounts = { Pending: 0, AwaitingConfirmation: 0, Confirmed: 0, Cancelled: 0 };
+            filteredBookings.forEach(b => {
+                if (statusCounts[b.status] !== undefined) statusCounts[b.status]++;
+                else statusCounts[b.status] = 1;
+            });
+            
+            const ctxStatus = document.getElementById('statusChart');
+            if (ctxStatus) {
+                if (window.statusChartInstance) window.statusChartInstance.destroy();
+                
+                // Đăng ký plugin datalabels nếu có
+                const plugins = [];
+                if (typeof ChartDataLabels !== 'undefined') {
+                    Chart.register(ChartDataLabels);
+                    plugins.push(ChartDataLabels);
+                }
+                
+                window.statusChartInstance = new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Chờ thanh toán', 'Chờ xác nhận', 'Thành công', 'Đã hủy'],
+                        datasets: [{
+                            data: [statusCounts.Pending || 0, statusCounts.AwaitingConfirmation || 0, statusCounts.Confirmed || 0, statusCounts.Cancelled || 0],
+                            backgroundColor: ['#fef3c7', '#e0e7ff', '#dcfce3', '#fee2e2'],
+                            borderColor: ['#d97706', '#4338ca', '#16a34a', '#dc2626'],
+                            borderWidth: 1
+                        }]
+                    },
+                    plugins: plugins,
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            datalabels: {
+                                formatter: (value, ctx) => {
+                                    let sum = 0;
+                                    let dataArr = ctx.chart.data.datasets[0].data;
+                                    dataArr.map(data => { sum += data; });
+                                    if (sum === 0 || value === 0) return '';
+                                    let percentage = Math.round((value * 100) / sum) + "%";
+                                    return percentage;
+                                },
+                                color: '#1e293b',
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        let value = context.parsed;
+                                        let sum = 0;
+                                        let dataArr = context.dataset.data;
+                                        dataArr.map(data => { sum += data; });
+                                        let percentage = sum > 0 ? Math.round((value * 100) / sum) + "%" : "0%";
+                                        return label + value + ' đơn (' + percentage + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 2 & 3. Revenue Chart & Orders Chart
+            const dates = [];
+            const revenues = [];
+            const orderCounts = [];
+            
+            if (days <= 30) {
+                // Group by day
+                for (let i = days - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
+                    revenues.push(0);
+                    orderCounts.push(0);
+                }
+                
+                filteredBookings.forEach(b => {
+                    if (b.createdAt) {
+                        const bDate = new Date(b.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                        const idx = dates.indexOf(bDate);
+                        if (idx !== -1) {
+                            if (b.status === 'Confirmed') revenues[idx] += b.totalPrice;
+                            orderCounts[idx] += 1;
+                        }
+                    }
+                });
+            } else {
+                // Group by month
+                const monthsToShow = days === 180 ? 6 : 12;
+                for (let i = monthsToShow - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    dates.push(d.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }));
+                    revenues.push(0);
+                    orderCounts.push(0);
+                }
+                
+                filteredBookings.forEach(b => {
+                    if (b.createdAt) {
+                        const bDate = new Date(b.createdAt).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
+                        const idx = dates.indexOf(bDate);
+                        if (idx !== -1) {
+                            if (b.status === 'Confirmed') revenues[idx] += b.totalPrice;
+                            orderCounts[idx] += 1;
+                        }
+                    }
+                });
+            }
+            
+            const ctxRev = document.getElementById('revenueChart');
+            if (ctxRev) {
+                if (window.revenueChartInstance) window.revenueChartInstance.destroy();
+                window.revenueChartInstance = new Chart(ctxRev, {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: revenues,
+                            backgroundColor: 'rgba(5, 150, 105, 0.7)',
+                            borderColor: 'rgba(5, 150, 105, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            datalabels: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const ctxOrders = document.getElementById('ordersChart');
+            if (ctxOrders) {
+                if (window.ordersChartInstance) window.ordersChartInstance.destroy();
+                window.ordersChartInstance = new Chart(ctxOrders, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Số lượng đơn đặt',
+                            data: orderCounts,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { datalabels: { display: false } }
+                    }
+                });
+            }
+            
+            // 4. Top Cruises Chart (Horizontal Bar)
+            const cruiseStats = {};
+            filteredBookings.forEach(b => {
+                if (b.status === 'Confirmed') {
+                    const name = b.cruiseName || 'Khác';
+                    if (!cruiseStats[name]) cruiseStats[name] = 0;
+                    cruiseStats[name] += 1;
+                }
+            });
+            const sortedCruises = Object.entries(cruiseStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const cruiseLabels = sortedCruises.map(x => x[0]);
+            const cruiseData = sortedCruises.map(x => x[1]);
+
+            const ctxTop = document.getElementById('topCruiseChart');
+            if (ctxTop) {
+                if (window.topCruiseChartInstance) window.topCruiseChartInstance.destroy();
+                window.topCruiseChartInstance = new Chart(ctxTop, {
+                    type: 'bar',
+                    data: {
+                        labels: cruiseLabels.length > 0 ? cruiseLabels : ['Chưa có dữ liệu'],
+                        datasets: [{
+                            label: 'Số đơn thành công',
+                            data: cruiseData.length > 0 ? cruiseData : [0],
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        indexAxis: 'y',
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { datalabels: { display: false } }
+                    }
+                });
+            }
+        }
+        
+        window.updateBICharts = function() {
+            if (window.adminGroupedBookings) {
+                renderAdminCharts(window.adminGroupedBookings);
+            }
+        };
 
         // --- Fetch Admin Bookings Data ---
         async function loadAdminBookings() {
@@ -507,8 +787,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const elNotes = document.getElementById('dash-notes');
                     if (elNotes) elNotes.innerText = totalNotes.toString();
 
-                        // Sử dụng hàm lọc để render thay vì render trực tiếp
-                        filterAdminBookings();
+                    // Cập nhật biểu đồ BI Dashboard
+                    renderAdminCharts(grouped);
+
+                    // Sử dụng hàm lọc để render thay vì render trực tiếp
+                    filterAdminBookings();
                 } else {
                     const errorText = await response.text();
                     document.getElementById('bookings-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Lỗi tải dữ liệu: ${errorText || response.statusText}</td></tr>`;
@@ -913,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 window.downloadInvoiceDirectly = function(code, btnEl) {
     if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Đang tạo...'; }
-    const restore = () => { if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📥 Tải hóa đơn (PDF)'; } };
+    const restore = () => { if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Tải hóa đơn'; } };
 
     const grp = (window.adminGroupedBookings && window.adminGroupedBookings[code]) ||
                 (window.customerGroupedBookings && window.customerGroupedBookings[code]) || null;
@@ -1075,7 +1358,7 @@ window.filterAdminBookings = function() {
 
         let actionsHtml = `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
 
-        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#0d9488; color:#0d9488;" onclick="downloadInvoiceDirectly('${b.bookingCode}', this)">📥 Tải hóa đơn (PDF)</button>`;
+        actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#0d9488; color:#0d9488;" onclick="downloadInvoiceDirectly('${b.bookingCode}', this)">Tải hóa đơn</button>`;
         
         if (bStatus === 'AwaitingConfirmation' || bStatus === 'Pending') {
             actionsHtml += `<button class="btn-sm btn-outline" style="border-color:#10b981; color:#10b981;" onclick="updateBookingGroupStatus('${b.bookingCode}', 'Confirmed')">Xác nhận</button>`;

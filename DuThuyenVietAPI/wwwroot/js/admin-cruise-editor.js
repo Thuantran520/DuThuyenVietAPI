@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cruiseId = urlParams.get('id');
     const isEdit = !!cruiseId;
     let isCruiseActive = true; // Mặc định là đang hoạt động
+    let currentGalleryUrls = []; // Lưu danh sách ảnh thư viện
 
     const formatPrice = p => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
 
@@ -162,6 +163,124 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start init
     initPage();
 
+    // ==========================================
+    // 1.5 IMAGE UPLOAD HANDLERS
+    // ==========================================
+    async function uploadSingleImage(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch('/api/Upload/image', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return data.url || data.Url;
+            } else {
+                let msg = 'Lỗi tải ảnh.'; try { const e = await res.json(); msg = e.message || e.title || msg; } catch {}
+                Popup.show('Lỗi', msg, 'error');
+            }
+        } catch { Popup.show('Lỗi', 'Lỗi kết nối tải ảnh.', 'error'); }
+        return null;
+    }
+
+    // Thumbnail upload
+    const btnThumb = document.getElementById('btn-upload-thumb');
+    const fileThumb = document.getElementById('file-thumb');
+    if (btnThumb && fileThumb) {
+        btnThumb.addEventListener('click', () => fileThumb.click());
+        fileThumb.addEventListener('change', async (e) => {
+            if (!e.target.files.length) return;
+            btnThumb.innerText = 'Đang tải...'; btnThumb.disabled = true;
+            const url = await uploadSingleImage(e.target.files[0]);
+            if (url) {
+                document.getElementById('edit-thumb').value = url;
+                document.getElementById('preview-thumb').src = url;
+                Popup.show('Thành công', 'Tải ảnh đại diện thành công!', 'success');
+            }
+            btnThumb.innerText = '📁 Tải lên'; btnThumb.disabled = false;
+            e.target.value = '';
+        });
+    }
+
+    // Gallery upload
+    const btnGallery = document.getElementById('btn-upload-gallery');
+    const fileGallery = document.getElementById('file-gallery');
+    if (btnGallery && fileGallery) {
+        btnGallery.addEventListener('click', () => fileGallery.click());
+        fileGallery.addEventListener('change', async (e) => {
+            if (!e.target.files.length) return;
+            const files = Array.from(e.target.files);
+            if (currentGalleryUrls.length + files.length > 5) {
+                Popup.show('Lỗi', 'Chỉ được phép tải lên tối đa 5 ảnh trong thư viện.', 'error');
+                return;
+            }
+            btnGallery.innerText = 'Đang tải...'; btnGallery.disabled = true;
+            
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            
+            try {
+                const res = await fetch('/api/Upload/images', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const urls = data.urls || data.Urls || [];
+                    currentGalleryUrls.push(...urls);
+                    renderGalleryPreview();
+                    Popup.show('Thành công', 'Tải ảnh thư viện thành công!', 'success');
+                } else {
+                    let msg = 'Lỗi tải ảnh.'; try { const e = await res.json(); msg = e.message || e.title || msg; } catch {}
+                    Popup.show('Lỗi', msg, 'error');
+                }
+            } catch { Popup.show('Lỗi', 'Lỗi kết nối tải ảnh.', 'error'); }
+            
+            btnGallery.innerText = '📁 Chọn ảnh tải lên'; btnGallery.disabled = false;
+            e.target.value = '';
+        });
+    }
+
+    function renderGalleryPreview() {
+        const previewEl = document.getElementById('gallery-preview');
+        const countEl = document.getElementById('gallery-count');
+        if (!previewEl || !countEl) return;
+        
+        countEl.innerText = `${currentGalleryUrls.length}/5`;
+        previewEl.innerHTML = currentGalleryUrls.map((url, index) => `
+            <div style="position: relative; border-radius: 8px; overflow: hidden; height: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                <button onclick="removeGalleryImage(${index})" style="position: absolute; top: 4px; right: 4px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            </div>
+        `).join('');
+    }
+    
+    window.removeGalleryImage = function(index) {
+        currentGalleryUrls.splice(index, 1);
+        renderGalleryPreview();
+    };
+
+    // Cabin image upload
+    const btnCabinUpload = document.getElementById('btn-upload-cabin');
+    const fileCabin = document.getElementById('file-cabin');
+    if (btnCabinUpload && fileCabin) {
+        btnCabinUpload.addEventListener('click', () => fileCabin.click());
+        fileCabin.addEventListener('change', async (e) => {
+            if (!e.target.files.length) return;
+            btnCabinUpload.innerText = 'Đang tải...'; btnCabinUpload.disabled = true;
+            const url = await uploadSingleImage(e.target.files[0]);
+            if (url) {
+                document.getElementById('cabin-image').value = url;
+            }
+            btnCabinUpload.innerText = '📁 Tải lên'; btnCabinUpload.disabled = false;
+            e.target.value = '';
+        });
+    }
+
 
     async function loadCruise(id) {
         try {
@@ -176,6 +295,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const thumbUrl = c.thumbnailUrl || (c.images && c.images.length > 0 ? c.images[0] : '');
             document.getElementById('edit-thumb').value = thumbUrl;
             document.getElementById('preview-thumb').src = thumbUrl || '/images/default-cruise.jpg';
+            
+            if (c.images && c.images.length > 1) {
+                // If there are multiple images, the first is usually the thumbnail, so we take the rest for gallery
+                currentGalleryUrls = c.images.filter(url => url !== thumbUrl);
+                if (currentGalleryUrls.length > 5) currentGalleryUrls = currentGalleryUrls.slice(0, 5);
+            } else {
+                currentGalleryUrls = [];
+            }
+            renderGalleryPreview();
             
             isCruiseActive = c.isActive !== undefined ? c.isActive : true;
             updateMaintenanceBtn();
@@ -196,7 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
             shortDescription: document.getElementById('edit-shortdesc').value.trim(),
             description: document.getElementById('edit-desc').value.trim(),
             thumbnailUrl: document.getElementById('edit-thumb').value.trim(),
-            isActive: isCruiseActive
+            isActive: isCruiseActive,
+            galleryUrls: currentGalleryUrls
         };
 
         if (!data.name) { Popup.show('Thiếu thông tin', 'Vui lòng nhập tên du thuyền.', 'error'); btn.innerText = origText; btn.disabled = false; return; }
