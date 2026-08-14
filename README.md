@@ -25,11 +25,11 @@ Dưới đây là thông tin các thành viên trong nhóm và các chức năng
 
 | STT | Họ và Tên | Mã Sinh Viên (MSSV) | Phân công công việc (Tasks) |
 | :---: | :--- | :---: | :--- |
-| **1** | Nguyễn Văn A *(Nhóm trưởng)* | 20001234 | - Thiết kế Database và viết Script SQL.<br>- Xây dựng Backend (Auth, Quản lý User, Thống kê).<br>- Tích hợp JWT Token.<br>- Fix lỗi tối ưu hóa upload file ảnh trực tiếp lên Server. |
-| **2** | Trần Thị B | 20005678 | - Code Frontend giao diện Quản trị (Admin Dashboard).<br>- Làm tính năng Quản lý Du thuyền, Danh mục, Đơn hàng.<br>- Ghép API cho các trang Admin. |
-| **3** | Lê Văn C | 20009101 | - Code Frontend giao diện Người dùng (Trang chủ, Tìm kiếm).<br>- Xây dựng luồng Đặt phòng (Booking), xem chi tiết sản phẩm.<br>- Viết báo cáo, kịch bản thuyết trình và làm slide đồ án. |
+| **1** | Trần Phan Minh Thuận *(Nhóm trưởng)* | 23115371 | - Thiết kế Database và viết Script SQL.<br>- Xây dựng Backend (Auth, Quản lý User, Thống kê).<br>- Tích hợp JWT Token.<br>- Fix lỗi tối ưu hóa upload file ảnh trực tiếp lên Server. |
+| **2** | Phạm Văn Thư | 2311553334 | - Code Frontend giao diện Quản trị (Admin Dashboard).<br>- Làm tính năng Quản lý Du thuyền, Danh mục, Đơn hàng.<br>- Ghép API cho các trang Admin. |
+| **3** | Phạm Thanh Tài | 2311553867 | - Code Frontend giao diện Người dùng (Trang chủ, Tìm kiếm).<br>- Xây dựng luồng Đặt phòng (Booking), xem chi tiết sản phẩm.<br>- Viết báo cáo, kịch bản thuyết trình và làm slide đồ án. |
+| **4** | Phạm Thị Ngọc Trâm | 2311559516 | - Code Frontend giao diện Quản trị | Báo cáo đồ án |
 
-> *(Lưu ý: Bạn hãy chỉnh sửa lại Họ tên, Mã sinh viên và mô tả công việc ở trên cho đúng với thực tế của nhóm mình nhé!)*
 
 ---
 
