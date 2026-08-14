@@ -178,15 +178,31 @@ public class AccountController : ControllerBase
             var user = await _userManager.FindByEmailAsync(email ?? "");
             if (user == null) return NotFound("User not found");
 
-            // Convert file to Base64 string
-            using (var memoryStream = new MemoryStream())
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            if (!Directory.Exists(uploadsFolder))
             {
-                await file.CopyToAsync(memoryStream);
-                byte[] fileBytes = memoryStream.ToArray();
-                string base64String = Convert.ToBase64String(fileBytes);
-                user.AvatarUrl = $"data:{file.ContentType};base64,{base64String}";
+                Directory.CreateDirectory(uploadsFolder);
             }
 
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            if (!string.IsNullOrEmpty(user.AvatarUrl) && user.AvatarUrl.StartsWith("/uploads/"))
+            {
+                var oldFileName = Path.GetFileName(user.AvatarUrl);
+                var oldFilePath = Path.Combine(uploadsFolder, oldFileName);
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    System.IO.File.Delete(oldFilePath);
+                }
+            }
+
+            user.AvatarUrl = $"/uploads/{uniqueFileName}";
             await _userManager.UpdateAsync(user);
 
             return Ok(new { message = "Avatar uploaded successfully to database", avatarUrl = user.AvatarUrl });

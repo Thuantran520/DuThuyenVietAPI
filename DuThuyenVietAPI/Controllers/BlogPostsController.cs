@@ -151,6 +151,13 @@ public class BlogPostsController : ControllerBase
             var post = await _context.BlogPosts.FindAsync(id);
             if (post == null) return NotFound(new { message = "Không tìm thấy bài viết." });
 
+            if (!string.IsNullOrEmpty(post.ThumbnailUrl) && post.ThumbnailUrl != dto.ThumbnailUrl && post.ThumbnailUrl.StartsWith("/uploads/"))
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var oldFilePath = Path.Combine(uploadsFolder, Path.GetFileName(post.ThumbnailUrl));
+                if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
+            }
+
             post.Title = dto.Title;
             if (!string.IsNullOrEmpty(dto.Slug)) post.Slug = dto.Slug;
             post.Summary = dto.Summary;

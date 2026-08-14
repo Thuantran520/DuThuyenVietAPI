@@ -42,13 +42,21 @@ public class UploadController : ControllerBase
             return BadRequest("Chỉ chấp nhận các định dạng ảnh: .jpg, .jpeg, .png, .gif, .webp");
         }
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms);
-        var base64 = Convert.ToBase64String(ms.ToArray());
-        var contentType = file.ContentType;
-        var dataUrl = $"data:{contentType};base64,{base64}";
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
 
-        return Ok(new { Url = dataUrl });
+        var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Ok(new { Url = $"/uploads/{uniqueFileName}" });
     }
 
     [HttpPost("images")]
@@ -64,6 +72,12 @@ public class UploadController : ControllerBase
         var urls = new List<string>();
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
         foreach (var file in files)
         {
             if (file.Length > 5 * 1024 * 1024)
@@ -73,12 +87,15 @@ public class UploadController : ControllerBase
             if (!allowedExtensions.Contains(ext))
                 return BadRequest($"File {file.FileName} không đúng định dạng ảnh.");
                 
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
-            var base64 = Convert.ToBase64String(ms.ToArray());
-            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
             
-            urls.Add(dataUrl);
+            urls.Add($"/uploads/{uniqueFileName}");
         }
         
         return Ok(new { Urls = urls });

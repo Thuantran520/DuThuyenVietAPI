@@ -227,7 +227,15 @@ public class CruisesController : ControllerBase
     {
         var cruise = await _context.Cruises.Include(c => c.CruiseImages).FirstOrDefaultAsync(c => c.CruiseId == id);
         if (cruise == null) return NotFound();
-        
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+        // Delete old thumbnail if it has changed
+        if (!string.IsNullOrEmpty(cruise.ThumbnailUrl) && cruise.ThumbnailUrl != dto.ThumbnailUrl && cruise.ThumbnailUrl.StartsWith("/uploads/"))
+        {
+            var oldFilePath = Path.Combine(uploadsFolder, Path.GetFileName(cruise.ThumbnailUrl));
+            if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
+        }
+
         cruise.DestinationId = dto.DestinationId;
         cruise.Name = dto.Name;
         cruise.Slug = dto.Name.ToLower().Replace(" ", "-").Replace("đ", "d");
@@ -259,6 +267,18 @@ public class CruisesController : ControllerBase
         if (dto.GalleryUrls != null)
         {
             var existingGallery = cruise.CruiseImages.Where(i => i.DisplayOrder > 1).ToList();
+            
+            // Delete removed gallery images from disk
+            var removedImages = existingGallery.Where(i => !dto.GalleryUrls.Contains(i.ImageUrl)).ToList();
+            foreach (var img in removedImages)
+            {
+                if (!string.IsNullOrEmpty(img.ImageUrl) && img.ImageUrl.StartsWith("/uploads/"))
+                {
+                    var oldFilePath = Path.Combine(uploadsFolder, Path.GetFileName(img.ImageUrl));
+                    if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
+                }
+            }
+
             _context.CruiseImages.RemoveRange(existingGallery);
             
             int order = 2;
