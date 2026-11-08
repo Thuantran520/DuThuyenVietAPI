@@ -78,37 +78,64 @@ public class PaymentsController : ControllerBase
 
     [HttpGet("create-vnpay-url")]
     [Authorize]
-    public async Task<IActionResult> CreateVnPayUrl([FromQuery] int bookingId)
+    public async Task<IActionResult> CreateVnPayUrl([FromQuery] int? bookingId, [FromQuery] string? bookingCode)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var booking = await _context.Bookings.Include(b => b.CabinType).FirstOrDefaultAsync(b => b.BookingId == bookingId);
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            var query = _context.Bookings.AsQueryable();
+            if (bookingId.HasValue && bookingId.Value > 0)
+            {
+                query = query.Where(b => b.BookingId == bookingId.Value);
+            }
+            else if (!string.IsNullOrEmpty(bookingCode))
+            {
+                query = query.Where(b => b.BookingCode == bookingCode);
+            }
+            else
+            {
+                return BadRequest(new { message = "Thiếu thông tin đơn đặt vé." });
+            }
 
-        if (booking == null) return NotFound(new { message = "Không tìm thấy đơn đặt vé." });
-        if (booking.UserId != userId) return Forbid();
-        if (booking.Status != "Pending") return BadRequest(new { message = "Đơn đặt vé này không ở trạng thái chờ thanh toán." });
+            var booking = await query.FirstOrDefaultAsync();
 
-        var tmnCode = _configuration["VnPay:TmnCode"] ?? "J914ZYDG";
-        var hashSecret = _configuration["VnPay:HashSecret"] ?? "STQJECRYLUKAESMZXXVIZKUCMEGJOORU";
-        var baseUrl = _configuration["VnPay:BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        var returnUrl = _configuration["VnPay:ReturnUrl"] ?? "https://localhost:7137/api/Payments/vnpay-return";
+            if (booking == null) 
+                return NotFound(new { message = "Không tìm thấy đơn đặt vé." });
+                
+            if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(booking.UserId) && booking.UserId != userId) 
+                return StatusCode(403, new { message = "Bạn không có quyền thanh toán đơn đặt vé này." });
+                
+            if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase)) 
+                return BadRequest(new { message = $"Đơn đặt vé này không ở trạng thái chờ thanh toán (Trạng thái hiện tại: {booking.Status})." });
 
-        var vnpay = new VnPayLibrary();
-        vnpay.AddRequestData("vnp_Version", "2.1.0");
-        vnpay.AddRequestData("vnp_Command", "pay");
-        vnpay.AddRequestData("vnp_TmnCode", tmnCode);
-        vnpay.AddRequestData("vnp_Amount", ((long)(booking.TotalPrice * 100)).ToString()); // VNPAY tính bằng đơn vị Xu (x100)
-        vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
-        vnpay.AddRequestData("vnp_CurrCode", "VND");
-        vnpay.AddRequestData("vnp_IpAddr", VnPayLibrary.GetIpAddress(HttpContext));
-        vnpay.AddRequestData("vnp_Locale", "vn");
-        vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan ve #{booking.BookingCode}");
-        vnpay.AddRequestData("vnp_OrderType", "other");
-        vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
-        vnpay.AddRequestData("vnp_TxnRef", $"{booking.BookingId}_{DateTime.Now.Ticks}");
+            var tmnCode = _configuration["VnPay:TmnCode"] ?? "J914ZYDG";
+            var hashSecret = _configuration["VnPay:HashSecret"] ?? "STQJECRYLUKAESMZXXVIZKUCMEGJOORU";
+            var baseUrl = _configuration["VnPay:BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+            var returnUrl = _configuration["VnPay:ReturnUrl"] ?? "https://localhost:7137/api/Payments/vnpay-return";
 
-        var paymentUrl = vnpay.CreateRequestUrl(baseUrl, hashSecret);
+            var vnpay = new VnPayLibrary();
+            vnpay.AddRequestData("vnp_Version", "2.1.0");
+            vnpay.AddRequestData("vnp_Command", "pay");
+            vnpay.AddRequestData("vnp_TmnCode", tmnCode);
+            vnpay.AddRequestData("vnp_Amount", ((long)(booking.TotalPrice * 100)).ToString());
+            vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            vnpay.AddRequestData("vnp_CurrCode", "VND");
+            vnpay.AddRequestData("vnp_IpAddr", VnPayLibrary.GetIpAddress(HttpContext));
+            vnpay.AddRequestData("vnp_Locale", "vn");
+            vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan ve {booking.BookingCode}");
+            vnpay.AddRequestData("vnp_OrderType", "other");
+            vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
+            vnpay.AddRequestData("vnp_TxnRef", $"{booking.BookingId}_{DateTime.Now.Ticks}");
 
-        return Ok(new { paymentUrl });
+            var paymentUrl = vnpay.CreateRequestUrl(baseUrl, hashSecret);
+
+            return Ok(new { paymentUrl });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi tạo URL VNPAY: " + ex.Message });
+        }
     }
 
     [HttpGet("vnpay-return")]

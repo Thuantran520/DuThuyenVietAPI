@@ -245,21 +245,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (selectedMethod === 'VNPAY') {
                 btn.innerText = 'Đang chuyển hướng sang VNPAY...';
                 try {
-                    const vnpRes = await fetch(`${API_URL}/Payments/create-vnpay-url?bookingId=${firstBookingId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                    const bId = firstBookingId || 0;
+                    const vnpRes = await fetch(`${API_URL}/Payments/create-vnpay-url?bookingId=${bId}&bookingCode=${encodeURIComponent(bookingCode)}`, {
+                        headers: { 
+                            'Authorization': `Bearer ${token}` 
+                        }
                     });
-                    const vnpData = await vnpRes.json();
-                    if (vnpData.paymentUrl) {
+                    
+                    let vnpData = {};
+                    try {
+                        vnpData = await vnpRes.json();
+                    } catch (parseErr) {
+                        console.error('Failed to parse response JSON:', parseErr);
+                    }
+                    
+                    if (vnpRes.ok && vnpData.paymentUrl) {
                         window.location.href = vnpData.paymentUrl;
                         return;
                     } else {
-                        window.Popup.show('Lỗi', vnpData.message || 'Không thể tạo liên kết VNPAY', 'error');
+                        const errMsg = vnpData.message || (vnpRes.status === 401 ? 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.' : `Không thể tạo cổng VNPAY (Mã lỗi HTTP: ${vnpRes.status})`);
+                        window.Popup.show('Lỗi', errMsg, 'error');
                         btn.disabled = false;
                         updateInstructions();
                         return;
                     }
                 } catch (e) {
-                    window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ VNPAY', 'error');
+                    console.error('VNPAY Error:', e);
+                    window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ: ' + e.message, 'error');
                     btn.disabled = false;
                     updateInstructions();
                     return;

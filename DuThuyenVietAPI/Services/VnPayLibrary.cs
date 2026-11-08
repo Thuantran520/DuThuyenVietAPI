@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -113,28 +112,19 @@ public class VnPayLibrary
 
     public static string GetIpAddress(HttpContext context)
     {
-        var ipAddress = string.Empty;
         try
         {
-            var remoteIpAddress = context.Connection.RemoteIpAddress;
-            if (remoteIpAddress != null)
+            var ip = context.Connection.RemoteIpAddress?.ToString();
+            if (string.IsNullOrEmpty(ip) || ip == "::1" || ip == "127.0.0.1")
             {
-                if (remoteIpAddress.AddressFamily == AddressFamily.InterNetworkV6)
-                {
-                    remoteIpAddress = Dns.GetHostEntry(remoteIpAddress).AddressList
-                        .FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
-                }
-                if (remoteIpAddress != null) ipAddress = remoteIpAddress.ToString();
+                return "127.0.0.1";
             }
+            return ip;
         }
-        catch { }
-
-        if (string.IsNullOrEmpty(ipAddress) || ipAddress == "::1")
+        catch
         {
-            ipAddress = "127.0.0.1";
+            return "127.0.0.1";
         }
-
-        return ipAddress;
     }
 }
 
