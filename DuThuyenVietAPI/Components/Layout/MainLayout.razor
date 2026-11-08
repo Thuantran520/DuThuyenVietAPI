@@ -1,0 +1,56 @@
+@inherits LayoutComponentBase
+
+<header class="main-header" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid #e5e7eb; padding: 16px 0; position: sticky; top: 0; z-index: 1000;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+        <a href="/" class="logo" style="font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: #0d9488; text-decoration: none;">DuThuyenViet</a>
+        <nav id="topNav" style="display: flex; align-items: center; gap: 24px;">
+            <a href="/" style="font-size: 15px; font-weight: 500; color: #1f2937; text-decoration: none;">Trang Chủ</a>
+            <a href="/search.html" style="font-size: 15px; font-weight: 500; color: #1f2937; text-decoration: none;">Tìm Du Thuyền</a>
+            <a href="/history.html" style="font-size: 15px; font-weight: 500; color: #1f2937; text-decoration: none;">Lịch Sử Đặt Vé</a>
+            <a href="/login.html" class="btn-primary" style="padding: 8px 18px; font-size: 14px; text-decoration: none;">Đăng Nhập</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    @Body
+</main>
+
+<footer class="main-footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <a href="/" class="logo">DuThuyenViet</a>
+                <p style="margin-top: 15px;">DuThuyenViet cung cấp các hải trình nghỉ dưỡng đẳng cấp, đưa du khách khám phá vẻ đẹp kỳ vĩ của Vịnh Hạ Long và Vịnh Lan Hạ trên những du thuyền 5 sao sang trọng nhất.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Khám phá</h4>
+                <ul class="footer-links">
+                    <li><a href="/">Trang chủ</a></li>
+                    <li><a href="/search.html">Tìm du thuyền</a></li>
+                    <li><a href="/history.html">Lịch sử đặt phòng</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Liên hệ</h4>
+                <ul class="footer-contact" style="list-style:none; padding:0;">
+                    <li>Viện song ngữ quốc tế NIIE</li>
+                    <li>📞 Hotline: 1900 1234</li>
+                    <li>✉️ Email: info@duthuyenviet.vn</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Bản tin</h4>
+                <p>Đăng ký nhận thông tin ưu đãi và các hành trình mới nhất.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div>&copy; 2026 DuThuyenViet. Bảo lưu mọi quyền. Đồ án Blazor Web App.</div>
+            <div class="social-links">
+                <span>🌐 Facebook</span>
+                <span>📸 Instagram</span>
+                <span>🎥 Youtube</span>
+            </div>
+        </div>
+    </div>
+</footer>

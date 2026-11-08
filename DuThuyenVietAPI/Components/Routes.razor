@@ -1,0 +1,15 @@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <div class="container text-center py-5">
+                <h2>404 - Không tìm thấy trang</h2>
+                <p>Hải trình hoặc trang bạn yêu cầu không tồn tại.</p>
+                <a href="/" class="btn-primary mt-4">Về Trang Chủ</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
