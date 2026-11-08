@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
+using DuThuyenVietAPI.Models;
 
 namespace DuThuyenVietAPI.Controllers;
 
@@ -15,10 +16,12 @@ namespace DuThuyenVietAPI.Controllers;
 public class UploadController : ControllerBase
 {
     private readonly IWebHostEnvironment _env;
+    private readonly DuThuyenVietDBContext _context;
 
-    public UploadController(IWebHostEnvironment env)
+    public UploadController(IWebHostEnvironment env, DuThuyenVietDBContext context)
     {
         _env = env;
+        _context = context;
     }
 
     [HttpPost("image")]
@@ -30,9 +33,9 @@ public class UploadController : ControllerBase
             return BadRequest("File không hợp lệ.");
         }
 
-        if (file.Length > 5 * 1024 * 1024)
+        if (file.Length > 10 * 1024 * 1024)
         {
-            return BadRequest("Kích thước file không được vượt quá 5MB.");
+            return BadRequest("Kích thước file không được vượt quá 10MB.");
         }
 
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -42,62 +45,59 @@ public class UploadController : ControllerBase
             return BadRequest("Chỉ chấp nhận các định dạng ảnh: .jpg, .jpeg, .png, .gif, .webp");
         }
 
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-        if (!Directory.Exists(uploadsFolder))
+        // Lưu trực tiếp vào Database SQL Server (không lưu vào ổ đĩa / source code)
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream);
+
+        var stored = new StoredImage
         {
-            Directory.CreateDirectory(uploadsFolder);
-        }
+            FileName = file.FileName,
+            ContentType = string.IsNullOrEmpty(file.ContentType) ? "image/jpeg" : file.ContentType,
+            Data = memoryStream.ToArray(),
+            CreatedAt = DateTime.Now
+        };
 
-        var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+        _context.StoredImages.Add(stored);
+        await _context.SaveChangesAsync();
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        return Ok(new { Url = $"/uploads/{uniqueFileName}" });
+        // Trả về đường dẫn API xem ảnh trực tiếp từ Database
+        return Ok(new { imageUrl = $"/api/Upload/image/{stored.Id}" });
     }
 
-    [HttpPost("images")]
-    [Authorize(Roles = "Admin,Manager,Staff")]
-    public async Task<IActionResult> UploadImages(List<IFormFile> files)
+    [HttpGet("image/{id}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetImage(int id)
     {
-        if (files == null || files.Count == 0)
-            return BadRequest("Không có file nào được chọn.");
-            
-        if (files.Count > 5)
-            return BadRequest("Chỉ được phép tải lên tối đa 5 ảnh.");
-            
-        var urls = new List<string>();
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-        if (!Directory.Exists(uploadsFolder))
+        var stored = await _context.StoredImages.FindAsync(id);
+        if (stored == null)
         {
-            Directory.CreateDirectory(uploadsFolder);
+            return NotFound("Không tìm thấy ảnh trong database.");
         }
 
-        foreach (var file in files)
-        {
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest($"File {file.FileName} vượt quá 5MB.");
-                
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!allowedExtensions.Contains(ext))
-                return BadRequest($"File {file.FileName} không đúng định dạng ảnh.");
-                
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+        return File(stored.Data, stored.ContentType);
+    }
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-            
-            urls.Add($"/uploads/{uniqueFileName}");
-        }
-        
-        return Ok(new { Urls = urls });
+    [HttpPost("avatar")]
+    [Authorize]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    {
+        if (file == null || file.Length == 0) return BadRequest("File không hợp lệ.");
+        if (file.Length > 5 * 1024 * 1024) return BadRequest("Avatar tối đa 5MB.");
+
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream);
+
+        var stored = new StoredImage
+        {
+            FileName = file.FileName,
+            ContentType = file.ContentType ?? "image/jpeg",
+            Data = memoryStream.ToArray(),
+            CreatedAt = DateTime.Now
+        };
+
+        _context.StoredImages.Add(stored);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { avatarUrl = $"/api/Upload/image/{stored.Id}" });
     }
 }

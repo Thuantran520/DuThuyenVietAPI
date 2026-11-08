@@ -40,7 +40,13 @@
             
             <h3 class="mb-3 mt-4">Chọn phương thức thanh toán</h3>
             <div class="payment-methods" id="paymentMethods">
-                <div class="payment-method selected" data-method="BankTransfer">Chuyển khoản NH</div>
+                <div class="payment-method selected" data-method="VNPAY" style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600;">
+                    <span style="color:#005baa; font-weight:bold;">💳 VNPAY (QR / Thẻ ATM)</span>
+                </div>
+                <div class="payment-method" data-method="PayPal" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:600;">
+                    <span style="color:#003087; font-weight:bold;">Pay</span><span style="color:#0079C1; font-weight:bold;">Pal</span>
+                </div>
+                <div class="payment-method" data-method="BankTransfer">Chuyển khoản VietQR</div>
                 <div class="payment-method" data-method="Cash">Tiền mặt / Thu hộ</div>
             </div>
             

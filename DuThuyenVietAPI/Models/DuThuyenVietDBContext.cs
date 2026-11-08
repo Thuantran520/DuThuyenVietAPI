@@ -39,6 +39,8 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
 
     public virtual DbSet<ScheduleCabinInventory> ScheduleCabinInventories { get; set; }
 
+    public virtual DbSet<StoredImage> StoredImages { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder); // Bắt buộc phải có dòng này cho Identity

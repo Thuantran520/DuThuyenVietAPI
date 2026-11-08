@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    let selectedMethod = 'BankTransfer';
+    let selectedMethod = 'VNPAY';
     let firstBookingId = null;
 
     document.querySelectorAll('.payment-method').forEach(el => {
@@ -152,7 +152,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             const bCode = bookingCode;
             const bTotal = formatPrice(totalGroupPrice);
             
-            if (selectedMethod === 'BankTransfer') {
+            if (selectedMethod === 'VNPAY') {
+                instructions.innerHTML = `
+                    <h4 style="color: #005baa; margin-bottom: 12px; font-weight: 700;">💳 Cổng thanh toán VNPAY Sandbox</h4>
+                    <p class="mb-2">Bạn sẽ được chuyển hướng sang cổng thanh toán bảo mật của <strong>VNPAY</strong> để quét mã QR hoặc nhập thẻ ATM ngân hàng.</p>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:8px; font-size:13px; line-height:1.6; margin-bottom:12px; border-left:4px solid #005baa;">
+                        <strong>Thông tin thẻ TEST Sandbox để nộp đồ án:</strong><br/>
+                        • Ngân hàng: <b>NCB</b><br/>
+                        • Số thẻ: <b>9704198526191432198</b><br/>
+                        • Tên chủ thẻ: <b>NGUYEN VAN A</b><br/>
+                        • Ngày phát hành: <b>07/15</b><br/>
+                        • Mật khẩu OTP: <b>123456</b>
+                    </div>
+                    <p style="font-size:12px; color:#64748b; font-style:italic;">Hệ thống VNPAY Sandbox tự động xử lý và xác nhận kết quả thanh toán ngay lập tức.</p>
+                `;
+                btn.innerText = 'Chuyển sang Cổng VNPAY ➔';
+            } else if (selectedMethod === 'PayPal') {
+                instructions.innerHTML = `
+                    <h4 style="color: #003087; margin-bottom: 12px; font-weight: 700;">🌍 Cổng thanh toán Quốc tế PayPal Sandbox</h4>
+                    <p class="mb-2">Thanh toán an toàn dành cho khách du lịch quốc tế bằng thẻ <strong>Visa / MasterCard</strong> hoặc tài khoản <strong>PayPal</strong>.</p>
+                    <p style="font-size:13px; color:#0d9488; font-weight:600;">Đơn hàng tự động quy đổi tỷ giá USD khi thanh toán.</p>
+                `;
+                btn.innerText = 'Thanh toán qua PayPal ➔';
+            } else if (selectedMethod === 'BankTransfer') {
                 // Generate real dynamic VietQR code
                 const bankId = 'Techcombank';
                 const accountNo = '17118899999';
@@ -219,6 +241,58 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btn = document.getElementById('btnPay');
             btn.disabled = true;
             btn.innerText = 'Đang xử lý...';
+
+            if (selectedMethod === 'VNPAY') {
+                btn.innerText = 'Đang chuyển hướng sang VNPAY...';
+                try {
+                    const vnpRes = await fetch(`${API_URL}/Payments/create-vnpay-url?bookingId=${firstBookingId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const vnpData = await vnpRes.json();
+                    if (vnpData.paymentUrl) {
+                        window.location.href = vnpData.paymentUrl;
+                        return;
+                    } else {
+                        window.Popup.show('Lỗi', vnpData.message || 'Không thể tạo liên kết VNPAY', 'error');
+                        btn.disabled = false;
+                        updateInstructions();
+                        return;
+                    }
+                } catch (e) {
+                    window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ VNPAY', 'error');
+                    btn.disabled = false;
+                    updateInstructions();
+                    return;
+                }
+            } else if (selectedMethod === 'PayPal') {
+                btn.innerText = 'Đang xác thực PayPal...';
+                try {
+                    const ppRes = await fetch(`${API_URL}/Payments/capture-paypal-order`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ bookingCode: bookingCode, paymentMethod: 'PayPal' })
+                    });
+                    const ppData = await ppRes.json();
+                    if (ppRes.ok) {
+                        window.Popup.show('Thành công', 'Thanh toán PayPal thành công!', 'success');
+                        setTimeout(() => window.location.href = '/history.html?payment=success', 2000);
+                        return;
+                    } else {
+                        window.Popup.show('Lỗi', ppData.message || 'Thanh toán thất bại', 'error');
+                        btn.disabled = false;
+                        updateInstructions();
+                        return;
+                    }
+                } catch (e) {
+                    window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ PayPal', 'error');
+                    btn.disabled = false;
+                    updateInstructions();
+                    return;
+                }
+            }
 
             try {
                 // Thanh toán 1 lần duy nhất cho toàn bộ đơn hàng qua endpoint ProcessByCode

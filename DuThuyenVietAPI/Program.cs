@@ -94,6 +94,7 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<DuThuyenVietDBContext>();
     try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Reviews') AND name = 'StaffReply') ALTER TABLE Reviews ADD StaffReply NVARCHAR(MAX) NULL;"); } catch { }
     try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Reviews') AND name = 'StaffReplyUserId') ALTER TABLE Reviews ADD StaffReplyUserId NVARCHAR(450) NULL;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StoredImages') CREATE TABLE StoredImages (Id INT IDENTITY(1,1) PRIMARY KEY, FileName NVARCHAR(255) NOT NULL, ContentType NVARCHAR(100) NOT NULL, Data VARBINARY(MAX) NOT NULL, CreatedAt DATETIME DEFAULT GETDATE());"); } catch { }
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
