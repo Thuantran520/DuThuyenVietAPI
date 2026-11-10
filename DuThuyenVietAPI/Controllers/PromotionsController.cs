@@ -46,9 +46,29 @@ public class PromotionsController : ControllerBase
                 return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:dd/MM/yyyy}." });
             }
 
-            if (now.Date > promotion.EndDate.Date)
+            if (promotion.EndDate.HasValue && now.Date > promotion.EndDate.Value.Date)
             {
                 return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
+            }
+
+            // 1b. Kiểm tra giới hạn số lượt sử dụng
+            if (promotion.UsageLimit.HasValue && promotion.UsageLimit.Value > 0 && promotion.UsedCount >= promotion.UsageLimit.Value)
+            {
+                return BadRequest(new { message = $"Mã giảm giá này đã hết lượt sử dụng ({promotion.UsedCount}/{promotion.UsageLimit.Value} lượt)." });
+            }
+
+            // 1c. Kiểm tra nếu khách hàng đã sử dụng mã này 1 lần rồi
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var hasUsed = await _context.Bookings.AnyAsync(b => b.UserId == userId && b.PromotionId == promotion.PromotionId && b.Status != "Cancelled");
+                    if (hasUsed)
+                    {
+                        return BadRequest(new { message = "Mã ưu đãi này chỉ áp dụng 1 lần cho mỗi khách hàng. Bạn đã sử dụng mã này trong một đơn đặt trước đó." });
+                    }
+                }
             }
 
             // 2. Xác định ngày khởi hành để kiểm tra
@@ -90,7 +110,12 @@ public class PromotionsController : ControllerBase
                 promotion.Code,
                 promotion.Description,
                 promotion.DiscountPercent,
+                promotion.StartDate,
                 promotion.EndDate,
+                isPermanent = !promotion.EndDate.HasValue,
+                usageLimit = promotion.UsageLimit,
+                usedCount = promotion.UsedCount,
+                remainingUses = promotion.UsageLimit.HasValue ? Math.Max(0, promotion.UsageLimit.Value - promotion.UsedCount) : (int?)null,
                 isValid = true
             });
         }
@@ -111,7 +136,7 @@ public class PromotionsController : ControllerBase
             var now = DateTime.Now;
             var promotions = await _context.Promotions
                 .AsNoTracking()
-                .Where(p => p.IsActive && p.StartDate.Date <= now.Date && p.EndDate.Date >= now.Date)
+                .Where(p => p.IsActive && p.StartDate.Date <= now.Date && (!p.EndDate.HasValue || p.EndDate.Value.Date >= now.Date) && (!p.UsageLimit.HasValue || p.UsedCount < p.UsageLimit.Value))
                 .Select(p => new
                 {
                     p.PromotionId,
@@ -119,7 +144,11 @@ public class PromotionsController : ControllerBase
                     p.Description,
                     p.DiscountPercent,
                     p.StartDate,
-                    p.EndDate
+                    p.EndDate,
+                    p.UsageLimit,
+                    p.UsedCount,
+                    isPermanent = !p.EndDate.HasValue,
+                    remainingUses = p.UsageLimit.HasValue ? Math.Max(0, p.UsageLimit.Value - p.UsedCount) : (int?)null
                 })
                 .ToListAsync();
 
@@ -137,7 +166,9 @@ public class PromotionsController : ControllerBase
         public string? Description { get; set; }
         public int DiscountPercent { get; set; }
         public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsPermanent { get; set; } = false;
+        public int? UsageLimit { get; set; } // Giới hạn lượt dùng (null hoặc <= 0 là không giới hạn)
         public bool IsActive { get; set; } = true;
     }
 
@@ -155,7 +186,9 @@ public class PromotionsController : ControllerBase
                 return BadRequest(new { message = "Phần trăm giảm giá phải nằm trong khoảng từ 0% đến 100%." });
             }
 
-            if (dto.EndDate <= dto.StartDate)
+            DateTime? finalEndDate = dto.IsPermanent ? null : dto.EndDate;
+
+            if (finalEndDate.HasValue && finalEndDate.Value <= dto.StartDate)
             {
                 return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
             }
@@ -172,7 +205,9 @@ public class PromotionsController : ControllerBase
                 Description = dto.Description,
                 DiscountPercent = dto.DiscountPercent,
                 StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                EndDate = finalEndDate,
+                UsageLimit = (dto.UsageLimit.HasValue && dto.UsageLimit.Value > 0) ? dto.UsageLimit.Value : null,
+                UsedCount = 0,
                 IsActive = dto.IsActive
             };
 
@@ -225,7 +260,9 @@ public class PromotionsController : ControllerBase
             if (dto.DiscountPercent < 0 || dto.DiscountPercent > 100)
                 return BadRequest(new { message = "Phần trăm giảm giá phải từ 0% đến 100%." });
 
-            if (dto.EndDate <= dto.StartDate)
+            DateTime? finalEndDate = dto.IsPermanent ? null : dto.EndDate;
+
+            if (finalEndDate.HasValue && finalEndDate.Value <= dto.StartDate)
                 return BadRequest(new { message = "Ngày kết thúc phải lớn hơn ngày bắt đầu." });
 
             bool codeExists = await _context.Promotions.AnyAsync(p => p.Code.ToUpper() == dto.Code.ToUpper() && p.PromotionId != id);
@@ -238,7 +275,8 @@ public class PromotionsController : ControllerBase
             promotion.Description = dto.Description;
             promotion.DiscountPercent = dto.DiscountPercent;
             promotion.StartDate = dto.StartDate;
-            promotion.EndDate = dto.EndDate;
+            promotion.EndDate = finalEndDate;
+            promotion.UsageLimit = (dto.UsageLimit.HasValue && dto.UsageLimit.Value > 0) ? dto.UsageLimit.Value : null;
             promotion.IsActive = dto.IsActive;
 
             await _context.SaveChangesAsync();

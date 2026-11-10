@@ -49,30 +49,52 @@ a:hover { color: var(--primary-hover); }
 .w-100 { width: 100%; }
 
 .btn-primary {
-    display: inline-block;
-    background: var(--primary);
-    color: var(--white);
-    padding: 12px 24px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #f0fdfa;
+    color: #0f766e;
+    border: 1.5px solid #2dd4bf;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
+    transition: all 0.25s ease;
 }
-.btn-primary:hover { background: var(--primary-hover); color: var(--white); }
+.btn-primary:hover {
+    background: #0d9488;
+    color: #ffffff;
+    border-color: #0d9488;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
+    transform: translateY(-1px);
+}
 
 .btn-secondary {
-    display: inline-block;
-    background: var(--white);
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #f8fafc;
+    color: #0284c7;
+    border: 1.5px solid #bae6fd;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 0 1px 4px rgba(2, 132, 199, 0.08);
+    transition: all 0.25s ease;
 }
-.btn-secondary:hover { background: var(--primary); color: var(--white); }
+.btn-secondary:hover {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    transform: translateY(-1px);
+}
 
 /* Header */
 .main-header {
@@ -142,6 +164,14 @@ a:hover { color: var(--primary-hover); }
     gap: 30px;
 }
 
+/* Cruise Grid & Card Alignment */
+.cruise-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+    align-items: stretch;
+}
+
 /* Card */
 .cruise-card {
     background: var(--white);
@@ -149,6 +179,9 @@ a:hover { color: var(--primary-hover); }
     overflow: hidden;
     border: 1px solid var(--border);
     transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 .cruise-card:hover {
     transform: translateY(-5px);
@@ -158,16 +191,33 @@ a:hover { color: var(--primary-hover); }
     width: 100%;
     height: 220px;
     object-fit: cover;
+    flex-shrink: 0;
 }
-.cruise-card-body { padding: 24px; }
-.cruise-title { font-size: 20px; margin-bottom: 10px; }
-.cruise-title a { color: var(--text-heading); }
+.cruise-card-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.cruise-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+    line-height: 1.35;
+    min-height: 54px; /* Fix price baseline: Always allocate 2 lines so short and long titles align */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.cruise-title a { color: var(--text-heading); text-decoration: none; }
 .cruise-title a:hover { color: var(--primary); }
 .cruise-meta {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 15px;
     font-size: 14px;
+    color: var(--text-body);
 }
 .cruise-desc { font-size: 14px; margin-bottom: 20px; color: var(--text-body); }
 .cruise-footer {
@@ -176,6 +226,7 @@ a:hover { color: var(--primary-hover); }
     align-items: center;
     border-top: 1px solid var(--border);
     padding-top: 15px;
+    margin-top: auto; /* Pushes price and action button to the bottom of the card */
 }
 .price { font-weight: 600; color: #ef4444; font-size: 18px; }
 
@@ -352,3 +403,79 @@ a:hover { color: var(--primary-hover); }
 .gallery-grid img:hover {
     transform: scale(1.03);
 }
+
+/* ==========================================================================
+   Icon Styles (Bộ icon nhận diện thương hiệu Ha Long Cruise - PNG Transparent)
+   ========================================================================== */
+.app-icon {
+    display: inline-block;
+    width: 1.35em;
+    height: 1.35em;
+    min-width: 1.35em;
+    vertical-align: -0.22em;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.app-icon-sm {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    min-width: 1.15em;
+    vertical-align: -0.15em;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.app-icon-md {
+    display: inline-block;
+    width: 1.55em;
+    height: 1.55em;
+    min-width: 1.55em;
+    vertical-align: -0.25em;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.app-icon-lg {
+    display: inline-block;
+    width: 1.95em;
+    height: 1.95em;
+    min-width: 1.95em;
+    vertical-align: -0.3em;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.app-icon-xl {
+    display: inline-block;
+    width: 2.6em;
+    height: 2.6em;
+    min-width: 2.6em;
+    vertical-align: -0.35em;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.app-icon-circle {
+    border-radius: 50%;
+}
+
+button .app-icon,
+.btn .app-icon,
+.modal-btn .app-icon {
+    margin-right: 6px;
+    vertical-align: -0.2em;
+}
+
+.modal-title .app-icon {
+    width: 1.25em;
+    height: 1.25em;
+    vertical-align: -0.18em;
+    margin-right: 8px;
+}
+
+.card-title .app-icon,
+h1 .app-icon,
+h2 .app-icon,
+h3 .app-icon,
+h4 .app-icon {
+    vertical-align: -0.18em;
+    margin-right: 8px;
+}
+

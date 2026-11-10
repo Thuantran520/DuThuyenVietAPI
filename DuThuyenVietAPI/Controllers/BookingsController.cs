@@ -86,9 +86,23 @@ public class BookingsController : ControllerBase
                     return BadRequest(new { message = $"Mã giảm giá chỉ bắt đầu có hiệu lực từ ngày {promotion.StartDate:MM/dd/yyyy}." });
                 }
 
-                if (now > promotion.EndDate)
+                if (promotion.EndDate.HasValue && now > promotion.EndDate.Value)
                 {
                     return BadRequest(new { message = "Mã giảm giá này đã hết hạn sử dụng." });
+                }
+
+                // Kiểm tra giới hạn số lượt sử dụng
+                if (promotion.UsageLimit.HasValue && promotion.UsageLimit.Value > 0 && promotion.UsedCount >= promotion.UsageLimit.Value)
+                {
+                    return BadRequest(new { message = $"Mã giảm giá này đã hết lượt sử dụng ({promotion.UsedCount}/{promotion.UsageLimit.Value} lượt)." });
+                }
+
+                // Nếu khách hàng đã dùng mã giảm giá này 1 lần trước đó thì từ chối (quy tắc 1 lần / khách)
+                var alreadyUsed = await _context.Bookings
+                    .AnyAsync(b => b.UserId == userId && b.PromotionId == promotion.PromotionId && b.Status != "Cancelled");
+                if (alreadyUsed)
+                {
+                    return BadRequest(new { message = "Mã ưu đãi này chỉ áp dụng 1 lần cho mỗi khách hàng. Bạn đã sử dụng mã này trong một đơn đặt trước đó." });
                 }
 
                 // 2. Đã loại bỏ ràng buộc ngày khởi hành phải nằm trong khoảng thời gian khuyến mãi.
@@ -165,7 +179,10 @@ public class BookingsController : ControllerBase
                     b.TotalPrice,
                     b.Status,
                     b.CreatedAt,
-                    Payments = b.Payments.Select(p => new { p.PaymentMethod, p.PaidAt, p.Status, p.TransactionCode })
+                    Payments = b.Payments
+                        .Where(p => p.Status != "Superseded")
+                        .OrderByDescending(p => p.PaymentId)
+                        .Select(p => new { p.PaymentId, p.PaymentMethod, p.PaidAt, p.Status, p.TransactionCode, p.CreatedAt })
                 })
                 .ToListAsync();
 
@@ -264,13 +281,17 @@ public class BookingsController : ControllerBase
                     b.TotalPrice,
                     b.Status,
                     b.CreatedAt,
-                    Payments = b.Payments.Select(p => new
-                    {
-                        p.PaymentMethod,
-                        p.TransactionCode,
-                        p.Status,
-                        p.PaidAt
-                    })
+                    Payments = b.Payments
+                        .Where(p => p.Status != "Superseded")
+                        .OrderByDescending(p => p.PaymentId)
+                        .Select(p => new
+                        {
+                            p.PaymentId,
+                            p.PaymentMethod,
+                            p.TransactionCode,
+                            p.Status,
+                            p.PaidAt
+                        })
                 })
                 .ToListAsync();
 

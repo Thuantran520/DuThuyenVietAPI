@@ -13,6 +13,26 @@
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
     <link rel="stylesheet" href="/css/history.css?v=3">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header"></header>
@@ -38,7 +58,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title fw-bold fs-6 mb-0">⚠️ Mẫu Xác Nhận Hủy Vé</h5>
+                    <h5 class="modal-title fw-bold fs-6 mb-0"><img src="/images/icons/warning.png" class="app-icon" alt=""> Mẫu Xác Nhận Hủy Vé</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 text-start">
@@ -57,7 +77,7 @@
                         <textarea class="form-control" id="customReasonText" rows="2" placeholder="Nhập lý do chi tiết của bạn..."></textarea>
                     </div>
                     <div class="alert alert-warning py-2 small mb-0">
-                        💡 Lưu ý: Việc hủy đơn sẽ được gửi lên hệ thống và cập nhật trạng thái ngay lập tức.
+                        <img src="/images/icons/travel-tip.png" class="app-icon" alt=""> Lưu ý: Việc hủy đơn sẽ được gửi lên hệ thống và cập nhật trạng thái ngay lập tức.
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2">
@@ -79,7 +99,44 @@
                 </div>
                 <div class="modal-footer border-0 justify-content-center bg-transparent mt-3 hide-on-print">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn btn-primary fw-bold" onclick="printTicket()">🎟️ Tải vé (Ảnh)</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="printTicket()"><img src="/images/icons/ticket.png" class="app-icon" alt=""> Tải vé (Ảnh)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVIEW MODAL ĐÁNH GIÁ DU THUYỀN -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.6);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none; padding: 20px;">
+                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a;" id="reviewCruiseNameDisplay"><img src="/images/icons/rating-star.png" class="app-icon" alt=""> Đánh giá tour du thuyền</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding-top: 16px;">
+                    <input type="hidden" id="reviewCruiseId">
+                    <input type="hidden" id="reviewBookingId">
+                    
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 14px; color: #64748b; margin-bottom: 8px;">Chọn số sao đánh giá kỳ nghỉ của bạn:</div>
+                        <div id="starRatingSelect" style="font-size: 32px; color: #fbbf24; cursor: pointer; user-select: none;">
+                            <span data-star="1">★</span>
+                            <span data-star="2">★</span>
+                            <span data-star="3">★</span>
+                            <span data-star="4">★</span>
+                            <span data-star="5">★</span>
+                        </div>
+                        <div id="starRatingText" style="font-size: 13px; font-weight: 600; color: #f59e0b; margin-top: 4px;">5 sao - Tuyệt vời & Đáng nhớ</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">Nhận xét chi tiết của bạn:</label>
+                        <textarea id="reviewCommentText" rows="4" placeholder="Chia sẻ trải nghiệm về phòng ốc, dịch vụ, cảnh quan, bữa ăn trên tàu..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-size: 14px; box-sizing: border-box;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: none; padding-top: 0; display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="flex: 1; padding: 10px; border-radius: 8px;">Đóng</button>
+                    <button type="button" onclick="submitCruiseReview()" class="btn btn-primary fw-bold" style="flex: 1; padding: 10px; border-radius: 8px; background: #f0fdfa; border: 1.5px solid #2dd4bf; color: #0f766e;">Gửi đánh giá</button>
                 </div>
             </div>
         </div>
@@ -90,6 +147,8 @@
 
     <!-- Các file JS gốc của nhóm -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="/js/lottie.min.js"></script>
+    <script src="/js/effects.js"></script>
     <script src="/js/popup.js"></script>
     <script src="/js/history-page.js?v=6"></script>
     <footer class="main-footer"></footer>

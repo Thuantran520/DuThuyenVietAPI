@@ -8,6 +8,33 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header" id="main-header"></header>
@@ -26,12 +53,38 @@
         <div class="container">
             <div id="main-content">
                 <div class="card" id="tab-cruises">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <div class="card-title" style="margin-bottom: 4px;">Quản lý Danh mục Du Thuyền</div>
-                            <div style="font-size: 14px; color: #6b7280;">Thêm, sửa, xóa các du thuyền trên hệ thống.</div>
+                            <div class="card-title" style="margin-bottom: 4px;"><img src="/images/icons/cruise-yacht.png" class="app-icon" alt=""> Quản lý Danh mục Du Thuyền</div>
+                            <div style="font-size: 14px; color: #6b7280;">Thêm, sửa, bảo trì và kiểm soát tình trạng hoạt động của các du thuyền.</div>
                         </div>
                         <a href="/admin/cruise-editor.html" class="btn btn-primary" style="text-decoration: none;">+ Thêm Du Thuyền Mới</a>
+                    </div>
+
+                    <!-- BỘ LỌC DU THUYỀN TOÀN DIỆN -->
+                    <div class="cruise-filter-bar" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1.5px solid #e2e8f0; align-items: center;">
+                        <div style="flex: 2; min-width: 220px;">
+                            <input type="text" id="filter-cruise-search" placeholder="🔍 Tìm theo tên du thuyền..." style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1.2; min-width: 160px;">
+                            <select id="filter-cruise-dest" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="">Tất cả khu vực</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1.2; min-width: 170px;">
+                            <select id="filter-cruise-status" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="active">🟢 Đang hoạt động</option>
+                                <option value="maintenance">🟡 Đang bảo trì</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 160px;">
+                            <select id="filter-cruise-sort" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="rating">Đánh giá sao (Cao → Thấp)</option>
+                                <option value="newest">Mới nhất (ID giảm)</option>
+                                <option value="name">Tên du thuyền (A → Z)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div id="cruises-grid-container" class="cruise-grid" style="margin-top: 20px;">
@@ -45,8 +98,11 @@
     <!-- Hidden nav elements for auth.js compatibility -->
     <div id="tab-cruises-nav" style="display:none;"></div>
 
+    <footer class="main-footer"></footer>
+
     <script src="/js/popup.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

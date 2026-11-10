@@ -89,14 +89,14 @@ input[type="file"] { display: none; }
 .pw-form-group input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 14px; transition: border-color 0.2s; box-sizing: border-box; }
 .pw-form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
 
-.role-badge { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-right: 8px; }
+.role-badge { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-right: 6px; white-space: nowrap !important; display: inline-block !important; vertical-align: middle; }
 .role-badge.admin { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
 
-.btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border-color); }
-.btn-outline:hover { background: #f9fafb; }
+.btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: #f0fdfa; color: #0f766e; border: 1.5px solid #2dd4bf; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12); }
+.btn-primary:hover { background: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28); transform: translateY(-1px); }
+.btn-outline { background: white; color: #475569; border: 1.5px solid #cbd5e1; }
+.btn-outline:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
 
 .actions { margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end; }
 
@@ -126,6 +126,7 @@ td { padding: 16px; border-bottom: 1px solid var(--border-color); font-size: 14p
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 .cruise-card:hover {
     transform: translateY(-5px);
@@ -135,8 +136,10 @@ td { padding: 16px; border-bottom: 1px solid var(--border-color); font-size: 14p
     width: 100%;
     height: 220px;
     object-fit: cover;
+    flex-shrink: 0;
 }
 .cruise-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+.cruise-footer { margin-top: auto; }
 .cruise-title { font-size: 20px; margin-bottom: 10px; font-weight: 600; }
 .cruise-title a { color: #0f172a; text-decoration: none; }
 .cruise-title a:hover { color: #0284c7; }

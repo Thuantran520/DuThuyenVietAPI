@@ -3,17 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Không Tìm Thấy Trang</title>
+    <title>404 - Không Tìm Thấy Trang | Du Thuyền Việt</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/404.css">
 </head>
 <body>
     <div class="error-container">
-        <img src="/images/Boatbroken.png" alt="Broken Boat Icon" class="error-icon">
-        <div class="error-code">404</div>
-        <div class="error-title">Trang không tồn tại hoặc bị từ chối truy cập</div>
-        <div class="error-message">Hệ thống không tìm thấy đường dẫn này hoặc bạn không có đủ thẩm quyền để truy cập vào khu vực Quản trị. Vui lòng quay lại.</div>
-        <a href="/index.html" class="btn-home">Quay về Trang Chủ</a>
+        <div data-lottie="404-lost-in-bay" class="error-lottie-box"></div>
+        <h1 class="error-title">Bạn Đang Lạc Giữa Vịnh?</h1>
+        <p class="error-message">Trang này không tồn tại hoặc bạn không có thẩm quyền truy cập. Hãy để chúng tôi đưa bạn trở về bến đỗ an toàn.</p>
+        <div class="error-btn-group">
+            <a href="/index.html" class="btn-action btn-primary-soft">
+                <img src="/images/icons/home.png" class="app-icon" alt="">
+                Về Trang Chủ
+            </a>
+            <a href="/search.html" class="btn-action btn-outline-soft">
+                <img src="/images/icons/cruise-yacht.png" class="app-icon" alt="">
+                Tìm Du Thuyền
+            </a>
+        </div>
     </div>
+
+    <script src="/js/lottie.min.js"></script>
+    <script src="/js/effects.js"></script>
 </body>
 </html>

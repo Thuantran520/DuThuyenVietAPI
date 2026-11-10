@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Popup Quảng Cáo - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/ads.css">
+    <style>
+        .ads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .ad-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s ease;
+        }
+        .ad-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .ad-preview-box {
+            position: relative;
+            min-height: 180px;
+            padding: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .ad-preview-img {
+            max-height: 120px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .ad-pos-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #ffffff;
+            backdrop-filter: blur(4px);
+        }
+        .ad-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .ad-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+            margin-top: auto;
+        }
+        .ad-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        /* --- MODAL DIALOG & OVERLAY ENHANCEMENTS --- */
+        .inline-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 99999;
+            padding: 20px;
+        }
+        .inline-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .inline-modal {
+            background: #ffffff;
+            width: 100%;
+            max-width: 720px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            transform: translateY(20px) scale(0.96);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .inline-modal-overlay.active .inline-modal {
+            transform: translateY(0) scale(1);
+        }
+        .inline-modal-header {
+            padding: 18px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .inline-modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .inline-modal-footer {
+            padding: 14px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-group-modal {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 13.5px;
+            color: #0f172a;
+            background: #ffffff;
+            transition: all 0.2s;
+            outline: none;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-input:focus {
+            border-color: #0d9488;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        }
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .inline-modal {
+                max-height: 95vh;
+                border-radius: 16px;
+            }
+            .inline-modal-body {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header"></header>
+
+    <div class="breadcrumbs-container">
+        <div class="container">
+            <ul class="breadcrumbs">
+                <li><a href="/index.html">Trang chủ</a></li>
+                <li><a href="/admin/profile.html">Quản trị</a></li>
+                <li class="active">Popup Quảng Cáo</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h1 style="font-family: 'Playfair Display', serif; font-size: 28px; color: #0f172a; margin: 0 0 6px;">Quản Lý Popup & Banner Quảng Cáo</h1>
+                <p style="color: #64748b; margin: 0; font-size: 14px;">Tùy chỉnh định dạng kiểu chữ, màu sắc, vị trí hiển thị, upload ảnh Canva và đính kèm mã ưu đãi.</p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <a href="/admin/chat.html" class="btn btn-outline" style="text-decoration: none; padding: 9px 18px; font-size: 13.5px;">
+                    <img src="/images/icons/review-chat.png" class="app-icon-sm" alt=""> Live Chat Hỗ Trợ
+                </a>
+                <button class="btn btn-primary" id="btnOpenAdModal" style="padding: 9px 20px; font-size: 13.5px;">
+                    <img src="/images/icons/plus.png" class="app-icon" alt=""> Tạo Popup Mới
+                </button>
+            </div>
+        </div>
+
+        <div class="ads-grid" id="adsContainer">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #94a3b8;">Đang tải danh sách popup quảng cáo...</div>
+        </div>
+    </div>
+
+    <!-- MODAL TẠO / SỬA POPUP QUẢNG CÁO -->
+    <div class="inline-modal-overlay" id="adModal">
+        <div class="inline-modal">
+            <div class="inline-modal-header">
+                <div class="modal-title" id="adModalTitle" style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <img src="/images/icons/special-offer.png" class="app-icon" alt=""> Tạo Popup Quảng Cáo
+                </div>
+                <button type="button" class="btn-close-modal" id="btnCloseModal" style="background:none; border:none; font-size:26px; line-height: 1; color:#94a3b8; cursor:pointer; padding: 0 4px;" title="Đóng">&times;</button>
+            </div>
+
+            <form id="adForm" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+                <div class="inline-modal-body" id="adModalBody">
+                    <input type="hidden" id="adId">
+
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Tiêu đề quảng cáo *</label>
+                            <input type="text" id="adTitle" class="form-input" placeholder="VD: Ưu Đãi Mùa Hè 2026" required>
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Vị trí hiển thị</label>
+                            <select id="adPosition" class="form-input">
+                                <option value="center">Giữa màn hình (Modal Popup + Mờ nền)</option>
+                                <option value="bottom-right">Góc dưới phải (Nổi floating card)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group-modal">
+                        <label class="form-label">Nội dung chi tiết</label>
+                        <textarea id="adDescription" class="form-input" rows="2" placeholder="VD: Đặt tour du thuyền ngay hôm nay để nhận voucher giảm 20% và đưa đón miễn phí..."></textarea>
+                    </div>
+
+                    <!-- TÙY CHỌN ẢNH CANVA / FILE -->
+                    <div class="form-group-modal">
+                        <label class="form-label">Hình ảnh banner / Canva quảng cáo</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                            <input type="text" id="adImageUrl" class="form-input" placeholder="Dán URL ảnh hoặc chọn tải lên từ máy tính">
+                            <label class="btn btn-outline" style="white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px;">
+                                <img src="/images/icons/folder.png" class="app-icon-sm" alt=""> Tải ảnh
+                                <input type="file" id="fileAdImage" accept="image/*" style="display: none;">
+                            </label>
+                        </div>
+                        <div id="imagePreviewContainer" style="display: none; margin-top: 8px;">
+                            <img id="imagePreview" src="" alt="Preview" style="max-height: 120px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: contain;">
+                        </div>
+                    </div>
+
+                    <!-- LINK CTA & VOUCHER -->
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Đường dẫn liên kết (CTA Link)</label>
+                            <input type="text" id="adLinkUrl" class="form-input" placeholder="VD: /search.html hoặc link du thuyền">
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Chữ trên nút (Button Text)</label>
+                            <input type="text" id="adLinkText" class="form-input" placeholder="VD: Khám Phá Ngay" value="Khám Phá Ngay">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Mã Giảm Giá đính kèm (nếu có)</label>
+                            <input type="text" id="adPromoCode" class="form-input" placeholder="VD: HALONG2026 (Tự động copy khi bấm)" style="text-transform: uppercase; font-weight: 600; color: #0d9488;">
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Kiểu phông chữ (Font Family)</label>
+                            <select id="adFontFamily" class="form-input">
+                                <option value="'Playfair Display', serif">Playfair Display (Sang trọng cổ điển)</option>
+                                <option value="'Inter', sans-serif" selected>Inter (Hiện đại chuẩn mực)</option>
+                                <option value="'Montserrat', sans-serif">Montserrat (Trẻ trung nổi bật)</option>
+                                <option value="'Roboto', sans-serif">Roboto (Rõ ràng thanh lịch)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- MÀU SẮC & GIAO DIỆN -->
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Màu tiêu đề / Màu chữ</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="color" id="adTitleColorPicker" value="#0f172a" style="width: 44px; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; cursor: pointer;">
+                                <input type="text" id="adTitleColor" class="form-input" value="#0f172a">
+                            </div>
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Màu nền hoặc Gradient</label>
+                            <select id="adBgPreset" class="form-input" style="margin-bottom: 6px;">
+                                <option value="#ffffff">Trắng tinh khiết</option>
+                                <option value="linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)">Xanh Ngọc Pastel (Halong Mint)</option>
+                                <option value="linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)">Vàng Hổ Phách Sang Trọng</option>
+                                <option value="linear-gradient(135deg, #042f2e 0%, #0f172a 100%)">Đại Dương Đêm (Dark Luxury)</option>
+                                <option value="custom">Tự nhập mã màu...</option>
+                            </select>
+                            <input type="text" id="adBackgroundColor" class="form-input" value="#ffffff" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group-modal" style="margin-bottom: 16px;">
+                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #0f766e; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="adIsActive" checked style="width: 18px; height: 18px; accent-color: #0d9488;">
+                            Kích hoạt hiển thị popup này cho khách hàng
+                        </label>
+                    </div>
+
+                    <!-- LIVE PREVIEW BOX -->
+                    <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <img src="/images/icons/preview-eye.png" class="app-icon-sm" alt=""> Xem trước giao diện thực tế (Live Preview)
+                        </div>
+                        <div id="livePreviewBox" style="border-radius: 12px; padding: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); transition: all 0.25s ease;">
+                            <!-- Live contents rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inline-modal-footer">
+                    <button type="button" class="btn btn-outline" id="btnCancelAd">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveAd">
+                        <img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Quảng Cáo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="main-footer"></footer>
+
+    <script src="/js/popup.js?v=2"></script>
+    <script src="/js/admin-ads.js?v=2"></script>
+    <script src="/js/navigation.js"></script>
+</body>
+</html>

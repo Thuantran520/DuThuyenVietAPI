@@ -4,43 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - Du Thuyền Việt</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/popup.css">
-    <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/layout.css?v=28">
+    <link rel="stylesheet" href="css/auth.css?v=28">
     <script>
-        if (localStorage.getItem('auth_token')) { window.location.replace('/index.html'); }
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (t && t !== 'null' && t !== 'undefined') {
+                    const p = JSON.parse(atob(t.split('.')[1]));
+                    if (p.exp && p.exp * 1000 > Date.now()) {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const returnUrl = urlParams.get('returnUrl') || '/index.html';
+                        window.location.replace(returnUrl);
+                        return;
+                    }
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+            }
+        })();
     </script>
 </head>
 <body>
-    <a href="/index.html" class="back-home" style="position: absolute; top: 20px; left: 20px; text-decoration: none; color: #ffffff; font-weight: 500; display: flex; align-items: center; gap: 8px; z-index: 10;"><span style="font-size: 20px;">&larr;</span> Trang chủ</a>
+    <a href="/index.html" class="back-home-pill">
+        <img src="/images/icons/arrow-left.png" class="app-icon" alt="">
+        Trang chủ
+    </a>
+    
     <div class="overlay"></div>
+    
     <div class="auth-card">
-        <div class="logo">Du Thuyền Việt</div>
-        <div class="subtitle">Chào mừng bạn quay trở lại</div>
+        <div data-lottie="login-welcome" class="login-lottie-wrap"></div>
+        <h1 class="logo">Du Thuyền Việt</h1>
+        <p class="subtitle">Chào mừng bạn quay trở lại trải nghiệm hải trình</p>
+        
         <div id="alert-box"></div>
+        
         <form id="loginForm">
             <div class="input-group">
-                <label>Tên đăng nhập hoặc Email</label>
-                <input type="text" id="usernameOrEmail" placeholder="Ví dụ: admin123 hoặc abc@gmail.com" required>
+                <label for="usernameOrEmail">
+                    <img src="/images/icons/user.png" class="app-icon-sm" alt="">
+                    Tên đăng nhập hoặc Email
+                </label>
+                <div class="input-wrapper">
+                    <input type="text" id="usernameOrEmail" placeholder="Ví dụ: admin123 hoặc abc@gmail.com" required autocomplete="username">
+                </div>
             </div>
+            
             <div class="input-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="password" placeholder="Nhập mật khẩu của bạn" required>
+                <label for="password">
+                    <img src="/images/icons/cabin-door.png" class="app-icon-sm" alt="">
+                    Mật khẩu
+                </label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" placeholder="Nhập mật khẩu của bạn" required autocomplete="current-password">
+                    <button type="button" class="btn-toggle-pw" id="btnTogglePw" title="Hiện/ẩn mật khẩu">
+                        <img src="/images/icons/preview-eye.png" class="app-icon-sm" alt="👁️">
+                    </button>
+                </div>
             </div>
-            <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="isAdminLogin" style="width: 16px; height: 16px; cursor: pointer;">
-                <label for="isAdminLogin" style="font-size: 14px; color: var(--text-main); cursor: pointer; user-select: none;">Đăng nhập hệ thống Quản lý (Admin)</label>
+            
+            <div class="checkbox-row">
+                <input type="checkbox" id="isAdminLogin">
+                <label for="isAdminLogin">Đăng nhập hệ thống Quản lý (Admin)</label>
             </div>
+            
             <button type="submit" class="btn-submit" id="submitBtn">
-                <span id="btnText">Đăng nhập</span>
-                <img id="spinner" src="/images/loading.gif" style="display: none; width: 24px; height: 24px; margin: 0 auto;" alt="...">
+                <img src="/images/icons/cruise-yacht.png" class="app-icon" alt="">
+                <span id="btnText">Đăng Nhập Ngay</span>
+                <span id="spinner" class="spinner" style="display: none;"></span>
             </button>
         </form>
+        
         <div class="footer-link">
-            Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a>
+            Chưa có tài khoản? <a href="register.html">Đăng ký thành viên mới</a>
         </div>
     </div>
+
     <script src="js/popup.js"></script>
+    <script src="js/lottie.min.js"></script>
+    <script src="js/effects.js"></script>
     <script src="js/auth.js"></script>
+    <script>
+        const btnToggle = document.getElementById('btnTogglePw');
+        const pwInput = document.getElementById('password');
+        if (btnToggle && pwInput) {
+            btnToggle.addEventListener('click', () => {
+                const isPw = pwInput.type === 'password';
+                pwInput.type = isPw ? 'text' : 'password';
+            });
+        }
+    </script>
 </body>
 </html>

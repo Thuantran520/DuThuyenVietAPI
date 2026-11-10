@@ -9,6 +9,33 @@
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
     <link rel="stylesheet" href="/css/cruise-editor.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header"></header>
@@ -31,10 +58,10 @@
             </div>
             <div style="display: flex; gap: 12px; align-items: center;">
                 <button class="btn btn-outline" id="btn-toggle-maintenance" style="display: none; padding: 10px 20px; font-weight: 600; font-size: 0.9rem;" title="Chuyển trạng thái bảo trì cho du thuyền">
-                    🔴 Đưa vào Bảo Trì
+                    <img src="/images/icons/inactive-dot.png" class="app-icon" alt=""> Đưa vào Bảo Trì
                 </button>
                 <button class="btn btn-primary" id="btn-save-cruise" style="padding: 10px 28px; font-weight: 700; font-size: 0.95rem;">
-                    💾 Lưu Thông Tin
+                    <img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Thông Tin
                 </button>
             </div>
         </div>
@@ -63,30 +90,30 @@
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <label class="form-label" style="font-size: 0.8rem; margin: 0;">🛏️ TỔNG SỐ PHÒNG</label>
+                            <label class="form-label" style="font-size: 0.8rem; margin: 0;"><img src="/images/icons/cabin-bed.png" class="app-icon" alt=""> TỔNG SỐ PHÒNG</label>
                             <input type="number" id="edit-cabins" class="editable-field" value="20" min="1" style="height: 38px;">
                         </div>
                     </div>
 
                     <div class="form-group-modal">
-                        <label class="form-label" style="font-size: 0.8rem;">📝 GIỚI THIỆU TÓM TẮT</label>
+                        <label class="form-label" style="font-size: 0.8rem;"><img src="/images/icons/note-edit.png" class="app-icon" alt=""> GIỚI THIỆU TÓM TẮT</label>
                         <textarea id="edit-shortdesc" class="editable-field" rows="3" placeholder="Mô tả ngắn gọn, hấp dẫn về du thuyền..."></textarea>
                     </div>
 
                     <div class="form-group-modal">
-                        <label class="form-label" style="font-size: 0.8rem;">📄 MÔ TẢ CHI TIẾT (Hỗ trợ HTML)</label>
+                        <label class="form-label" style="font-size: 0.8rem;"><img src="/images/icons/file.png" class="app-icon" alt=""> MÔ TẢ CHI TIẾT (Hỗ trợ HTML)</label>
                         <textarea id="edit-desc" class="editable-field" rows="10" placeholder="Bài viết chi tiết, hỗ trợ thẻ HTML như &lt;b&gt;, &lt;ul&gt;, &lt;h4&gt;..."></textarea>
                     </div>
                 </div>
 
                 <!-- Ảnh đại diện -->
                 <div>
-                    <label class="form-label" style="font-size: 0.8rem;">🖼️ ẢNH ĐẠI DIỆN</label>
+                    <label class="form-label" style="font-size: 0.8rem;"><img src="/images/icons/image-gallery.png" class="app-icon" alt=""> ẢNH ĐẠI DIỆN</label>
                     <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                         <input type="text" id="edit-thumb" class="editable-field" style="font-size: 13px; flex: 1;" placeholder="URL ảnh hoặc tải lên..."
                             oninput="document.getElementById('preview-thumb').src = this.value || '/images/default-cruise.jpg'">
                         <input type="file" id="file-thumb" accept="image/*" style="display: none;">
-                        <button class="btn btn-outline" id="btn-upload-thumb" style="padding: 0 12px; height: 38px; white-space: nowrap;" title="Tải ảnh lên (Tối đa 5MB)">📁 Tải lên</button>
+                        <button class="btn btn-outline" id="btn-upload-thumb" style="padding: 0 12px; height: 38px; white-space: nowrap;" title="Tải ảnh lên (Tối đa 5MB)"><img src="/images/icons/folder.png" class="app-icon" alt=""> Tải lên</button>
                     </div>
                     <img id="preview-thumb" src="/images/default-cruise.jpg"
                         style="width: 100%; height: 240px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);"
@@ -96,12 +123,12 @@
                     <!-- Thư viện ảnh -->
                     <div style="margin-top: 24px;">
                         <label class="form-label" style="font-size: 0.8rem; display: flex; justify-content: space-between;">
-                            <span>📸 THƯ VIỆN ẢNH (Tối đa 5 ảnh)</span>
+                            <span><img src="/images/icons/camera.png" class="app-icon" alt=""> THƯ VIỆN ẢNH (Tối đa 5 ảnh)</span>
                             <span id="gallery-count" style="color: var(--primary); font-weight: 600;">0/5</span>
                         </label>
                         <input type="file" id="file-gallery" accept="image/*" multiple style="display: none;">
                         <button class="btn btn-outline" id="btn-upload-gallery" style="width: 100%; margin-bottom: 12px; padding: 10px;" title="Tải nhiều ảnh (Tối đa 5MB/ảnh)">
-                            📁 Chọn ảnh tải lên
+                            <img src="/images/icons/folder.png" class="app-icon" alt=""> Chọn ảnh tải lên
                         </button>
                         <div id="gallery-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
                             <!-- Gallery items will be added here -->
@@ -114,12 +141,12 @@
         <!-- ===== SECTION 2: LOẠI PHÒNG ===== -->
         <div class="section-card" id="section-cabins" style="display: none;">
             <div class="section-header">
-                <h2 class="section-title">🛏️ Loại Phòng (Cabin Types)</h2>
+                <h2 class="section-title"><img src="/images/icons/cabin-bed.png" class="app-icon" alt=""> Loại Phòng (Cabin Types)</h2>
                 <button class="btn btn-primary" id="btn-add-cabin" style="padding: 9px 20px; font-size: 0.9rem;">+ Thêm Loại Phòng</button>
             </div>
             <div class="cabin-grid" id="cabin-list">
                 <div class="empty-state">
-                    <div class="empty-state-icon">🛏️</div>
+                    <div class="empty-state-icon"><img src="/images/icons/cabin-bed.png" class="app-icon-xl" alt=""></div>
                     <p>Chưa có loại phòng nào.<br>Nhấn <strong>"+ Thêm Loại Phòng"</strong> để bắt đầu.</p>
                 </div>
             </div>
@@ -128,7 +155,7 @@
         <!-- ===== SECTION 3: LỊCH TRÌNH ===== -->
         <div class="section-card" id="section-schedules" style="display: none;">
             <div class="section-header">
-                <h2 class="section-title">🗓️ Lịch Trình Khởi Hành</h2>
+                <h2 class="section-title"><img src="/images/icons/departure-calendar.png" class="app-icon" alt=""> Lịch Trình Khởi Hành</h2>
                 <button class="btn btn-primary" id="btn-add-schedule" style="padding: 9px 20px; font-size: 0.9rem;">+ Thêm Lịch Trình</button>
             </div>
             <div class="table-responsive">
@@ -145,7 +172,7 @@
                     <tbody id="schedule-list">
                         <tr>
                             <td colspan="5" style="text-align: center; color: #94a3b8; padding: 40px;">
-                                <div style="font-size: 2rem; margin-bottom: 8px;">🗓️</div>
+                                <div style="margin-bottom: 8px;"><img src="/images/icons/departure-calendar.png" class="app-icon-xl" alt=""></div>
                                 Chưa có lịch trình nào.
                             </td>
                         </tr>
@@ -159,7 +186,7 @@
     <!-- ===== MODAL: ADD DESTINATION ===== -->
     <div class="inline-modal-overlay" id="dest-modal">
         <div class="inline-modal" style="max-width: 420px;">
-            <div class="modal-title">➕ Thêm Khu Vực Mới</div>
+            <div class="modal-title"><img src="/images/icons/plus.png" class="app-icon" alt=""> Thêm Khu Vực Mới</div>
             <div class="form-group-modal">
                 <label class="form-label">Tên khu vực</label>
                 <input type="text" id="dest-name" class="form-input" placeholder="VD: Vịnh Bái Tử Long">
@@ -170,7 +197,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="document.getElementById('dest-modal').classList.remove('active')">Hủy</button>
-                <button class="btn btn-primary" id="btn-save-dest">💾 Tạo Khu Vực</button>
+                <button class="btn btn-primary" id="btn-save-dest"><img src="/images/icons/save.png" class="app-icon" alt=""> Tạo Khu Vực</button>
             </div>
         </div>
     </div>
@@ -207,12 +234,12 @@
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="cabin-image" class="form-input" style="flex: 1;" placeholder="https://...">
                     <input type="file" id="file-cabin" accept="image/*" style="display: none;">
-                    <button class="btn btn-outline" id="btn-upload-cabin" style="padding: 0 12px; height: 38px; white-space: nowrap;" title="Tải ảnh lên (Tối đa 5MB)">📁 Tải lên</button>
+                    <button class="btn btn-outline" id="btn-upload-cabin" style="padding: 0 12px; height: 38px; white-space: nowrap;" title="Tải ảnh lên (Tối đa 5MB)"><img src="/images/icons/folder.png" class="app-icon" alt=""> Tải lên</button>
                 </div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="document.getElementById('cabin-modal').classList.remove('active')">Hủy</button>
-                <button class="btn btn-primary" id="btn-save-cabin">💾 Lưu Loại Phòng</button>
+                <button class="btn btn-primary" id="btn-save-cabin"><img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Loại Phòng</button>
             </div>
         </div>
     </div>
@@ -246,7 +273,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="document.getElementById('schedule-modal').classList.remove('active')">Hủy</button>
-                <button class="btn btn-primary" id="btn-save-schedule">💾 Lưu Lịch Trình</button>
+                <button class="btn btn-primary" id="btn-save-schedule"><img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Lịch Trình</button>
             </div>
         </div>
     </div>

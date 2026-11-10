@@ -1,3 +1,4 @@
+// @ts-nocheck
 const API_URL = '/api';
 
 const formatPrice = (price) => {
@@ -40,7 +41,15 @@ window.loadHomeCruises = async function(page = 1) {
         const paginationContainer = document.getElementById('homePagination');
         if (!container) return;
 
-        container.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Đang tải...</p>';
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 30px 0;">
+                <div id="lottie-home-loading" style="width: 240px; height: 131px; margin: 0 auto 12px; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(13,148,136,0.08);"></div>
+                <div style="font-size: 15px; font-weight: 600; color: #0d9488;">Đang tải danh sách du thuyền...</div>
+            </div>
+        `;
+        if (window.LottieEffects) {
+            window.LottieEffects.play('lottie-home-loading', 'searching-cruise');
+        }
         
         const response = await fetch(`${API_URL}/Cruises?page=${page}&pageSize=6`);
         const data = await response.json();
@@ -115,7 +124,15 @@ window.performSearch = async function(page = 1) {
     const paginationContainer = document.getElementById('pagination');
     
     try {
-        container.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Đang tìm kiếm...</p>';
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px 0;">
+                <div id="lottie-searching" style="width: 260px; height: 142px; margin: 0 auto 12px; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(13,148,136,0.08);"></div>
+                <div style="font-size: 16px; font-weight: 600; color: #0d9488;">Đang tìm kiếm hải trình du thuyền...</div>
+            </div>
+        `;
+        if (window.LottieEffects) {
+            window.LottieEffects.play('lottie-searching', 'searching-cruise');
+        }
         const urlParams = new URLSearchParams(window.location.search);
         let url = `${API_URL}/Cruises?page=${page}&pageSize=9`;
         
@@ -182,7 +199,7 @@ async function loadCruiseDetail() {
                     <div class="cabin-info" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <h4 style="font-size: 1.3rem; margin-bottom: 10px;">${cabin.name}</h4>
-                            <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người | 🛏️ Tổng số phòng: ${cabin.totalRooms || 'Không giới hạn'}</p>
+                            <p class="text-muted"><i class="icon-users"></i> Sức chứa: ${cabin.maxOccupancy} người | <img src="/images/icons/cabin-bed.png" class="app-icon" alt=""> Tổng số phòng: ${cabin.totalRooms || 'Không giới hạn'}</p>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                             <div class="price" style="font-size: 1.4rem; color: var(--primary); font-weight: 700;">${formatPrice(cabin.basePrice)} <span style="font-size: 1rem; color: #666; font-weight: 400;">/ phòng</span></div>
@@ -211,9 +228,9 @@ async function loadCruiseDetail() {
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; border-top-left-radius: 16px; border-top-right-radius: 16px; background: linear-gradient(90deg, var(--primary), #34d399); opacity: 0; transition: opacity 0.3s;" class="schedule-highlight"></div>
                     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; width: 100%;">
                         <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem; background: rgba(13, 148, 136, 0.08); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(13, 148, 136, 0.2);">${depStr}</div>
-                        ${retStr ? `<div style="color: #94a3b8; font-size: 0.8rem;">➔</div><div style="font-weight: 600; color: #475569; font-size: 0.95rem; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">${retStr}</div>` : ''}
+                        ${retStr ? `<div style="display:inline-flex; align-items:center;"><img src="/images/icons/arrow-right.png" class="app-icon-sm" alt="➔"></div><div style="font-weight: 600; color: #475569; font-size: 0.95rem; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">${retStr}</div>` : ''}
                     </div>
-                    <div style="color: #475569; font-size: 0.85rem; margin-bottom: 15px; background: #f1f5f9; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-block;">⏱️ ${s.durationLabel || '2 ngày 1 đêm'}</div>
+                    <div style="color: #475569; font-size: 0.85rem; margin-bottom: 15px; background: #f1f5f9; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-block;"><img src="/images/icons/stopwatch.png" class="app-icon" alt=""> ${s.durationLabel || '2 ngày 1 đêm'}</div>
                     <button class="btn-outline" id="btn-schedule-${s.scheduleId}" style="padding: 8px 0; width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; color: #475569; background: transparent; font-weight: 600; pointer-events: none; transition: all 0.2s; font-size: 0.9rem;">Chọn lịch này</button>
                 </div>
             `;
@@ -245,7 +262,7 @@ async function loadCruiseDetail() {
             <div class="cruise-detail-header mb-4 text-center">
                 <h1 class="cruise-title" style="font-size: 3rem; font-family: var(--font-heading); color: var(--text-dark); margin-bottom: 15px;">${cruise.name}</h1>
                 <div class="cruise-meta d-flex justify-content-center align-items-center" style="font-size: 1.1rem; gap: 20px; color: #555;">
-                    <span class="rating">⭐ <strong>${cruise.averageRating}</strong> (${cruise.reviewCount} đánh giá)</span>
+                    <span class="rating"><img src="/images/icons/rating-star.png" class="app-icon" alt=""> <strong>${cruise.averageRating}</strong> (${cruise.reviewCount} đánh giá)</span>
                     <span>•</span>
                     <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${cruise.destinationName}</span>
                 </div>
@@ -293,13 +310,13 @@ async function loadCruiseDetail() {
                         
                         <div class="booking-benefits mb-4" style="font-size: 0.95rem; color: #555;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Hủy phòng miễn phí
+                                <img src="/images/icons/check.png" class="app-icon" alt="✓"> Hủy phòng miễn phí
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Không thu phí đặt chỗ
+                                <img src="/images/icons/check.png" class="app-icon" alt="✓"> Không thu phí đặt chỗ
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="color: #10b981; font-size: 1.2rem;">✓</span> Hỗ trợ 24/7
+                                <img src="/images/icons/check.png" class="app-icon" alt="✓"> Hỗ trợ 24/7
                             </div>
                         </div>
 
@@ -314,7 +331,7 @@ async function loadCruiseDetail() {
                         
                         <div class="help-box mt-4 p-3 text-center" style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
                             <p style="margin-bottom: 5px; font-weight: 500; color: #334155;">Cần hỗ trợ?</p>
-                            <a href="tel:19001234" style="color: var(--primary); font-weight: 700; font-size: 1.2rem; text-decoration: none;">📞 1900 1234</a>
+                            <a href="tel:19001234" style="color: var(--primary); font-weight: 700; font-size: 1.2rem; text-decoration: none;"><img src="/images/icons/phone-hotline.png" class="app-icon" alt=""> 1900 1234</a>
                         </div>
                     </div>
                 </div>
@@ -375,7 +392,7 @@ window.selectSchedule = function(scheduleId) {
         const hl = box.querySelector('.schedule-highlight');
         if (hl) hl.style.opacity = '1';
         btn.className = 'btn-primary';
-        btn.innerText = 'Đã chọn ✓';
+        btn.innerHTML = 'Đã chọn <img src="/images/icons/check.png" class="app-icon-sm" alt="✓">';
         btn.style.background = 'var(--primary)';
         btn.style.color = 'white';
         btn.style.borderColor = 'var(--primary)';
@@ -518,7 +535,7 @@ function renderCruiseCard(cruise) {
             <div class="cruise-card-body">
                 <h3 class="cruise-title"><a href="/du-thuyen/${cruise.cruiseId}-${window.generateSlug(cruise.name)}">${cruise.name}</a></h3>
                 <div class="cruise-meta mb-3">
-                    <span class="rating">⭐ ${cruise.averageRating} (${cruise.reviewCount})</span>
+                    <span class="rating"><img src="/images/icons/rating-star.png" class="app-icon" alt=""> ${cruise.averageRating} (${cruise.reviewCount})</span>
                     <span class="destination"><img src="/images/Direction.svg" alt="Location" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> ${cruise.destinationName}</span>
                 </div>
                 <div class="cruise-footer">

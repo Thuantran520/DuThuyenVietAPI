@@ -17,9 +17,13 @@ public partial class Promotion
 
     public DateTime StartDate { get; set; }
 
-    public DateTime EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public bool IsActive { get; set; }
+
+    public int? UsageLimit { get; set; }
+
+    public int UsedCount { get; set; } = 0;
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Thư viện Popup/Toast dùng chung cho toàn dự án
 window.Popup = (function() {
     let toastContainer = null;
@@ -16,10 +17,11 @@ window.Popup = (function() {
             modalOverlay.className = 'modal-overlay';
             modalOverlay.innerHTML = `
                 <div class="modal-card">
-                    <button class="modal-close-icon" id="modal-close-icon" title="Đóng">✕</button>
+                    <button class="modal-close-icon" id="modal-close-icon" title="Đóng"><img src="/images/icons/close.png" class="app-icon-sm" alt="✕"></button>
                     <h3 class="modal-title" id="modal-title"></h3>
                     <div class="modal-body" id="modal-body"></div>
                     <input type="text" class="modal-input" id="modal-input" style="display: none;">
+                    <textarea class="modal-input modal-textarea" id="modal-textarea" style="display: none; min-height: 100px; resize: vertical; line-height: 1.5;"></textarea>
                     <div class="modal-actions">
                         <button class="modal-btn modal-btn-cancel" id="modal-cancel">Hủy</button>
                         <button class="modal-btn modal-btn-confirm" id="modal-confirm">Xác nhận</button>
@@ -59,6 +61,12 @@ window.Popup = (function() {
                     input.value = '';
                     input.style.borderColor = '#d1d5db';
                 }
+                const textarea = document.getElementById('modal-textarea');
+                if (textarea) {
+                    textarea.style.display = 'none';
+                    textarea.value = '';
+                    textarea.style.borderColor = '#d1d5db';
+                }
                 const btnConfirm = document.getElementById('modal-confirm');
                 if (btnConfirm) {
                     btnConfirm.className = 'modal-btn modal-btn-confirm';
@@ -89,7 +97,7 @@ window.Popup = (function() {
         lightboxOverlay.innerHTML = `
             <div class="lightbox-backdrop"></div>
             <div class="lightbox-container">
-                <button class="lightbox-close" id="lightbox-close" title="Đóng (Esc)">✕</button>
+                <button class="lightbox-close" id="lightbox-close" title="Đóng (Esc)"><img src="/images/icons/close.png" class="app-icon-sm" alt="✕"></button>
                 <button class="lightbox-nav lightbox-prev" id="lightbox-prev" title="Ảnh trước (←)">&#8249;</button>
                 <div class="lightbox-img-wrap">
                     <img id="lightbox-img" src="" alt="Gallery">
@@ -169,9 +177,11 @@ window.Popup = (function() {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             
-            let icon = '🔔';
-            if (type === 'success') icon = '✅';
-            if (type === 'error') icon = '❌';
+            let icon = '<img src="/images/icons/notification-bell.png" class="app-icon" alt="🔔">';
+            if (type === 'success') icon = '<img src="/images/icons/success.png" class="app-icon" alt="✅">';
+            if (type === 'error') icon = '<img src="/images/icons/error.png" class="app-icon" alt="❌">';
+            if (type === 'warning') icon = '<img src="/images/icons/warning.png" class="app-icon" alt="⚠️">';
+            if (type === 'info') icon = '<img src="/images/icons/info.png" class="app-icon" alt="ℹ️">';
 
             toast.innerHTML = `
                 <div class="toast-icon">${icon}</div>
@@ -194,7 +204,7 @@ window.Popup = (function() {
         confirm: function(title, message, onConfirm, isDanger = false, confirmBtnText = null) {
             console.log("Popup.confirm triggered. Title:", title, "Message:", message);
             if(!modalOverlay) init();
-            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-title').innerHTML = title;
             document.getElementById('modal-body').innerText = message;
             
             const btnConfirm = document.getElementById('modal-confirm');
@@ -218,7 +228,7 @@ window.Popup = (function() {
 
         info: function(title, htmlMessage) {
             if(!modalOverlay) init();
-            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-title').innerHTML = title;
             document.getElementById('modal-body').innerHTML = htmlMessage;
             
             const btnConfirm = document.getElementById('modal-confirm');
@@ -230,44 +240,67 @@ window.Popup = (function() {
             const input = document.getElementById('modal-input');
             if (input) input.style.display = 'none';
 
+            const textarea = document.getElementById('modal-textarea');
+            if (textarea) textarea.style.display = 'none';
+
             activeCancelCallback = () => { close(); };
             activeConfirmCallback = null;
 
             modalOverlay.classList.add('show');
         },
 
-        prompt: function(title, message, placeholder, onComplete) {
+        prompt: function(title, message, placeholder, onComplete, isMultiline = false) {
             if(!modalOverlay) init();
-            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-title').innerHTML = title;
             document.getElementById('modal-body').innerText = message;
             
             const input = document.getElementById('modal-input');
-            input.style.display = 'block';
-            input.placeholder = placeholder || '';
-            input.type = 'text';
+            const textarea = document.getElementById('modal-textarea');
+            let activeInput = input;
+
+            // Auto-detect multiline for replies, feedbacks, long texts
+            const shouldBeMultiline = isMultiline || (typeof title === 'string' && (title.includes('Phản hồi') || title.includes('ghi chú')));
+
+            if (shouldBeMultiline && textarea) {
+                if (input) input.style.display = 'none';
+                textarea.style.display = 'block';
+                textarea.placeholder = placeholder || '';
+                textarea.value = (placeholder && !placeholder.startsWith('Ví dụ')) ? placeholder : '';
+                activeInput = textarea;
+            } else {
+                if (textarea) textarea.style.display = 'none';
+                if (input) {
+                    input.style.display = 'block';
+                    input.placeholder = placeholder || '';
+                    input.type = 'text';
+                    input.value = '';
+                    activeInput = input;
+                }
+            }
             
             const btnConfirm = document.getElementById('modal-confirm');
             btnConfirm.className = 'modal-btn modal-btn-confirm';
             btnConfirm.innerText = 'Lưu';
             
             activeConfirmCallback = () => {
-                const val = input.value;
-                if (!val) {
-                    input.style.borderColor = 'red';
+                const val = activeInput.value;
+                if (!val || !val.trim()) {
+                    activeInput.style.borderColor = '#ef4444';
+                    activeInput.focus();
                     return;
                 }
                 close();
-                if (onComplete) onComplete(val);
+                if (onComplete) onComplete(val.trim());
             };
             activeCancelCallback = null;
 
             modalOverlay.classList.add('show');
-            setTimeout(() => input.focus(), 100);
+            setTimeout(() => activeInput.focus(), 100);
         },
 
         gallery: function(title, imagesArray) {
             if(!modalOverlay) init();
-            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-title').innerHTML = title;
             
             const card = modalOverlay.querySelector('.modal-card');
             card.classList.add('gallery-modal');

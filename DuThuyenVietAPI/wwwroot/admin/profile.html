@@ -9,9 +9,34 @@
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css?v=2">
     <link rel="stylesheet" href="/css/promotions.css">
+    <link rel="stylesheet" href="/css/ads.css">
+    <link rel="stylesheet" href="/css/chat.css">
     <script>
-        // Instant check to prevent layout flash
-        if (!localStorage.getItem('auth_token')) { window.location.replace('/login.html'); }
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
     </script>
 </head>
 <body>
@@ -42,6 +67,8 @@
                 <div class="tab" id="tab-cruises-nav" data-target="tab-cruises" style="display: none;">Quản lý Du Thuyền</div>
                 <div class="tab" id="tab-admin-nav" data-target="tab-admin" style="display: none;">Quản lý hệ thống</div>
                 <div class="tab" id="tab-promotions-nav" data-target="tab-promotions" style="display: none;">Mã Giảm Giá</div>
+                <div class="tab" id="tab-ads-nav" data-target="tab-ads" style="display: none;">Popup Quảng Cáo</div>
+                <div class="tab" id="tab-chat-nav" data-target="tab-chat" style="display: none;">Live Chat Khách</div>
             </div>
 
             <!-- TAB: HỒ SƠ -->
@@ -154,16 +181,77 @@
                             <div id="dash-notes" style="color: #be185d; font-size: 24px; font-weight: 800;">0</div>
                         </div>
                     </div>
+
+                    <!-- Bảng Doanh thu theo Phương thức Thanh toán -->
+                    <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 700;"><img src="/images/icons/revenue-chart.png" class="app-icon" alt=""> Doanh thu theo Phương thức Thanh toán</h3>
+                            <span style="font-size: 13px; color: #64748b;">(Chỉ tính các đơn đã thanh toán thành công)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+                            <div style="background: #f0fdfa; border: 1px solid #ccfbf1; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #005baa; font-size: 14px;"><img src="/images/icons/vnpay.png" class="app-icon" alt=""> Cổng VNPAY</span>
+                                    <span id="rev-vnpay-count" style="font-size: 12px; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-vnpay-amount" style="font-size: 18px; font-weight: 800; color: #0369a1;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #15803d; font-size: 14px;"><img src="/images/icons/vietqr.png" class="app-icon" alt=""> Chuyển khoản VietQR</span>
+                                    <span id="rev-vietqr-count" style="font-size: 12px; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-vietqr-amount" style="font-size: 18px; font-weight: 800; color: #15803d;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #eff6ff; border: 1px solid #dbeafe; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #1d4ed8; font-size: 14px;"><img src="/images/icons/paypal.png" class="app-icon" alt=""> PayPal Quốc tế</span>
+                                    <span id="rev-paypal-count" style="font-size: 12px; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-paypal-amount" style="font-size: 18px; font-weight: 800; color: #1d4ed8;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #fefce8; border: 1px solid #fef08a; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #a16207; font-size: 14px;"><img src="/images/icons/cash-vnd.png" class="app-icon" alt=""> Tiền mặt / Thu hộ</span>
+                                    <span id="rev-cash-count" style="font-size: 12px; color: #ca8a04; background: #fef9c3; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-cash-amount" style="font-size: 18px; font-weight: 800; color: #a16207;">0 ₫</div>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, hoặc Ghi chú..." style="flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
-                        <select id="adminBookingStatusFilter" style="padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 180px;" onchange="filterAdminBookings()">
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, Ghi chú..." style="flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
+                        
+                        <div style="display:flex; align-items:center; gap:6px; background:white; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">Từ:</span>
+                            <input type="date" id="adminBookingStartDate" style="border:none; outline:none; font-size:13px;" onchange="filterAdminBookings()">
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">Đến:</span>
+                            <input type="date" id="adminBookingEndDate" style="border:none; outline:none; font-size:13px;" onchange="filterAdminBookings()">
+                            <button onclick="window.clearDateFilters()" style="background:none; border:none; cursor:pointer; color:#94a3b8; font-size:14px; padding:0 4px;" title="Xóa lọc ngày"><img src="/images/icons/close.png" class="app-icon-sm" alt="✕"></button>
+                        </div>
+
+                        <select id="adminBookingMethodFilter" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 160px;" onchange="filterAdminBookings()">
+                            <option value="all">Tất cả phương thức</option>
+                            <option value="VNPAY">Cổng VNPAY</option>
+                            <option value="VietQR">Chuyển khoản VietQR</option>
+                            <option value="PayPal">PayPal</option>
+                            <option value="Cash">Tiền mặt / Thu hộ</option>
+                        </select>
+                        <select id="adminBookingStatusFilter" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 160px;" onchange="filterAdminBookings()">
                             <option value="all">Tất cả trạng thái</option>
                             <option value="Pending">Chờ thanh toán</option>
                             <option value="AwaitingConfirmation">Chờ xác nhận</option>
                             <option value="Confirmed">Thành công</option>
                             <option value="Cancelled">Đã hủy</option>
                         </select>
+
+                        <button onclick="window.exportBookingsToExcel()" class="btn-primary" style="padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; background: #15803d; color: white; white-space: nowrap;">
+                            <img src="/images/icons/download-tray.png" class="app-icon" alt=""> Xuất Excel
+                        </button>
                     </div>
                     
                     <div class="table-responsive">
@@ -174,12 +262,13 @@
                                     <th>Khách hàng</th>
                                     <th>Du thuyền & Phòng</th>
                                     <th>Tổng tiền</th>
-                                    <th style="min-width: 120px;">Trạng thái</th>
-                                    <th style="text-align: right; min-width: 250px;">Hành động</th>
+                                    <th style="min-width: 130px; white-space: nowrap;">Phương thức</th>
+                                    <th style="min-width: 140px; white-space: nowrap;">Trạng thái</th>
+                                    <th style="text-align: right; min-width: 220px; white-space: nowrap;">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody id="bookings-table-body">
-                                <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                                <tr><td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -189,12 +278,38 @@
             <!-- TAB: CRUISES QUẢN LÝ DU THUYỀN -->
             <div class="tab-content" id="tab-cruises">
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <div class="card-title" style="margin-bottom: 4px;">Quản lý Danh mục Du Thuyền</div>
-                            <div style="font-size: 14px; color: #6b7280;">Thêm, sửa, xóa các du thuyền trên hệ thống.</div>
+                            <div class="card-title" style="margin-bottom: 4px;"><img src="/images/icons/cruise-yacht.png" class="app-icon" alt=""> Quản lý Danh mục Du Thuyền</div>
+                            <div style="font-size: 14px; color: #6b7280;">Thêm, sửa, bảo trì và kiểm soát tình trạng hoạt động của các du thuyền.</div>
                         </div>
                         <a href="/admin/cruise-editor.html" class="btn btn-primary" style="text-decoration: none;">+ Thêm Du Thuyền</a>
+                    </div>
+
+                    <!-- BỘ LỌC DU THUYỀN TOÀN DIỆN -->
+                    <div class="cruise-filter-bar" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1.5px solid #e2e8f0; align-items: center;">
+                        <div style="flex: 2; min-width: 220px;">
+                            <input type="text" id="filter-cruise-search" placeholder="🔍 Tìm theo tên du thuyền..." style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1.2; min-width: 160px;">
+                            <select id="filter-cruise-dest" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="">Tất cả khu vực</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1.2; min-width: 170px;">
+                            <select id="filter-cruise-status" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="active">🟢 Đang hoạt động</option>
+                                <option value="maintenance">🟡 Đang bảo trì</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 160px;">
+                            <select id="filter-cruise-sort" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none; background: #ffffff; cursor: pointer; box-sizing: border-box;">
+                                <option value="rating">Đánh giá sao (Cao → Thấp)</option>
+                                <option value="newest">Mới nhất (ID giảm)</option>
+                                <option value="name">Tên du thuyền (A → Z)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div id="cruises-grid-container" class="cruise-grid" style="margin-top: 20px;">
@@ -205,9 +320,124 @@
 
             <!-- TAB: ADMIN QUẢN LÝ NHÂN SỰ -->
             <div class="tab-content" id="tab-admin">
+                <!-- THỐNG KÊ HIỆU SUẤT & TỶ LỆ ĐÁNH GIÁ NHÂN VIÊN -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;">
+                                <img src="/images/icons/staff.png" class="app-icon" alt=""> Hiệu Suất & Đánh Giá Nhân Viên Tư Vấn
+                            </div>
+                            <div style="font-size: 13.5px; color: #64748b;">Theo dõi năng suất tư vấn trực tiếp, số sao đánh giá trung bình và tỷ lệ hài lòng của từng nhân viên để nâng cao chất lượng dịch vụ.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline" id="btnRefreshStaffPerf" style="font-size: 13px; padding: 6px 14px;">
+                            <img src="/images/icons/pending-hourglass.png" class="app-icon-sm" alt=""> Làm mới số liệu
+                        </button>
+                    </div>
+
+                    <!-- 4 Thẻ KPI Hiệu Suất -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                        <div style="background: #f0fdfa; border: 1px solid #ccfbf1; padding: 16px; border-radius: 12px;">
+                            <div style="font-size: 12px; color: #0d9488; font-weight: 700; text-transform: uppercase;">Đội ngũ nhân sự</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #0f766e; margin-top: 4px;" id="kpi-total-staff">0</div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Admin, Manager, Accountant, Staff</div>
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px;">
+                            <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase;">Cuộc tư vấn Live Chat</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px;" id="kpi-total-consultations">0</div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Đã tiếp nhận và hỗ trợ khách</div>
+                        </div>
+                        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 16px; border-radius: 12px;">
+                            <div style="font-size: 12px; color: #b45309; font-weight: 700; text-transform: uppercase;">Đánh giá sao trung bình</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #d97706; margin-top: 4px;" id="kpi-avg-stars">5.0 ⭐</div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Từ phản hồi của khách hàng</div>
+                        </div>
+                        <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 12px;">
+                            <div style="font-size: 12px; color: #15803d; font-weight: 700; text-transform: uppercase;">Tỷ lệ hài lòng (≥ 4⭐)</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #16a34a; margin-top: 4px;" id="kpi-satisfaction-rate">100%</div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="kpi-disputes-count">0 khiếu nại cần lưu ý</div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Chuyên viên / Cán bộ</th>
+                                    <th>Chức vụ / Vai trò</th>
+                                    <th>Số cuộc tư vấn</th>
+                                    <th>Tỷ lệ giải quyết</th>
+                                    <th>Đánh giá sao (⭐)</th>
+                                    <th>Tỷ lệ hài lòng</th>
+                                    <th style="text-align: right;">Hành động & Tra cứu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-perf-body">
+                                <tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;">Đang tải số liệu hiệu suất nhân viên...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="text-align: center; margin-top: 14px;">
+                        <button type="button" id="btnToggleStaffLimit" class="btn btn-outline" style="font-size: 13px; padding: 7px 20px; display: none;">
+                            Xem tất cả nhân viên ▼
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TRA CỨU KHIẾU NẠI & LỊCH SỬ TƯ VẤN (AUDIT DISPUTES) -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;">
+                                <img src="/images/icons/review-chat.png" class="app-icon" alt=""> Tra Cứu Khiếu Nại & Lịch Sử Tư Vấn Khách Hàng
+                            </div>
+                            <div style="font-size: 13.5px; color: #64748b;">Hỗ trợ Quản lý, Kế toán và Admin dễ dàng tra cứu lại biên bản tư vấn, nhận xét và số sao khi khách hàng có khiếu kiện.</div>
+                        </div>
+                    </div>
+
+                    <!-- Thanh tìm kiếm & bộ lọc khiếu nại -->
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <input type="text" id="auditSearchInput" placeholder="Tìm tên khách, email, tên nhân viên phụ trách hoặc từ khóa..." style="flex: 2; min-width: 240px; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
+                        <select id="auditRatingFilter" style="flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white;">
+                            <option value="">Tất cả đánh giá sao</option>
+                            <option value="2">⚠️ Khiếu nại / Không hài lòng (1 - 2 ⭐)</option>
+                            <option value="3">⚡ Đánh giá trung bình (≤ 3 ⭐)</option>
+                        </select>
+                        <button type="button" class="btn btn-primary" id="btnAuditSearch" style="padding: 9px 18px; font-size: 13.5px;">
+                            Tra cứu
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã Chat</th>
+                                    <th>Khách hàng</th>
+                                    <th>Chuyên viên phụ trách</th>
+                                    <th>Đánh giá sao</th>
+                                    <th>Phản hồi / Nhận xét của khách</th>
+                                    <th>Giải quyết bởi</th>
+                                    <th>Thời gian</th>
+                                    <th>Trạng thái</th>
+                                    <th style="text-align: right;">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-disputes-body">
+                                <tr><td colspan="9" style="text-align:center; padding: 24px; color: #94a3b8;">Đang tải nhật ký tư vấn...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="text-align: center; margin-top: 14px;">
+                        <button type="button" id="btnToggleAuditLimit" class="btn btn-outline" style="font-size: 13px; padding: 7px 20px; display: none;">
+                            Xem tất cả biên bản tư vấn ▼
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN HỆ THỐNG -->
                 <div class="card">
-                    <div class="card-title">Hệ thống Nhân sự & Phân quyền</div>
-                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Tại đây Quản trị viên có thể quản lý nhân viên và cấp quyền Quản lý hệ thống đặt Du Thuyền.</div>
+                    <div class="card-title"><img src="/images/icons/admin-crown.png" class="app-icon" alt=""> Phân Quyền & Quản Lý Tài Khoản</div>
+                    <div style="margin-bottom: 20px; font-size: 14px; color: #6b7280;">Cấp quyền và quản lý tài khoản cho Quản trị viên (Admin), Quản lý (Manager), Kế toán (Accountant), Nhân viên (Staff) và Khách hàng.</div>
                     
                     <div class="table-responsive">
                         <table>
@@ -233,7 +463,7 @@
                 <div class="card" style="position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <div>
-                            <div class="card-title" style="margin-bottom: 4px;">🎟️ Quản lý Mã Giảm Giá</div>
+                            <div class="card-title" style="margin-bottom: 4px;"><img src="/images/icons/voucher.png" class="app-icon" alt=""> Quản lý Mã Giảm Giá</div>
                             <div style="font-size: 14px; color: #6b7280;">Tạo và quản lý các coupon khuyến mãi cho hệ thống.</div>
                         </div>
                         <button type="button" class="btn btn-primary" id="btn-add-promo">+ Thêm Khuyến Mãi</button>
@@ -242,6 +472,99 @@
                     <div class="promo-grid" id="promo-list">
                         <!-- Loading state -->
                         <div style="text-align: center; padding: 40px; color: #64748b; grid-column: 1/-1;">Đang tải danh sách...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: POPUP QUẢNG CÁO -->
+            <div class="tab-content" id="tab-ads">
+                <div class="card" style="position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;"><img src="/images/icons/special-offer.png" class="app-icon" alt=""> Quản lý Popup & Banner Quảng Cáo</div>
+                            <div style="font-size: 14px; color: #6b7280;">Tùy chỉnh định dạng kiểu chữ, màu sắc, vị trí hiển thị, upload ảnh Canva và đính kèm mã ưu đãi.</div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="btnOpenAdModal">
+                            <img src="/images/icons/plus.png" class="app-icon" alt=""> Tạo Popup Mới
+                        </button>
+                    </div>
+
+                    <div class="ads-grid" id="adsContainer">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #94a3b8;">Đang tải danh sách popup quảng cáo...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: LIVE CHAT KHÁCH HÀNG -->
+            <div class="tab-content" id="tab-chat">
+                <div class="card" style="padding: 20px; margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div class="card-title" style="margin-bottom: 4px;"><img src="/images/icons/review-chat.png" class="app-icon" alt=""> Trung Tâm Live Chat Khách Hàng</div>
+                            <div style="font-size: 13.5px; color: #6b7280;">Tư vấn trực tiếp, phân công chuyên viên phụ trách và giải quyết yêu cầu khách hàng. Tự động gắn cờ sau 5 phút không phản hồi.</div>
+                        </div>
+                    </div>
+
+                    <div class="chat-app-container">
+                        <!-- SIDEBAR: DANH SÁCH CUỘC TRÒ CHUYỆN -->
+                        <div class="chat-sidebar">
+                            <div class="chat-sidebar-header">
+                                <input type="text" id="chatSearch" class="chat-search-input" placeholder="Tìm tên, email khách hoặc chuyên viên...">
+                            </div>
+                            <div class="chat-filter-tabs">
+                                <button class="chat-filter-btn active" data-filter="all">Tất cả</button>
+                                <button class="chat-filter-btn" data-filter="Open">Chờ trả lời</button>
+                                <button class="chat-filter-btn" data-filter="StaffReplied">Đang đếm 5p</button>
+                                <button class="chat-filter-btn" data-filter="Resolved">Đã giải quyết</button>
+                            </div>
+                            <div class="conversation-list" id="conversationList">
+                                <div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Đang tải danh sách...</div>
+                            </div>
+                        </div>
+
+                        <!-- MAIN CHAT PANE -->
+                        <div class="chat-main-pane" id="chatMainPane">
+                            <!-- Header -->
+                            <div class="chat-main-header" id="chatHeader" style="display: none;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="width: 42px; height: 42px; border-radius: 50%; background: #f0fdfa; border: 1.5px solid #2dd4bf; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/images/icons/user.png" class="app-icon" alt="">
+                                    </span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 15.5px; color: #0f172a;" id="activeCustomerName">Tên Khách Hàng</div>
+                                        <div style="font-size: 12px; color: #64748b;" id="activeCustomerStatus">Trạng thái</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;" id="headerActionGroup">
+                                    <div id="countdownBox" class="countdown-timer-box" style="display: none;">
+                                        <img src="/images/icons/pending-hourglass.png" class="app-icon-sm" alt="">
+                                        <span>Tự động giải quyết sau: <strong id="countdownTimer">05:00</strong></span>
+                                    </div>
+                                    <button class="btn-resolve-chat" id="btnMarkResolved">
+                                        <img src="/images/icons/check.png" class="app-icon-sm" alt=""> Giải Quyết Thành Công
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="chatEmptyState" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; padding: 40px; text-align: center;">
+                                <img src="/images/icons/review-chat.png" class="app-icon-xl" alt="" style="margin-bottom: 16px; opacity: 0.5;">
+                                <h3 style="font-family: 'Playfair Display', serif; color: #475569; margin-bottom: 8px;">Chọn cuộc trò chuyện để bắt đầu hỗ trợ</h3>
+                                <p style="font-size: 13.5px; max-width: 400px;">Nhấp vào một khách hàng bên danh sách trái để xem lịch sử tin nhắn và gửi phản hồi.</p>
+                            </div>
+
+                            <!-- Messages -->
+                            <div class="chat-messages-container" id="chatMessages" style="display: none;">
+                            </div>
+
+                            <!-- Input bar -->
+                            <div class="chat-input-bar" id="chatInputBar" style="display: none;">
+                                <input type="text" id="chatInput" class="chat-input-field" placeholder="Nhập tin nhắn phản hồi khách hàng... (Enter để gửi)">
+                                <button class="btn-send-msg" id="btnSendMsg" title="Gửi">
+                                    <img src="/images/icons/arrow-right.png" class="app-icon" alt="" style="filter: brightness(0) invert(1);">
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,8 +579,8 @@
                 <div>
                     <h3 id="cruiseModalTitle" style="margin: 0; font-weight: 700; color: #0f172a; font-size: 1.5rem; font-family: 'Playfair Display', serif;">Thêm Du Thuyền Mới</h3>
                     <div style="margin-top: 8px;">
-                        <button id="btn-tab-form" class="btn btn-primary btn-sm" onclick="window.switchCruiseModalTab('form')" style="border-radius: 20px; padding: 4px 16px;">📝 Nhập Thông Tin</button>
-                        <button id="btn-tab-preview" class="btn btn-outline btn-sm" onclick="window.switchCruiseModalTab('preview')" style="border-radius: 20px; padding: 4px 16px; margin-left: 8px;">👁️ Xem Trước (Preview)</button>
+                        <button id="btn-tab-form" class="btn btn-primary btn-sm" onclick="window.switchCruiseModalTab('form')" style="border-radius: 20px; padding: 4px 16px;"><img src="/images/icons/note-edit.png" class="app-icon" alt=""> Nhập Thông Tin</button>
+                        <button id="btn-tab-preview" class="btn btn-outline btn-sm" onclick="window.switchCruiseModalTab('preview')" style="border-radius: 20px; padding: 4px 16px; margin-left: 8px;"><img src="/images/icons/preview-eye.png" class="app-icon" alt=""> Xem Trước (Preview)</button>
                     </div>
                 </div>
                 <button onclick="document.getElementById('cruiseModal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
@@ -313,7 +636,7 @@
                 <!-- Preview Section (Hidden by default) -->
                 <div id="cruise-preview-section" style="display: none; background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; overflow-y: auto;">
                     <div style="font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;" id="preview-title">Tên Du Thuyền</div>
-                    <div style="color: #64748b; margin-bottom: 24px; font-size: 1.1rem;"><img src="/images/Direction.svg" alt="Location" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"> <span id="preview-dest">Vịnh Hạ Long</span> • 🛏️ <span id="preview-cabins">20</span> phòng</div>
+                    <div style="color: #64748b; margin-bottom: 24px; font-size: 1.1rem;"><img src="/images/Direction.svg" alt="Location" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"> <span id="preview-dest">Vịnh Hạ Long</span> • <img src="/images/icons/cabin-bed.png" class="app-icon" alt=""> <span id="preview-cabins">20</span> phòng</div>
                     <div style="font-size: 1.1rem; color: #334155; font-style: italic; border-left: 4px solid var(--primary); padding-left: 16px; margin-bottom: 32px; line-height: 1.6;" id="preview-shortdesc">Mô tả ngắn gọn...</div>
                     <div style="line-height: 1.8; color: #1e293b;" id="preview-desc">Nội dung chi tiết...</div>
                 </div>
@@ -332,7 +655,7 @@
     <!-- PROMO MODAL -->
     <div class="inline-modal-overlay" id="promo-modal">
         <div class="inline-modal" style="background: white; width: 95%; max-width: 600px; border-radius: 12px; padding: 24px;">
-            <div class="modal-title" id="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 20px;">✨ Thêm Mã Giảm Giá</div>
+            <div class="modal-title" id="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 20px;"><img src="/images/icons/special-offer.png" class="app-icon" alt=""> Thêm Mã Giảm Giá</div>
             <input type="hidden" id="promo-id">
             
             <div style="display: flex; gap: 16px; margin-bottom: 16px;">
@@ -354,13 +677,17 @@
                 <div style="flex: 1;">
                     <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Ngày kết thúc</label>
                     <input type="datetime-local" id="promo-end" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #0d9488; cursor: pointer; user-select: none; margin-top: 6px;">
+                        <input type="checkbox" id="promo-permanent" style="width: 15px; height: 15px; accent-color: #0d9488; cursor: pointer;">
+                        Mã vĩnh viễn (Không thời hạn)
+                    </label>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 16px; margin-bottom: 24px;">
-                <div style="flex: 2;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Mô tả chi tiết</label>
-                    <input type="text" id="promo-desc" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="VD: Giảm 15%...">
+            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Giới hạn lượt dùng (Usage Limit)</label>
+                    <input type="number" id="promo-usage-limit" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="Để trống hoặc 0 = Không giới hạn" min="0">
                 </div>
                 <div style="flex: 1;">
                     <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Trạng thái</label>
@@ -371,10 +698,140 @@
                 </div>
             </div>
 
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Mô tả chi tiết</label>
+                <input type="text" id="promo-desc" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="VD: Giảm 15% cho du thuyền Hạ Long...">
+            </div>
+
             <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
                 <button type="button" class="btn btn-outline" id="btn-cancel-promo">Hủy bỏ</button>
-                <button type="button" class="btn btn-primary" id="btn-save-promo">💾 Lưu Khuyến Mãi</button>
+                <button type="button" class="btn btn-primary" id="btn-save-promo"><img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Khuyến Mãi</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL TẠO / SỬA POPUP QUẢNG CÁO -->
+    <div class="inline-modal-overlay" id="adModal">
+        <div class="inline-modal">
+            <div class="inline-modal-header">
+                <div class="modal-title" id="adModalTitle" style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <img src="/images/icons/special-offer.png" class="app-icon" alt=""> Tạo Popup Quảng Cáo
+                </div>
+                <button type="button" class="btn-close-modal" id="btnCloseModal" style="background:none; border:none; font-size:26px; line-height: 1; color:#94a3b8; cursor:pointer; padding: 0 4px;" title="Đóng">&times;</button>
+            </div>
+
+            <form id="adForm" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+                <div class="inline-modal-body" id="adModalBody">
+                    <input type="hidden" id="adId">
+
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Tiêu đề quảng cáo *</label>
+                            <input type="text" id="adTitle" class="form-input" placeholder="VD: Ưu Đãi Mùa Hè 2026" required>
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Vị trí hiển thị</label>
+                            <select id="adPosition" class="form-input">
+                                <option value="center">Giữa màn hình (Modal Popup + Mờ nền)</option>
+                                <option value="bottom-right">Góc dưới phải (Nổi floating card)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group-modal">
+                        <label class="form-label">Nội dung chi tiết</label>
+                        <textarea id="adDescription" class="form-input" rows="2" placeholder="VD: Đặt tour du thuyền ngay hôm nay để nhận voucher giảm 20% và đưa đón miễn phí..."></textarea>
+                    </div>
+
+                    <!-- TÙY CHỌN ẢNH CANVA / FILE -->
+                    <div class="form-group-modal">
+                        <label class="form-label">Hình ảnh banner / Canva quảng cáo</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                            <input type="text" id="adImageUrl" class="form-input" placeholder="Dán URL ảnh hoặc chọn tải lên từ máy tính">
+                            <label class="btn btn-outline" style="white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px;">
+                                <img src="/images/icons/folder.png" class="app-icon-sm" alt=""> Tải ảnh
+                                <input type="file" id="fileAdImage" accept="image/*" style="display: none;">
+                            </label>
+                        </div>
+                        <div id="imagePreviewContainer" style="display: none; margin-top: 8px;">
+                            <img id="imagePreview" src="" alt="Preview" style="max-height: 120px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: contain;">
+                        </div>
+                    </div>
+
+                    <!-- LINK CTA & VOUCHER -->
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Đường dẫn liên kết (CTA Link)</label>
+                            <input type="text" id="adLinkUrl" class="form-input" placeholder="VD: /search.html hoặc link du thuyền">
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Chữ trên nút (Button Text)</label>
+                            <input type="text" id="adLinkText" class="form-input" placeholder="VD: Khám Phá Ngay" value="Khám Phá Ngay">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Mã Giảm Giá đính kèm (nếu có)</label>
+                            <input type="text" id="adPromoCode" class="form-input" placeholder="VD: HALONG2026 (Tự động copy khi bấm)" style="text-transform: uppercase; font-weight: 600; color: #0d9488;">
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Kiểu phông chữ (Font Family)</label>
+                            <select id="adFontFamily" class="form-input">
+                                <option value="'Playfair Display', serif">Playfair Display (Sang trọng cổ điển)</option>
+                                <option value="'Inter', sans-serif" selected>Inter (Hiện đại chuẩn mực)</option>
+                                <option value="'Montserrat', sans-serif">Montserrat (Trẻ trung nổi bật)</option>
+                                <option value="'Roboto', sans-serif">Roboto (Rõ ràng thanh lịch)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- MÀU SẮC & GIAO DIỆN -->
+                    <div class="form-grid-2">
+                        <div class="form-group-modal">
+                            <label class="form-label">Màu tiêu đề / Màu chữ</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="color" id="adTitleColorPicker" value="#0f172a" style="width: 44px; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; cursor: pointer;">
+                                <input type="text" id="adTitleColor" class="form-input" value="#0f172a">
+                            </div>
+                        </div>
+                        <div class="form-group-modal">
+                            <label class="form-label">Màu nền hoặc Gradient</label>
+                            <select id="adBgPreset" class="form-input" style="margin-bottom: 6px;">
+                                <option value="#ffffff">Trắng tinh khiết</option>
+                                <option value="linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)">Xanh Ngọc Pastel (Halong Mint)</option>
+                                <option value="linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)">Vàng Hổ Phách Sang Trọng</option>
+                                <option value="linear-gradient(135deg, #042f2e 0%, #0f172a 100%)">Đại Dương Đêm (Dark Luxury)</option>
+                                <option value="custom">Tự nhập mã màu...</option>
+                            </select>
+                            <input type="text" id="adBackgroundColor" class="form-input" value="#ffffff" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group-modal" style="margin-bottom: 16px;">
+                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #0f766e; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="adIsActive" checked style="width: 18px; height: 18px; accent-color: #0d9488;">
+                            Kích hoạt hiển thị popup này cho khách hàng
+                        </label>
+                    </div>
+
+                    <!-- LIVE PREVIEW BOX -->
+                    <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <img src="/images/icons/preview-eye.png" class="app-icon-sm" alt=""> Xem trước giao diện thực tế (Live Preview)
+                        </div>
+                        <div id="livePreviewBox" style="border-radius: 12px; padding: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); transition: all 0.25s ease;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inline-modal-footer">
+                    <button type="button" class="btn btn-outline" id="btnCancelAd">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveAd">
+                        <img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Quảng Cáo
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -387,5 +844,7 @@
     <script src="/js/auth.js?v=25"></script>
     <script src="/js/navigation.js"></script>
     <script src="/js/promotions.js"></script>
+    <script src="/js/admin-ads.js"></script>
+    <script src="/js/admin-chat.js"></script>
 </body>
 </html>

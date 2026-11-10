@@ -53,13 +53,13 @@
                                 @if (cruise.Destination != null)
                                 {
                                     <span style="position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.9); color: #0d9488; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;">
-                                        📍 @cruise.Destination.Name
+                                        <img src="/images/icons/location-pin.png" class="app-icon" alt="" /> @cruise.Destination.Name
                                     </span>
                                 }
                             </div>
                             <div style="padding: 16px;">
                                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                                    <span style="color: #f59e0b; font-weight: bold; font-size: 14px;">★ @cruise.AverageRating.ToString("0.0")</span>
+                                    <span style="color: #f59e0b; font-weight: bold; font-size: 14px;"><img src="/images/icons/star-filled.png" class="app-icon" alt="" /> @cruise.AverageRating.ToString("0.0")</span>
                                     <span style="color: #9ca3af; font-size: 12px;">(@cruise.ReviewCount đánh giá)</span>
                                 </div>
                                 <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 8px; color: #111827;">@cruise.Name</h3>
@@ -77,7 +77,7 @@
                                 </span>
                             </div>
                             <a href="/cruise-detail.html?id=@cruise.CruiseId" class="btn-primary" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
-                                Chi Tiết ➔
+                                Chi Tiết <img src="/images/icons/arrow-right.png" class="app-icon-sm" alt="➔" />
                             </a>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
             .Include(c => c.Destination)
             .Include(c => c.CruiseImages)
             .Include(c => c.CabinTypes)
-            .Where(c => c.IsActive)
+            .Where(c => c.IsActive && !c.IsDeleted)
             .AsNoTracking()
             .AsQueryable();
 

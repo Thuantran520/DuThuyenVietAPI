@@ -33,6 +33,12 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
 
     public virtual DbSet<Promotion> Promotions { get; set; }
 
+    public virtual DbSet<PopupAd> PopupAds { get; set; }
+
+    public virtual DbSet<ChatConversation> ChatConversations { get; set; }
+
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
     public virtual DbSet<Review> Reviews { get; set; }
 
     public virtual DbSet<Schedule> Schedules { get; set; }
@@ -47,6 +53,12 @@ public partial class DuThuyenVietDBContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<ScheduleCabinInventory>()
             .HasKey(e => e.ScheduleCabinId);
+
+        modelBuilder.Entity<ChatConversation>()
+            .HasKey(e => e.ConversationId);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasKey(e => e.MessageId);
 
         // Fix decimal warnings
         modelBuilder.Entity<Booking>().Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");

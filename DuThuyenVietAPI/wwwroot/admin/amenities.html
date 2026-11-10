@@ -7,6 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/layout.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
     <style>
         .amenity-grid {
             display: grid;
@@ -62,16 +89,16 @@
     <div class="container py-5">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <div>
-                <h1 style="font-size: 1.8rem; font-weight: 700; color: #0f172a;">🏊‍♂️ Quản Lý Tiện Ích Dịch Vụ</h1>
+                <h1 style="font-size: 1.8rem; font-weight: 700; color: #0f172a;"><img src="/images/icons/swimming-pool.png" class="app-icon" alt=""> Quản Lý Tiện Ích Dịch Vụ</h1>
                 <p style="color: #64748b; font-size: 0.95rem;">Danh mục các tiện ích trang bị trên du thuyền (Bể bơi, Spa, Bar, Gym...)</p>
             </div>
-            <button class="btn btn-primary" onclick="openAddAmenityModal()">+ Thêm Tiện Ích Mới</button>
+            <button class="btn btn-primary" onclick="openAddAmenityModal()"><img src="/images/icons/plus.png" class="app-icon" alt=""> Thêm Tiện Ích Mới</button>
         </div>
 
         <div class="amenity-grid" id="amenities-container">
             <!-- Render động từ API -->
             <div class="amenity-card">
-                <div class="amenity-icon-box">🏊‍♂️</div>
+                <div class="amenity-icon-box"><img src="/images/icons/swimming-pool.png" class="app-icon-lg" alt=""></div>
                 <div class="amenity-info">
                     <div class="amenity-title">Hồ Bơi 4 Mùa</div>
                     <div class="amenity-code">bi-pool</div>
@@ -83,18 +110,18 @@
     <!-- MODAL THÊM TIỆN ÍCH -->
     <div class="inline-modal-overlay" id="amenity-modal">
         <div class="inline-modal" style="max-width: 450px;">
-            <div class="modal-title">➕ Thêm Tiện Ích Mới</div>
+            <div class="modal-title"><img src="/images/icons/plus.png" class="app-icon" alt=""> Thêm Tiện Ích Mới</div>
             <div class="form-group-modal" style="margin-bottom: 16px;">
                 <label class="form-label">Tên Tiện Ích</label>
                 <input type="text" id="amenity-name" class="form-input" placeholder="VD: Bể Bơi 4 Mùa, Spa, Phòng Gym...">
             </div>
             <div class="form-group-modal" style="margin-bottom: 24px;">
                 <label class="form-label">Icon / Biểu Tượng (Emoji hoặc Class)</label>
-                <input type="text" id="amenity-icon" class="form-input" placeholder="VD: 🏊‍♂️ hoặc bi-pool">
+                <input type="text" id="amenity-icon" class="form-input" placeholder="VD: /images/icons/swimming-pool.png hoặc bi-pool">
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="document.getElementById('amenity-modal').classList.remove('active')">Hủy</button>
-                <button class="btn btn-primary" onclick="saveAmenity()">💾 Lưu Tiện Ích</button>
+                <button class="btn btn-primary" onclick="saveAmenity()"><img src="/images/icons/save.png" class="app-icon" alt=""> Lưu Tiện Ích</button>
             </div>
         </div>
     </div>
@@ -115,7 +142,7 @@
                 }
                 container.innerHTML = data.map(a => `
                     <div class="amenity-card">
-                        <div class="amenity-icon-box">${a.iconClass || '✨'}</div>
+                        <div class="amenity-icon-box">${a.iconClass ? (a.iconClass.includes('/') || a.iconClass.includes('.') ? `<img src="${a.iconClass}" class="app-icon-lg">` : a.iconClass) : '<img src="/images/icons/special-offer.png" class="app-icon-lg">'}</div>
                         <div class="amenity-info">
                             <div class="amenity-title">${a.name}</div>
                             <div class="amenity-code">ID: #${a.amenityId}</div>

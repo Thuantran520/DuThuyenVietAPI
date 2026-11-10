@@ -8,6 +8,9 @@ using System.Text;
 using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
 
+// Nạp file bảo mật appsettings.Secrets.json (tự động đè các giá trị bí mật như VNPAY, PayPal, JWT nếu file tồn tại)
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+
 // Add services to the container.                                                                                                                                            
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle                                                                                     
@@ -95,10 +98,11 @@ using (var scope = app.Services.CreateScope())
     try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Reviews') AND name = 'StaffReply') ALTER TABLE Reviews ADD StaffReply NVARCHAR(MAX) NULL;"); } catch { }
     try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Reviews') AND name = 'StaffReplyUserId') ALTER TABLE Reviews ADD StaffReplyUserId NVARCHAR(450) NULL;"); } catch { }
     try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StoredImages') CREATE TABLE StoredImages (Id INT IDENTITY(1,1) PRIMARY KEY, FileName NVARCHAR(255) NOT NULL, ContentType NVARCHAR(100) NOT NULL, Data VARBINARY(MAX) NOT NULL, CreatedAt DATETIME DEFAULT GETDATE());"); } catch { }
+    try { context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Cruises') AND name = 'IsDeleted') ALTER TABLE Cruises ADD IsDeleted BIT NOT NULL DEFAULT 0;"); } catch { }
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    string[] roles = { "Admin", "Manager", "Staff", "Customer" };
+    string[] roles = { "Admin", "Manager", "Accountant", "Staff", "Customer" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))

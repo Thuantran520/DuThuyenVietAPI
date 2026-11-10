@@ -8,6 +8,33 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css?v=2">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header" id="main-header"></header>
@@ -48,9 +75,50 @@
                         </div>
                     </div>
                     
+                    <!-- Bảng Doanh thu theo Phương thức Thanh toán -->
+                    <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 700;"><img src="/images/icons/revenue-chart.png" class="app-icon" alt=""> Doanh thu theo Phương thức Thanh toán</h3>
+                            <span style="font-size: 13px; color: #64748b;">(Chỉ tính các đơn đã thanh toán thành công)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+                            <div style="background: #f0fdfa; border: 1px solid #ccfbf1; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #005baa; font-size: 14px;"><img src="/images/icons/vnpay.png" class="app-icon" alt=""> Cổng VNPAY</span>
+                                    <span id="rev-vnpay-count" style="font-size: 12px; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-vnpay-amount" style="font-size: 18px; font-weight: 800; color: #0369a1;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #15803d; font-size: 14px;"><img src="/images/icons/vietqr.png" class="app-icon" alt=""> Chuyển khoản VietQR</span>
+                                    <span id="rev-vietqr-count" style="font-size: 12px; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-vietqr-amount" style="font-size: 18px; font-weight: 800; color: #15803d;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #eff6ff; border: 1px solid #dbeafe; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #1d4ed8; font-size: 14px;"><img src="/images/icons/paypal.png" class="app-icon" alt=""> PayPal Quốc tế</span>
+                                    <span id="rev-paypal-count" style="font-size: 12px; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-paypal-amount" style="font-size: 18px; font-weight: 800; color: #1d4ed8;">0 ₫</div>
+                            </div>
+
+                            <div style="background: #fefce8; border: 1px solid #fef08a; padding: 16px; border-radius: 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight: 700; color: #a16207; font-size: 14px;"><img src="/images/icons/cash-vnd.png" class="app-icon" alt=""> Tiền mặt / Thu hộ</span>
+                                    <span id="rev-cash-count" style="font-size: 12px; color: #ca8a04; background: #fef9c3; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 đơn</span>
+                                </div>
+                                <div id="rev-cash-amount" style="font-size: 18px; font-weight: 800; color: #a16207;">0 ₫</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- BI Dashboard Charts -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h2 style="font-size: 18px; margin: 0; color: #0f172a;">Tổng quan dữ liệu</h2>
+                        <h2 style="font-size: 18px; margin: 0; color: #0f172a; font-weight: 700;"><img src="/images/icons/revenue-chart.png" class="app-icon" alt=""> Tổng quan dữ liệu kinh doanh & Thanh toán</h2>
                         <select id="biFilter" style="padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; background: white; cursor: pointer; font-weight: 500;" onchange="window.updateBICharts && window.updateBICharts()">
                             <option value="7">7 ngày qua</option>
                             <option value="30">30 ngày qua</option>
@@ -59,44 +127,70 @@
                         </select>
                     </div>
                     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                            <h3 id="revenueChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Doanh thu 7 ngày qua</h3>
-                            <div style="position: relative; width: 100%; height: 250px;">
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <h3 id="revenueChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155; font-weight: 600;">Doanh thu 7 ngày qua</h3>
+                            <div style="position: relative; width: 100%; height: 260px;">
                                 <canvas id="revenueChart"></canvas>
                             </div>
                         </div>
-                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Tỷ lệ trạng thái đơn</h3>
-                            <div style="position: relative; width: 100%; height: 250px;">
-                                <canvas id="statusChart"></canvas>
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155; font-weight: 600;"><img src="/images/icons/credit-card.png" class="app-icon" alt=""> Tỷ trọng Doanh thu Cổng thanh toán</h3>
+                            <div style="position: relative; width: 100%; height: 260px;">
+                                <canvas id="paymentMethodChart"></canvas>
                             </div>
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                            <h3 id="ordersChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Số lượng đơn đặt 7 ngày qua</h3>
-                            <div style="position: relative; width: 100%; height: 250px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155; font-weight: 600;">Tỷ lệ trạng thái đơn</h3>
+                            <div style="position: relative; width: 100%; height: 230px;">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <h3 id="ordersChartTitle" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155; font-weight: 600;">Số lượng đơn đặt 7 ngày qua</h3>
+                            <div style="position: relative; width: 100%; height: 230px;">
                                 <canvas id="ordersChart"></canvas>
                             </div>
                         </div>
-                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155;">Top 5 Du thuyền (Đơn thành công)</h3>
-                            <div style="position: relative; width: 100%; height: 250px;">
+                        <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #334155; font-weight: 600;">Top 5 Du thuyền (Đơn thành công)</h3>
+                            <div style="position: relative; width: 100%; height: 230px;">
                                 <canvas id="topCruiseChart"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, hoặc Ghi chú..." style="flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
-                        <select id="adminBookingStatusFilter" style="padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 180px;" onchange="filterAdminBookings()">
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="adminBookingSearch" placeholder="Tìm theo Mã đơn, Tên, SĐT khách, Ghi chú..." style="flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px;" onkeyup="filterAdminBookings()">
+                        
+                        <div style="display:flex; align-items:center; gap:6px; background:white; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">Từ:</span>
+                            <input type="date" id="adminBookingStartDate" style="border:none; outline:none; font-size:13px;" onchange="filterAdminBookings()">
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">Đến:</span>
+                            <input type="date" id="adminBookingEndDate" style="border:none; outline:none; font-size:13px;" onchange="filterAdminBookings()">
+                            <button onclick="window.clearDateFilters()" style="background:none; border:none; cursor:pointer; color:#94a3b8; font-size:14px; padding:0 4px;" title="Xóa lọc ngày"><img src="/images/icons/close.png" class="app-icon-sm" alt="✕"></button>
+                        </div>
+
+                        <select id="adminBookingMethodFilter" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 160px;" onchange="filterAdminBookings()">
+                            <option value="all">Tất cả phương thức</option>
+                            <option value="VNPAY">Cổng VNPAY</option>
+                            <option value="VietQR">Chuyển khoản VietQR</option>
+                            <option value="PayPal">PayPal</option>
+                            <option value="Cash">Tiền mặt / Thu hộ</option>
+                        </select>
+                        <select id="adminBookingStatusFilter" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; min-width: 160px;" onchange="filterAdminBookings()">
                             <option value="all">Tất cả trạng thái</option>
                             <option value="Pending">Chờ thanh toán</option>
                             <option value="AwaitingConfirmation">Chờ xác nhận</option>
                             <option value="Confirmed">Thành công</option>
                             <option value="Cancelled">Đã hủy</option>
                         </select>
+
+                        <button onclick="window.exportBookingsToExcel()" class="btn-primary" style="padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; background: #15803d; color: white; white-space: nowrap;">
+                            <img src="/images/icons/download-tray.png" class="app-icon" alt=""> Xuất Excel
+                        </button>
                     </div>
                     
                     <div class="table-responsive">
@@ -107,12 +201,13 @@
                                     <th>Khách hàng</th>
                                     <th>Du thuyền & Phòng</th>
                                     <th>Tổng tiền</th>
-                                    <th style="min-width: 120px;">Trạng thái</th>
+                                    <th style="min-width: 130px;">Phương thức</th>
+                                    <th style="min-width: 130px;">Trạng thái</th>
                                     <th style="text-align: right;">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody id="bookings-table-body">
-                                <tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>
+                                <tr><td colspan="7" style="text-align:center;">Đang tải...</td></tr>
                             </tbody>
                         </table>
                     </div>

@@ -8,6 +8,33 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                const r = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p['role'] || '';
+                const roles = Array.isArray(r) ? r : [r.toString()];
+                const isAdmin = roles.some(x => ['admin', 'manager', 'accountant', 'staff'].includes(x.toLowerCase()));
+                if (!isAdmin) {
+                    window.location.replace('/profile.html');
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header" id="main-header"></header>
@@ -25,25 +52,142 @@
     <div class="content-wrapper">
         <div class="container">
             <div id="main-content">
-                <div class="card" id="tab-admin">
-                    <div class="card-title">Hệ thống Nhân sự & Phân quyền</div>
-                    <div style="margin-bottom: 24px; font-size: 14px; color: #6b7280;">Tại đây Quản trị viên có thể quản lý nhân viên và cấp quyền Quản lý hệ thống đặt Du Thuyền.</div>
-                    
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID Người dùng</th>
-                                    <th>Họ Tên / Username</th>
-                                    <th>Email</th>
-                                    <th>Quyền hiện tại</th>
-                                    <th style="text-align: right;">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-table-body">
-                                <tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>
-                            </tbody>
-                        </table>
+                <div id="tab-admin">
+                    <!-- THỐNG KÊ HIỆU SUẤT & TỶ LỆ ĐÁNH GIÁ NHÂN VIÊN -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div class="card-title" style="margin-bottom: 4px;">
+                                    <img src="/images/icons/staff.png" class="app-icon" alt=""> Hiệu Suất & Đánh Giá Nhân Viên Tư Vấn
+                                </div>
+                                <div style="font-size: 13.5px; color: #64748b;">Theo dõi năng suất tư vấn trực tiếp, số sao đánh giá trung bình và tỷ lệ hài lòng của từng nhân viên để nâng cao chất lượng dịch vụ.</div>
+                            </div>
+                            <button type="button" class="btn btn-outline" id="btnRefreshStaffPerf" style="font-size: 13px; padding: 6px 14px;">
+                                <img src="/images/icons/pending-hourglass.png" class="app-icon-sm" alt=""> Làm mới số liệu
+                            </button>
+                        </div>
+
+                        <!-- 4 Thẻ KPI Hiệu Suất -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <div style="background: #f0fdfa; border: 1px solid #ccfbf1; padding: 16px; border-radius: 12px;">
+                                <div style="font-size: 12px; color: #0d9488; font-weight: 700; text-transform: uppercase;">Đội ngũ nhân sự</div>
+                                <div style="font-size: 26px; font-weight: 800; color: #0f766e; margin-top: 4px;" id="kpi-total-staff">0</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Admin, Manager, Accountant, Staff</div>
+                            </div>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px;">
+                                <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase;">Cuộc tư vấn Live Chat</div>
+                                <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px;" id="kpi-total-consultations">0</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Đã tiếp nhận và hỗ trợ khách</div>
+                            </div>
+                            <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 16px; border-radius: 12px;">
+                                <div style="font-size: 12px; color: #b45309; font-weight: 700; text-transform: uppercase;">Đánh giá sao trung bình</div>
+                                <div style="font-size: 26px; font-weight: 800; color: #d97706; margin-top: 4px;" id="kpi-avg-stars">5.0 ⭐</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Từ phản hồi của khách hàng</div>
+                            </div>
+                            <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 12px;">
+                                <div style="font-size: 12px; color: #15803d; font-weight: 700; text-transform: uppercase;">Tỷ lệ hài lòng (≥ 4⭐)</div>
+                                <div style="font-size: 26px; font-weight: 800; color: #16a34a; margin-top: 4px;" id="kpi-satisfaction-rate">100%</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="kpi-disputes-count">0 khiếu nại cần lưu ý</div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Chuyên viên / Cán bộ</th>
+                                        <th>Chức vụ / Vai trò</th>
+                                        <th>Số cuộc tư vấn</th>
+                                        <th>Tỷ lệ giải quyết</th>
+                                        <th>Đánh giá sao (⭐)</th>
+                                        <th>Tỷ lệ hài lòng</th>
+                                        <th style="text-align: right;">Hành động & Tra cứu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-perf-body">
+                                    <tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;">Đang tải số liệu hiệu suất nhân viên...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="text-align: center; margin-top: 14px;">
+                            <button type="button" id="btnToggleStaffLimit" class="btn btn-outline" style="font-size: 13px; padding: 7px 20px; display: none;">
+                                Xem tất cả nhân viên ▼
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TRA CỨU KHIẾU NẠI & LỊCH SỬ TƯ VẤN (AUDIT DISPUTES) -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div class="card-title" style="margin-bottom: 4px;">
+                                    <img src="/images/icons/review-chat.png" class="app-icon" alt=""> Tra Cứu Khiếu Nại & Lịch Sử Tư Vấn Khách Hàng
+                                </div>
+                                <div style="font-size: 13.5px; color: #64748b;">Hỗ trợ Quản lý, Kế toán và Admin dễ dàng tra cứu lại biên bản tư vấn, nhận xét và số sao khi khách hàng có khiếu kiện.</div>
+                            </div>
+                        </div>
+
+                        <!-- Thanh tìm kiếm & bộ lọc khiếu nại -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <input type="text" id="auditSearchInput" placeholder="Tìm tên khách, email, tên nhân viên phụ trách hoặc từ khóa..." style="flex: 2; min-width: 240px; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
+                            <select id="auditRatingFilter" style="flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white;">
+                                <option value="">Tất cả đánh giá sao</option>
+                                <option value="2">⚠️ Khiếu nại / Không hài lòng (1 - 2 ⭐)</option>
+                                <option value="3">⚡ Đánh giá trung bình (≤ 3 ⭐)</option>
+                            </select>
+                            <button type="button" class="btn btn-primary" id="btnAuditSearch" style="padding: 9px 18px; font-size: 13.5px;">
+                                Tra cứu
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Mã Chat</th>
+                                        <th>Khách hàng</th>
+                                        <th>Chuyên viên phụ trách</th>
+                                        <th>Đánh giá sao</th>
+                                        <th>Phản hồi / Nhận xét của khách</th>
+                                        <th>Giải quyết bởi</th>
+                                        <th>Thời gian</th>
+                                        <th>Trạng thái</th>
+                                        <th style="text-align: right;">Chi tiết</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-disputes-body">
+                                    <tr><td colspan="9" style="text-align:center; padding: 24px; color: #94a3b8;">Đang tải nhật ký tư vấn...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="text-align: center; margin-top: 14px;">
+                            <button type="button" id="btnToggleAuditLimit" class="btn btn-outline" style="font-size: 13px; padding: 7px 20px; display: none;">
+                                Xem tất cả biên bản tư vấn ▼
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN HỆ THỐNG -->
+                    <div class="card">
+                        <div class="card-title"><img src="/images/icons/admin-crown.png" class="app-icon" alt=""> Phân Quyền & Quản Lý Tài Khoản</div>
+                        <div style="margin-bottom: 20px; font-size: 14px; color: #6b7280;">Cấp quyền và quản lý tài khoản cho Quản trị viên (Admin), Quản lý (Manager), Kế toán (Accountant), Nhân viên (Staff) và Khách hàng.</div>
+                        
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID Người dùng</th>
+                                        <th>Họ Tên / Username</th>
+                                        <th>Email</th>
+                                        <th>Quyền hiện tại</th>
+                                        <th style="text-align: right;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body">
+                                    <tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -53,8 +197,11 @@
     <!-- Hidden nav elements for auth.js compatibility -->
     <div id="tab-admin-nav" style="display:none;"></div>
 
+    <footer class="main-footer"></footer>
+
     <script src="/js/popup.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="/js/navigation.js"></script>
 </body>
 </html>

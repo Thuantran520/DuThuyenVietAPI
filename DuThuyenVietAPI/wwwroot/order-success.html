@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Vé Thành Công - Du Thuyen Viet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/popup.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search));
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search));
+                    return;
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
+    <style>
+        .success-page-bg {
+            background: radial-gradient(circle at 50% 10%, #f0fdfa 0%, #f8fafc 100%);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .success-wrapper {
+            max-width: 760px;
+            margin: 30px auto 50px;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #ccfbf1;
+            box-shadow: 0 20px 50px -10px rgba(13, 148, 136, 0.12), 0 4px 15px rgba(0, 0, 0, 0.03);
+            padding: 36px 36px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Festive Celebration Ribbon (Băng rôn chúc mừng) */
+        .celebration-ribbon-wrap {
+            margin: -36px -36px 25px;
+            background: linear-gradient(135deg, #0d9488 0%, #0284c7 50%, #0f766e 100%);
+            padding: 14px 20px;
+            color: #ffffff;
+            position: relative;
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.25);
+        }
+
+        .celebration-ribbon {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .ribbon-sparkle {
+            font-size: 16px;
+            animation: pulseSparkle 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseSparkle {
+            from { transform: scale(0.9); opacity: 0.8; }
+            to { transform: scale(1.2); opacity: 1; }
+        }
+
+        .success-lottie-box {
+            width: 100%;
+            max-width: 260px;
+            aspect-ratio: 416 / 228;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.08);
+            background: #f0fdfa;
+        }
+
+        .success-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+
+        .success-subtitle {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        /* Order Summary Card */
+        .order-card {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: left;
+            margin-bottom: 28px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e2e8f0;
+            font-size: 14.5px;
+        }
+
+        .order-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .order-label {
+            color: #64748b;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .order-val {
+            font-weight: 700;
+            color: #0f172a;
+            text-align: right;
+        }
+
+        .pm-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .pm-badge-vietqr { background: #ccfbf1; color: #0d9488; border: 1px solid #99f6e4; }
+        .pm-badge-vnpay { background: #e0f2fe; color: #005baa; border: 1px solid #bae6fd; }
+        .pm-badge-paypal { background: #eff6ff; color: #003087; border: 1px solid #bfdbfe; }
+        .pm-badge-cash { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+
+        .btn-success-action .app-icon,
+        .pm-badge .app-icon,
+        .pm-badge .app-icon-sm {
+            background: transparent !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        .btn-action-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .btn-success-action {
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14.5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            user-select: none;
+        }
+
+        .btn-primary-act {
+            background: #f0fdfa;
+            border: 1.5px solid #2dd4bf;
+            color: #0f766e;
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.12);
+        }
+
+        .btn-primary-act:hover {
+            background: #0d9488;
+            color: #ffffff;
+            border-color: #0d9488;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(13, 148, 136, 0.25);
+        }
+
+        .btn-secondary-act {
+            background: #f8fafc;
+            color: #334155;
+            border: 1.5px solid #cbd5e1;
+        }
+
+        .btn-secondary-act:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success-action .app-icon {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            background: #ffffff;
+            border-radius: 5px;
+            padding: 2.5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            display: block;
+            flex-shrink: 0;
+        }
+
+        canvas#confettiCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @media (max-width: 600px) {
+            .success-wrapper {
+                padding: 24px 18px;
+                border-radius: 18px;
+                margin: 15px auto 40px;
+            }
+            .celebration-ribbon-wrap {
+                margin: -24px -18px 20px;
+                padding: 10px 14px;
+            }
+            .celebration-ribbon {
+                font-size: 12px;
+            }
+            .btn-action-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="success-page-bg">
+    <header class="main-header"></header>
+
+    <div class="container py-4">
+        <div class="success-wrapper">
+            <canvas id="confettiCanvas"></canvas>
+            
+            <!-- Festive Ribbon Banner -->
+            <div class="celebration-ribbon-wrap">
+                <div class="celebration-ribbon">
+                    <span class="ribbon-sparkle">✨</span>
+                    Chúc Mừng Bạn Đã Đặt Vé Thành Công!
+                    <span class="ribbon-sparkle">✨</span>
+                </div>
+            </div>
+
+            <!-- Pure Animation Graphic -->
+            <div data-lottie="payment-success" class="success-lottie-box"></div>
+            
+            <h1 class="success-title">Hải Trình Của Bạn Đã Sẵn Sàng</h1>
+            <p class="success-subtitle">Cảm ơn bạn đã lựa chọn <strong>Du Thuyền Việt</strong>.<br>Hệ thống đã xác nhận đơn đặt phòng và gửi thông tin về tài khoản của bạn.</p>
+
+            <div class="order-card" id="orderSummaryBox">
+                <div style="text-align: center; color: #94a3b8; padding: 25px;">
+                    <span class="spinner" style="display:inline-block; width:20px; height:20px; margin-bottom:8px;"></span>
+                    <div>Đang đồng bộ thông tin đơn đặt vé từ máy chủ...</div>
+                </div>
+            </div>
+
+            <div class="btn-action-group">
+                <a href="/history.html" class="btn-success-action btn-primary-act" id="btnViewHistory">
+                    <img src="/images/icons/ticket.png" class="app-icon" alt=""> Mở Vé Điện Tử & Lịch Sử
+                </a>
+                <a href="/index.html" class="btn-success-action btn-secondary-act">
+                    <img src="/images/icons/home.png" class="app-icon" alt=""> Quay Lại Trang Chủ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer"></footer>
+
+    <script src="/js/lottie.min.js"></script>
+    <script src="/js/effects.js"></script>
+    <script src="/js/popup.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingCode = urlParams.get('code') || urlParams.get('bookingCode') || '';
+            const queryMethod = urlParams.get('method') || '';
+            const token = localStorage.getItem('auth_token');
+
+            if (!bookingCode) {
+                window.location.href = '/history.html';
+                return;
+            }
+
+            const btnViewHistory = document.getElementById('btnViewHistory');
+            if (btnViewHistory) {
+                btnViewHistory.href = `/history.html?payment=success&code=${encodeURIComponent(bookingCode)}`;
+            }
+
+            const formatPrice = (p) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
+
+            try {
+                const res = await fetch('/api/Bookings/MyBookings', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const all = await res.json();
+                    const items = all.filter(b => b.bookingCode === bookingCode);
+                    if (items.length > 0) {
+                        const first = items[0];
+                        const total = items.reduce((s, i) => s + (i.totalPrice || 0), 0);
+                        const rooms = items.map(i => `${i.cabinName} (x${i.numberOfRooms})`).join(', ');
+                        
+                        // Thu thập tất cả payment của các phòng trong booking
+                        const allPay = items.reduce((acc, it) => acc.concat(it.payments || []), []).filter(p => p.status !== 'Superseded');
+                        allPay.sort((p1, p2) => {
+                            if (p1.status === 'Success' && p2.status !== 'Success') return -1;
+                            if (p2.status === 'Success' && p1.status !== 'Success') return 1;
+                            return (p2.paymentId || 0) - (p1.paymentId || 0);
+                        });
+
+                        // Xác định phương thức thanh toán cuối cùng (Priority: 1. DB Payment -> 2. Query Param -> 3. SessionStorage -> 4. Default)
+                        let resolvedMethod = queryMethod;
+                        if (allPay.length > 0) {
+                            resolvedMethod = allPay[0].paymentMethod;
+                        } else if (!resolvedMethod) {
+                            resolvedMethod = sessionStorage.getItem('last_payment_method_' + bookingCode) || 'VietQR';
+                        }
+
+                        let methodLabel = '<span class="pm-badge pm-badge-vietqr"><img src="/images/icons/vietqr.png" class="app-icon-sm" alt=""> Chuyển khoản VietQR</span>';
+                        if (resolvedMethod === 'PayPal') {
+                            methodLabel = '<span class="pm-badge pm-badge-paypal"><img src="/images/icons/paypal.png" class="app-icon-sm" alt=""> PayPal Quốc tế</span>';
+                        } else if (resolvedMethod === 'VNPAY') {
+                            methodLabel = '<span class="pm-badge pm-badge-vnpay"><img src="/images/icons/vnpay.png" class="app-icon-sm" alt=""> Cổng VNPAY</span>';
+                        } else if (resolvedMethod === 'Cash') {
+                            methodLabel = '<span class="pm-badge pm-badge-cash"><img src="/images/icons/cash-vnd.png" class="app-icon-sm" alt=""> Tiền mặt tại quầy</span>';
+                        }
+
+                        const isPaidConfirmed = first.status === 'Confirmed';
+                        const statusBadgeHtml = isPaidConfirmed 
+                            ? `<span style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px;">✓ Đã xác nhận vé</span>`
+                            : `<span style="background: #e0e7ff; border: 1px solid #c7d2fe; color: #4338ca; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px;">⏳ Chờ Admin đối soát & duyệt</span>`;
+
+                        if (!isPaidConfirmed) {
+                            const titleEl = document.querySelector('.success-title');
+                            const subEl = document.querySelector('.success-subtitle');
+                            if (titleEl) titleEl.innerText = 'Đã Tiếp Nhận Đơn Đặt Phòng';
+                            if (subEl) subEl.innerHTML = 'Cảm ơn bạn đã lựa chọn <strong>Du Thuyền Việt</strong>.<br>Đơn đặt phòng đang chờ quản trị viên đối soát thanh toán. Vé điện tử sẽ sẵn sàng tải về ngay khi được duyệt.';
+                            if (btnViewHistory) {
+                                btnViewHistory.innerHTML = '<img src="/images/icons/clock.png" class="app-icon" alt=""> Theo Dõi Đơn Đặt Phòng';
+                                btnViewHistory.href = `/history.html?payment=awaiting&code=${encodeURIComponent(bookingCode)}`;
+                            }
+                        } else {
+                            if (btnViewHistory) {
+                                btnViewHistory.innerHTML = '<img src="/images/icons/ticket.png" class="app-icon" alt=""> Mở Vé Điện Tử & Lịch Sử';
+                                btnViewHistory.href = `/history.html?payment=success&code=${encodeURIComponent(bookingCode)}`;
+                            }
+                        }
+
+                        document.getElementById('orderSummaryBox').innerHTML = `
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/ticket.png" class="app-icon-sm" alt=""> Mã đặt phòng:</span>
+                                <span class="order-val" style="color: #0d9488; font-size: 1.15rem; font-family: monospace;">${first.bookingCode}</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/ship-front.png" class="app-icon-sm" alt=""> Tên du thuyền:</span>
+                                <span class="order-val" style="font-size: 1rem;">${first.cruiseName || 'Du thuyền cao cấp'}</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/departure-calendar.png" class="app-icon-sm" alt=""> Lịch trình:</span>
+                                <span class="order-val">Ngày đi: ${new Date(first.departureDate).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/cabin-bed.png" class="app-icon-sm" alt=""> Loại phòng:</span>
+                                <span class="order-val">${rooms}</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/user.png" class="app-icon-sm" alt=""> Khách hàng đại diện:</span>
+                                <span class="order-val">${first.contactName} (${first.contactPhone})</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/credit-card.png" class="app-icon-sm" alt=""> Phương thức thanh toán:</span>
+                                <span class="order-val">${methodLabel}</span>
+                            </div>
+                            <div class="order-row">
+                                <span class="order-label"><img src="/images/icons/active-dot.png" class="app-icon-sm" alt=""> Trạng thái đơn:</span>
+                                <span class="order-val">${statusBadgeHtml}</span>
+                            </div>
+                            <div class="order-row" style="padding-top: 16px; margin-top: 6px; font-size: 1.1rem; border-top: 1.5px solid #cbd5e1;">
+                                <span class="order-label" style="font-weight: 700; color: #0f172a; font-size: 15px;">Tổng tiền thanh toán:</span>
+                                <span class="order-val" style="color: #ef4444; font-size: 1.35rem; font-weight: 800;">${formatPrice(total)}</span>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (e) {
+                console.error('Lỗi tải tóm tắt đơn:', e);
+            }
+
+            // Confetti canvas animation
+            try {
+                const canvas = document.getElementById('confettiCanvas');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    const pieces = [];
+                    const colors = ['#10b981', '#0d9488', '#38bdf8', '#f59e0b', '#ec4899', '#8b5cf6'];
+                    for (let i = 0; i < 70; i++) {
+                        pieces.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height - canvas.height,
+                            r: Math.random() * 6 + 4,
+                            d: Math.random() * 20 + 10,
+                            color: colors[Math.floor(Math.random() * colors.length)],
+                            tilt: Math.floor(Math.random() * 10) - 10,
+                            tiltAngleIncremental: (Math.random() * 0.07) + 0.05,
+                            tiltAngle: 0
+                        });
+                    }
+                    function draw() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        for (let i = 0; i < pieces.length; i++) {
+                            const p = pieces[i];
+                            ctx.beginPath();
+                            ctx.lineWidth = p.r / 2;
+                            ctx.strokeStyle = p.color;
+                            ctx.moveTo(p.x + p.tilt + (p.r / 4), p.y);
+                            ctx.lineTo(p.x + p.tilt, p.y + p.tilt + (p.r / 4));
+                            ctx.stroke();
+                            p.tiltAngle += p.tiltAngleIncremental;
+                            p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                            p.tilt = Math.sin(p.tiltAngle - (i / 3)) * 15;
+                        }
+                    }
+                    let counter = 0;
+                    function loop() {
+                        draw();
+                        counter++;
+                        if (counter < 180) requestAnimationFrame(loop);
+                    }
+                    loop();
+                }
+            } catch(e) {}
+        });
+    </script>
+</body>
+</html>

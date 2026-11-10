@@ -22,6 +22,8 @@ public class CruisesController : ControllerBase
         [FromQuery] string? keyword,
         [FromQuery] string? priceRange,
         [FromQuery] DateTime? departureDate,
+        [FromQuery] bool includeInactive = false,
+        [FromQuery] string? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
@@ -32,8 +34,26 @@ public class CruisesController : ControllerBase
                 .Include(c => c.CabinTypes)
                 .Include(c => c.CruiseImages)
                 .Include(c => c.Schedules)
-                .Where(c => c.IsActive)
+                .Where(c => !c.IsDeleted)
                 .AsQueryable();
+
+            // Filter status: active / maintenance / all
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (status.Equals("active", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => c.IsActive);
+                }
+                else if (status.Equals("maintenance", StringComparison.OrdinalIgnoreCase) || status.Equals("inactive", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => !c.IsActive);
+                }
+            }
+            else if (!includeInactive)
+            {
+                // Default customer view: only show active cruises
+                query = query.Where(c => c.IsActive);
+            }
 
             if (destinationId.HasValue && destinationId.Value > 0)
             {
@@ -78,10 +98,12 @@ public class CruisesController : ControllerBase
                     c.Slug,
                     c.AverageRating,
                     c.ReviewCount,
-                    DestinationName = c.Destination.Name,
+                    c.DestinationId,
+                    DestinationName = c.Destination != null ? c.Destination.Name : "Đang cập nhật",
                     ThumbnailUrl = c.CruiseImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).FirstOrDefault() ?? c.ThumbnailUrl,
                     c.ShortDescription,
-                    StartingPrice = c.CabinTypes.Any() ? c.CabinTypes.Min(cb => cb.BasePrice) : 0
+                    StartingPrice = c.CabinTypes.Any() ? c.CabinTypes.Min(cb => cb.BasePrice) : 0,
+                    c.IsActive
                 })
                 .ToListAsync();
 
@@ -112,7 +134,7 @@ public class CruisesController : ControllerBase
                 .Include(c => c.Schedules)
                     .ThenInclude(s => s.ScheduleCabinInventories)
                 .Include(c => c.Reviews)
-                .FirstOrDefaultAsync(c => c.CruiseId == id && c.IsActive);
+                .FirstOrDefaultAsync(c => c.CruiseId == id && !c.IsDeleted);
 
             if (cruise == null)
                 return NotFound("Không tìm thấy du thuyền");
@@ -128,6 +150,7 @@ public class CruisesController : ControllerBase
                 cruise.Description,
                 cruise.TotalCabins,
                 cruise.ThumbnailUrl,
+                cruise.IsActive,
                 DestinationId = cruise.DestinationId,
                 DestinationName = cruise.Destination != null ? cruise.Destination.Name : "Đang cập nhật",
                 Images = cruise.CruiseImages.Any() 
@@ -197,7 +220,8 @@ public class CruisesController : ControllerBase
             ShortDescription = dto.ShortDescription,
             Description = dto.Description,
             ThumbnailUrl = dto.ThumbnailUrl,
-            IsActive = true,
+            IsActive = dto.IsActive ?? true,
+            IsDeleted = false,
             CreatedAt = DateTime.Now
         };
         _context.Cruises.Add(cruise);
@@ -225,7 +249,7 @@ public class CruisesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCruise(int id, [FromBody] CruiseDTO dto)
     {
-        var cruise = await _context.Cruises.Include(c => c.CruiseImages).FirstOrDefaultAsync(c => c.CruiseId == id);
+        var cruise = await _context.Cruises.Include(c => c.CruiseImages).FirstOrDefaultAsync(c => c.CruiseId == id && !c.IsDeleted);
         if (cruise == null) return NotFound();
         var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
@@ -293,20 +317,74 @@ public class CruisesController : ControllerBase
         }
         
         await _context.SaveChangesAsync();
-        return Ok(new { cruise.CruiseId, cruise.Name, cruise.Slug, cruise.ThumbnailUrl, cruise.UpdatedAt });
+        return Ok(new { cruise.CruiseId, cruise.Name, cruise.Slug, cruise.ThumbnailUrl, cruise.IsActive, cruise.UpdatedAt });
+    }
+
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    [HttpPut("{id}/toggle-maintenance")]
+    public async Task<IActionResult> ToggleMaintenance(int id)
+    {
+        var cruise = await _context.Cruises.FirstOrDefaultAsync(c => c.CruiseId == id && !c.IsDeleted);
+        if (cruise == null) return NotFound(new { message = "Không tìm thấy du thuyền." });
+
+        cruise.IsActive = !cruise.IsActive;
+        cruise.UpdatedAt = DateTime.Now;
+
+        await _context.SaveChangesAsync();
+        return Ok(new
+        {
+            cruise.CruiseId,
+            cruise.Name,
+            cruise.IsActive,
+            Message = cruise.IsActive
+                ? $"Đã mở lại hoạt động cho du thuyền \"{cruise.Name}\""
+                : $"Đã đưa du thuyền \"{cruise.Name}\" vào chế độ bảo trì"
+        });
     }
     
     [Authorize(Roles = "Admin,Manager,Staff")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCruise(int id)
     {
-        var cruise = await _context.Cruises.FindAsync(id);
-        if (cruise == null) return NotFound();
+        var cruise = await _context.Cruises
+            .Include(c => c.CabinTypes)
+            .Include(c => c.Schedules)
+            .Include(c => c.CruiseImages)
+            .Include(c => c.Reviews)
+            .FirstOrDefaultAsync(c => c.CruiseId == id && !c.IsDeleted);
+            
+        if (cruise == null) return NotFound(new { message = "Không tìm thấy du thuyền hoặc đã bị xóa." });
         
-        cruise.IsActive = false; // soft delete
-        cruise.UpdatedAt = DateTime.Now;
+        var scheduleIds = cruise.Schedules.Select(s => s.ScheduleId).ToList();
+        var cabinTypeIds = cruise.CabinTypes.Select(c => c.CabinTypeId).ToList();
         
-        await _context.SaveChangesAsync();
-        return Ok(new { Message = "Đã xóa du thuyền" });
+        bool hasBookings = await _context.Bookings.AnyAsync(b => 
+            scheduleIds.Contains(b.ScheduleId) || cabinTypeIds.Contains(b.CabinTypeId));
+            
+        if (hasBookings)
+        {
+            // Du thuyền đã có dữ liệu đơn đặt phòng lịch sử -> Đánh dấu IsDeleted = true
+            // để bảo toàn dữ liệu hóa đơn/thanh toán nhưng biến mất hoàn toàn khỏi danh sách quản lý
+            cruise.IsDeleted = true;
+            cruise.IsActive = false;
+            cruise.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            // Du thuyền chưa từng phát sinh đơn đặt phòng -> Xóa dứt điểm khỏi Database
+            var inventories = await _context.ScheduleCabinInventories
+                .Where(i => scheduleIds.Contains(i.ScheduleId) || cabinTypeIds.Contains(i.CabinTypeId))
+                .ToListAsync();
+            if (inventories.Any())
+            {
+                _context.ScheduleCabinInventories.RemoveRange(inventories);
+            }
+            
+            _context.Cruises.Remove(cruise);
+            await _context.SaveChangesAsync();
+        }
+        
+        return Ok(new { Message = $"Đã xóa vĩnh viễn du thuyền \"{cruise.Name}\" thành công." });
     }
 }

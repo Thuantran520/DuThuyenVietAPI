@@ -2,6 +2,31 @@
    DuThuyenViet - Common Layout Stylesheet (Header, Footer, Breadcrumbs)
    ========================================================================== */
 
+/* Global Sticky Footer Layout */
+html {
+    height: 100% !important;
+}
+
+body {
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+}
+
+/* Page content wrappers expand to fill remaining viewport height */
+.content-wrapper,
+.search-container,
+.container-main,
+.page-wrapper,
+.auth-wrapper,
+.success-wrapper,
+.error-container,
+.py-5,
+main {
+    flex: 1 0 auto !important;
+}
+
 /* Redesigned Premium Header */
 .main-header {
     background: rgba(255, 255, 255, 0.85) !important;
@@ -79,18 +104,20 @@
 
 /* User Account Actions - Rounded Capsule */
 .main-header nav a.nav-btn-account {
-    background: #0d9488 !important;
-    color: #ffffff !important;
-    padding: 8px 18px !important;
+    background: #f0fdfa !important;
+    color: #0d9488 !important;
+    border: 1.5px solid #14b8a6 !important;
+    padding: 7px 18px !important;
     border-radius: 30px !important;
     font-weight: 600 !important;
-    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.1) !important;
     transition: all 0.25s ease !important;
 }
 
 .main-header nav a.nav-btn-account:hover {
-    background: #0f766e !important;
-    box-shadow: 0 6px 14px rgba(13, 148, 136, 0.35) !important;
+    background: #0d9488 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -99,25 +126,43 @@
 }
 
 .main-header nav a.nav-btn-admin {
-    color: #f59e0b !important;
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
     font-weight: 600 !important;
+    box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08) !important;
+    transition: all 0.25s ease !important;
 }
 .main-header nav a.nav-btn-admin:hover {
-    color: #d97706 !important;
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #92400e !important;
+    transform: translateY(-1px) !important;
 }
 .main-header nav a.nav-btn-admin::after {
-    background-color: #f59e0b !important;
+    display: none !important;
 }
 
 .main-header nav a.nav-btn-logout {
-    color: #ef4444 !important;
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
     font-weight: 600 !important;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08) !important;
+    transition: all 0.25s ease !important;
 }
 .main-header nav a.nav-btn-logout:hover {
-    color: #b91c1c !important;
+    background: #fee2e2 !important;
+    border-color: #f87171 !important;
+    color: #991b1b !important;
+    transform: translateY(-1px) !important;
 }
 .main-header nav a.nav-btn-logout::after {
-    background-color: #ef4444 !important;
+    display: none !important;
 }
 
 /* ==========================================================================
@@ -154,6 +199,10 @@
     color: #64748b !important;
 }
 
+.breadcrumbs li:empty {
+    display: none !important;
+}
+
 .breadcrumbs li:not(:last-child)::after {
     content: '/' !important;
     margin: 0 10px !important;
@@ -183,11 +232,12 @@
     background-color: #0f172a !important;
     color: #94a3b8 !important;
     padding: 60px 0 30px !important;
-    margin-top: 60px !important;
+    margin-top: auto !important;
     font-size: 14px !important;
     border-top: 4px solid #0d9488 !important;
     font-family: 'Inter', sans-serif !important;
     line-height: 1.6 !important;
+    width: 100% !important;
 }
 
 .main-footer .container {
@@ -271,6 +321,14 @@
     color: #94a3b8 !important;
 }
 
+.footer-contact li .app-icon {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    object-fit: contain !important;
+    vertical-align: middle !important;
+}
+
 .newsletter-form {
     display: flex !important;
     gap: 8px !important;
@@ -327,13 +385,168 @@
 }
 
 .social-links a {
-    color: #64748b !important;
+    color: #94a3b8 !important;
     text-decoration: none !important;
     transition: color 0.2s !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.social-links a .app-icon {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    object-fit: contain !important;
+    vertical-align: middle !important;
 }
 
 .social-links a:hover {
     color: #0d9488 !important;
+}
+
+/* ==========================================================================
+   Global Brand App Icons (PNG Transparent Collection)
+   ========================================================================== */
+.app-icon {
+    display: inline-block !important;
+    width: 1.35em !important;
+    height: 1.35em !important;
+    min-width: 1.35em !important;
+    vertical-align: -0.22em !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.app-icon-sm {
+    display: inline-block !important;
+    width: 1.15em !important;
+    height: 1.15em !important;
+    min-width: 1.15em !important;
+    vertical-align: -0.15em !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.app-icon-md {
+    display: inline-block !important;
+    width: 1.55em !important;
+    height: 1.55em !important;
+    min-width: 1.55em !important;
+    vertical-align: -0.25em !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.app-icon-lg {
+    display: inline-block !important;
+    width: 1.95em !important;
+    height: 1.95em !important;
+    min-width: 1.95em !important;
+    vertical-align: -0.3em !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.app-icon-xl {
+    display: inline-block !important;
+    width: 2.6em !important;
+    height: 2.6em !important;
+    min-width: 2.6em !important;
+    vertical-align: -0.35em !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.app-icon-circle {
+    border-radius: 50% !important;
+}
+
+button .app-icon,
+.btn .app-icon,
+.modal-btn .app-icon,
+a[class*="btn"] .app-icon,
+.btn-action .app-icon,
+.btn-action-sm .app-icon,
+.btn-submit .app-icon,
+.btn-primary-soft .app-icon,
+.btn-outline-soft .app-icon,
+button img,
+.btn img,
+.btn-submit img,
+#btnPay img,
+.icon-badge {
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin-right: 8px !important;
+    vertical-align: -0.22em !important;
+    box-sizing: border-box !important;
+}
+
+.modal-title .app-icon {
+    width: 1.25em !important;
+    height: 1.25em !important;
+    vertical-align: -0.18em !important;
+    margin-right: 8px !important;
+}
+
+.card-title .app-icon,
+h1 .app-icon,
+h2 .app-icon,
+h3 .app-icon,
+h4 .app-icon {
+    vertical-align: -0.18em !important;
+    margin-right: 8px !important;
+}
+
+/* Card Height & Price Baseline Alignment */
+.cruise-grid {
+    align-items: stretch !important;
+}
+.cruise-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+.cruise-card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+}
+.cruise-title {
+    min-height: 54px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-bottom: 10px !important;
+    line-height: 1.35 !important;
+}
+.cruise-footer {
+    margin-top: auto !important;
 }
 
 /* ==========================================================================
@@ -431,12 +644,16 @@
     border-radius: 8px !important;
     font-size: 16px !important;
     font-weight: 600 !important;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3) !important;
+    background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25) !important;
     transition: all 0.25s ease !important;
 }
 
 .search-form button:hover {
-    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.45) !important;
+    background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%) !important;
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.4) !important;
     transform: translateY(-1px) !important;
 }
 

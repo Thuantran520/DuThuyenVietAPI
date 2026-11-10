@@ -3,51 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký - Du Thuyền Việt</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/popup.css">
-    <link rel="stylesheet" href="css/auth.css">
-    <script>
-        if (localStorage.getItem('auth_token')) { window.location.replace('/index.html'); }
-    </script>
+    <title>Đăng ký tài khoản - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/layout.css?v=28">
+    <link rel="stylesheet" href="css/auth.css?v=28">
 </head>
 <body>
-    <a href="/index.html" class="back-home" style="position: absolute; top: 20px; left: 20px; text-decoration: none; color: #ffffff; font-weight: 500; display: flex; align-items: center; gap: 8px; z-index: 10;"><span style="font-size: 20px;">&larr;</span> Trang chủ</a>
+    <a href="/index.html" class="back-home-pill">
+        <img src="/images/icons/arrow-left.png" class="app-icon" alt="">
+        Trang chủ
+    </a>
+    
     <div class="overlay"></div>
-    <div class="auth-card">
-        <div class="logo">Du Thuyền Việt</div>
-        <div class="subtitle">Bắt đầu hành trình mới</div>
+    
+    <div class="auth-card" style="max-width: 480px;">
+        <h1 class="logo">Du Thuyền Việt</h1>
+        <p class="subtitle">Tạo tài khoản để bắt đầu những hải trình đáng nhớ</p>
+        
         <div id="alert-box"></div>
+        
         <form id="registerForm">
             <div class="input-group">
-                <label>Họ và tên</label>
-                <input type="text" id="fullname" placeholder="Nhập họ và tên của bạn" required>
+                <label for="fullname"><img src="/images/icons/user.png" class="app-icon-sm" alt=""> Họ và tên *</label>
+                <input type="text" id="fullname" placeholder="Ví dụ: Nguyễn Văn A" required>
             </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="input-group">
+                    <label for="username"><img src="/images/icons/admin-crown.png" class="app-icon-sm" alt=""> Tên đăng nhập *</label>
+                    <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
+                </div>
+                <div class="input-group">
+                    <label for="phone"><img src="/images/icons/smartphone.png" class="app-icon-sm" alt=""> Số điện thoại *</label>
+                    <input type="tel" id="phone" placeholder="0912 345 678" required>
+                </div>
+            </div>
+            
             <div class="input-group">
-                <label>Tên đăng nhập</label>
-                <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
+                <label for="email"><img src="/images/icons/email-at.png" class="app-icon-sm" alt=""> Địa chỉ Email *</label>
+                <input type="email" id="email" placeholder="example@gmail.com" required>
             </div>
+            
             <div class="input-group">
-                <label>Số điện thoại</label>
-                <input type="text" id="phone" placeholder="Nhập số điện thoại" required>
+                <label for="password"><img src="/images/icons/cabin-door.png" class="app-icon-sm" alt=""> Mật khẩu *</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" placeholder="Tạo mật khẩu an toàn (tối thiểu 6 ký tự)" required>
+                </div>
             </div>
-            <div class="input-group">
-                <label>Địa chỉ Email</label>
-                <input type="email" id="email" placeholder="Ví dụ: example@gmail.com" required>
-            </div>
-            <div class="input-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="password" placeholder="Tạo mật khẩu an toàn" required>
-            </div>
+            
             <button type="submit" class="btn-submit" id="submitBtn">
-                <span id="btnText">Đăng ký ngay</span>
-                <img id="spinner" src="/images/loading.gif" style="display: none; width: 24px; height: 24px; margin: 0 auto;" alt="...">
+                <img src="/images/icons/cruise-yacht.png" class="app-icon" alt="">
+                <span id="btnText">Tạo Tài Khoản Ngay</span>
+                <span id="spinner" class="spinner" style="display: none;"></span>
             </button>
         </form>
+        
         <div class="footer-link">
-            Đã có tài khoản? <a href="login.html">Đăng nhập</a>
+            Đã có tài khoản? <a href="login.html">Đăng nhập tại đây</a>
         </div>
     </div>
+
     <script src="js/popup.js"></script>
     <script src="js/auth.js"></script>
 </body>

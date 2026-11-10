@@ -62,15 +62,38 @@ body { background-color: #f8fafc; }
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+    background: #f0fdfa;
+    color: #0f766e;
+    border: 1.5px solid #2dd4bf;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
-    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
-    transform: translateY(-2px);
+    background: #ccfbf1;
+    color: #0d9488;
+    border-color: #14b8a6;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn .icon-badge {
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none !important;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.btn .icon-badge .app-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    margin-right: 0 !important;
+    display: block;
 }
 
 .btn-outline {
@@ -87,14 +110,17 @@ body { background-color: #f8fafc; }
 }
 
 .btn-danger {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1.5px solid #fecaca;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
 }
 
 .btn-danger:hover {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.28);
     transform: translateY(-2px);
 }
 

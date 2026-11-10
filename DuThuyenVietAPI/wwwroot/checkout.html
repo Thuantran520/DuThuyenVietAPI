@@ -3,12 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thanh Toán - Du Thuyền Việt</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <title>Thanh Toán Đặt Chỗ - Du Thuyền Việt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/popup.css">
     <link rel="stylesheet" href="/css/checkout.css">
+    <script>
+        (function() {
+            try {
+                const t = localStorage.getItem('auth_token');
+                if (!t || t === 'null' || t === 'undefined') {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search));
+                    return;
+                }
+                const p = JSON.parse(atob(t.split('.')[1]));
+                if (p.exp && p.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('auth_token');
+                    window.location.replace('/login.html?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search));
+                    return;
+                }
+            } catch(e) {
+                localStorage.removeItem('auth_token');
+                window.location.replace('/login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
     <header class="main-header"></header>
@@ -24,38 +45,90 @@
         </div>
     </div>
 
-    <div class="container py-5">
+    <div class="container py-4">
         <div class="checkout-box">
-            <h1 class="mb-2">Thanh Toán</h1>
-            <p class="text-muted mb-4" id="checkoutBookingCode">Mã đơn: ...</p>
-            
-            <div id="countdownTimer" style="display:none; background: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; padding: 12px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; font-size: 14px; text-align: center; align-items: center; justify-content: center;"></div>
-            
-            <div id="checkoutDetails" class="text-left mb-4" style="text-align: left; background: var(--bg-light); padding: 20px; border-radius: 8px;">
-                <!-- Info -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px;">
+                <div style="text-align: left;">
+                    <h1 style="font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Thanh Toán Đặt Phòng</h1>
+                    <p class="text-muted" id="checkoutBookingCode" style="margin: 0; font-size: 14px;">Mã đơn: ...</p>
+                </div>
+                <div id="checkoutStatusBadge" style="display: inline-flex; align-items: center; gap: 6px; background: #fef08a; color: #854d0e; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;">
+                    <img src="/images/icons/pending-hourglass.png" class="app-icon-sm" alt=""> Chờ thanh toán
+                </div>
             </div>
             
-            <p>Tổng tiền cần thanh toán</p>
-            <div class="price-total" id="checkoutTotal">0 ₫</div>
+            <div id="countdownTimer" style="display:none; background: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; padding: 12px; border-radius: 10px; font-weight: 600; margin-bottom: 20px; font-size: 14px; text-align: center; align-items: center; justify-content: center; gap: 8px;"></div>
             
-            <h3 class="mb-3 mt-4">Chọn phương thức thanh toán</h3>
+            <div id="checkoutDetails" class="text-left mb-4" style="text-align: left; background: #f8fafc; padding: 22px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center; color: #94a3b8; padding: 20px;">Đang tải thông tin chi tiết đơn đặt phòng...</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: baseline; background: #f0fdfa; border: 1.5px solid #99f6e4; padding: 16px 20px; border-radius: 12px; margin-bottom: 25px;">
+                <span style="font-weight: 700; color: #0f766e; font-size: 16px;">Tổng tiền cần thanh toán:</span>
+                <span class="price-total" id="checkoutTotal" style="margin: 0; font-size: 1.9rem; color: #ef4444; font-weight: 800;">0 ₫</span>
+            </div>
+            
+            <h3 class="mb-3 mt-4" style="font-weight: 700; font-size: 1.2rem; color: #1e293b; text-align: left; display: flex; align-items: center; gap: 8px;">
+                <img src="/images/icons/credit-card.png" class="app-icon" alt=""> Chọn phương thức thanh toán
+            </h3>
+            
             <div class="payment-methods" id="paymentMethods">
-                <div class="payment-method selected" data-method="VNPAY" style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600;">
-                    <span style="color:#005baa; font-weight:bold;">💳 VNPAY (QR / Thẻ ATM)</span>
+                <div class="payment-method selected" data-method="VietQR">
+                    <div class="pm-icon" style="background: #ccfbf1; color: #0d9488;"><img src="/images/icons/vietqr.png" class="pm-img" alt="VietQR"></div>
+                    <div class="pm-body">
+                        <div class="pm-title" style="color: #0d9488;">Chuyển khoản VietQR (Khuyên dùng)</div>
+                        <div class="pm-desc">Mã QR động quét qua App mọi ngân hàng 24/7</div>
+                    </div>
+                    <div class="pm-check"></div>
                 </div>
-                <div class="payment-method" data-method="PayPal" style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:600;">
-                    <span style="color:#003087; font-weight:bold;">Pay</span><span style="color:#0079C1; font-weight:bold;">Pal</span>
+
+                <div class="payment-method" data-method="VNPAY">
+                    <div class="pm-icon" style="background: #e0f2fe; color: #005baa;"><img src="/images/icons/vnpay.png" class="pm-img" alt="VNPAY"></div>
+                    <div class="pm-body">
+                        <div class="pm-title" style="color: #005baa;">Cổng VNPAY Sandbox</div>
+                        <div class="pm-desc">Quét VNPAY-QR hoặc Thẻ ATM nội địa</div>
+                    </div>
+                    <div class="pm-check"></div>
                 </div>
-                <div class="payment-method" data-method="BankTransfer">Chuyển khoản VietQR</div>
-                <div class="payment-method" data-method="Cash">Tiền mặt / Thu hộ</div>
+
+                <div class="payment-method" data-method="PayPal">
+                    <div class="pm-icon" style="background: #eff6ff; color: #003087;"><img src="/images/icons/paypal.png" class="pm-img" alt="PayPal"></div>
+                    <div class="pm-body">
+                        <div class="pm-title"><span style="color:#003087;">Pay</span><span style="color:#0079C1;">Pal</span> & Thẻ Quốc tế</div>
+                        <div class="pm-desc">Visa, MasterCard, tài khoản PayPal (Quy đổi USD)</div>
+                    </div>
+                    <div class="pm-check"></div>
+                </div>
+
+                <div class="payment-method" data-method="Cash">
+                    <div class="pm-icon" style="background: #fef9c3; color: #a16207;"><img src="/images/icons/cash-vnd.png" class="pm-img" alt="Tiền mặt"></div>
+                    <div class="pm-body">
+                        <div class="pm-title">Tiền mặt / Thu hộ tại quầy</div>
+                        <div class="pm-desc">Thanh toán trực tiếp tại văn phòng Du Thuyền Việt</div>
+                    </div>
+                    <div class="pm-check"></div>
+                </div>
             </div>
             
-            <div id="paymentInstructions" class="text-left mb-4" style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px dashed #cbd5e1; display: none;">
+            <div id="paymentInstructions" class="text-left mb-4" style="text-align: left; background: #ffffff; padding: 20px; border-radius: 12px; border: 1.5px solid #e2e8f0; display: none;">
+            </div>
+
+            <!-- Khung hiển thị nút thanh toán chính thức của PayPal -->
+            <div id="paypalButtonWrapper" style="display:none; margin: 20px 0; background: #ffffff; padding: 22px; border-radius: 12px; border: 1.5px solid #cbd5e1; box-shadow: 0 4px 14px rgba(0,0,0,0.06); text-align: center;">
+                <p style="font-weight: 600; margin-bottom: 15px; color: #1e293b; font-size: 15px;"><img src="/images/icons/pointing-hand.png" class="app-icon" alt=""> Bấm nút bên dưới để thanh toán trực tiếp qua cổng PayPal Sandbox an toàn:</p>
+                <div id="paypalLoadingSpinner" style="padding: 15px; color: #64748b; font-size: 14px;">
+                    <img src="/images/icons/pending-hourglass.png" class="app-icon" alt=""> Đang kết nối máy chủ PayPal Sandbox...
+                </div>
+                <div id="paypal-button-container" style="max-width: 480px; margin: 0 auto;"></div>
             </div>
             
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <button id="btnCancelCheckout" class="btn-secondary" style="flex: 1; font-size: 1.1rem; padding: 15px; border-radius: 8px; font-weight: 600; color: #ef4444; border: 1px solid #fecaca; background: transparent; transition: all 0.2s; cursor: pointer; display: block; width: 100%;">Hủy đơn đặt phòng</button>
-                <button id="btnPay" class="btn-primary" style="flex: 1; font-size: 1.1rem; padding: 15px; border-radius: 8px; font-weight: 600; display: block; width: 100%;">Xác nhận</button>
+            <div style="display: flex; gap: 14px; margin-top: 25px; flex-wrap: wrap;">
+                <button id="btnCancelCheckout" class="btn-cancel-act" style="flex: 1; min-width: 160px; font-size: 1rem; padding: 13px 20px; border-radius: 10px; font-weight: 600; color: #dc2626; border: 1.5px solid #fecaca; background: #fef2f2; transition: all 0.25s ease; cursor: pointer;">
+                    <img src="/images/icons/cancel-booking.png" class="app-icon" alt=""> Hủy đơn đặt phòng
+                </button>
+                <button id="btnPay" class="btn-primary-soft" style="flex: 2; min-width: 220px; font-size: 1.05rem; padding: 13px 24px; border-radius: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    Xác nhận thanh toán
+                </button>
             </div>
         </div>
     </div>

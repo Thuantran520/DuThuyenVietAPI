@@ -1,3 +1,4 @@
+// @ts-nocheck
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('auth_token');
     if (!token) { window.location.replace('/login.html'); return; }
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Popup.show('Lỗi', msg, 'error');
             }
         } catch { Popup.show('Lỗi', 'Lỗi kết nối.', 'error'); }
-        finally { btn.innerText = '💾 Tạo Khu Vực'; btn.disabled = false; }
+        finally { btn.innerHTML = '<img src="/images/icons/save.png" class="app-icon" alt=""> Tạo Khu Vực'; btn.disabled = false; }
     });
 
     // Delete destination
@@ -149,12 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.style.display = 'inline-flex';
         if (isCruiseActive) {
             btn.className = 'btn btn-outline';
-            btn.innerHTML = '🔴 Đưa vào Bảo Trì';
+            btn.innerHTML = '<img src="/images/icons/inactive-dot.png" class="app-icon" alt=""> Đưa vào Bảo Trì';
             btn.style.background = '';
             btn.style.color = '';
         } else {
             btn.className = 'btn btn-primary';
-            btn.innerHTML = '🟢 Bật Hoạt Động Lại';
+            btn.innerHTML = '<img src="/images/icons/active-dot.png" class="app-icon" alt=""> Bật Hoạt Động Lại';
             btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
             btn.style.color = 'white';
         }
@@ -200,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('preview-thumb').src = url;
                 Popup.show('Thành công', 'Tải ảnh đại diện thành công!', 'success');
             }
-            btnThumb.innerText = '📁 Tải lên'; btnThumb.disabled = false;
+            btnThumb.innerHTML = '<img src="/images/icons/folder.png" class="app-icon" alt=""> Tải lên'; btnThumb.disabled = false;
             e.target.value = '';
         });
     }
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch { Popup.show('Lỗi', 'Lỗi kết nối tải ảnh.', 'error'); }
             
-            btnGallery.innerText = '📁 Chọn ảnh tải lên'; btnGallery.disabled = false;
+            btnGallery.innerHTML = '<img src="/images/icons/folder.png" class="app-icon" alt=""> Chọn ảnh tải lên'; btnGallery.disabled = false;
             e.target.value = '';
         });
     }
@@ -254,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewEl.innerHTML = currentGalleryUrls.map((url, index) => `
             <div style="position: relative; border-radius: 8px; overflow: hidden; height: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
-                <button onclick="removeGalleryImage(${index})" style="position: absolute; top: 4px; right: 4px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                <button onclick="removeGalleryImage(${index})" style="position: absolute; top: 4px; right: 4px; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 2px;"><img src="/images/icons/close.png" class="app-icon-sm" alt="✕"></button>
             </div>
         `).join('');
     }
@@ -276,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (url) {
                 document.getElementById('cabin-image').value = url;
             }
-            btnCabinUpload.innerText = '📁 Tải lên'; btnCabinUpload.disabled = false;
+            btnCabinUpload.innerHTML = '<img src="/images/icons/folder.png" class="app-icon" alt=""> Tải lên'; btnCabinUpload.disabled = false;
             e.target.value = '';
         });
     }
@@ -378,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCabins(cabins) {
         const grid = document.getElementById('cabin-list');
         if (!cabins || cabins.length === 0) {
-            grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🛏️</div><p>Chưa có loại phòng nào.<br>Nhấn <strong>"+ Thêm Loại Phòng"</strong> để bắt đầu.</p></div>`;
+            grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><img src="/images/icons/cabin-bed.png" class="app-icon-xl" alt=""></div><p>Chưa có loại phòng nào.<br>Nhấn <strong>"+ Thêm Loại Phòng"</strong> để bắt đầu.</p></div>`;
             return;
         }
         grid.innerHTML = cabins.map(c => `
@@ -392,14 +393,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="cabin-card-price">${formatPrice(c.basePrice)}<span class="price-unit">/đêm</span></div>
                     </div>
                     <div class="cabin-card-details">
-                        <span class="detail-item">👥 Sức chứa: <strong>${c.maxOccupancy} khách</strong></span>
+                        <span class="detail-item"><img src="/images/icons/users.png" class="app-icon" alt=""> Sức chứa: <strong>${c.maxOccupancy} khách</strong></span>
                         <span class="detail-divider">•</span>
-                        <span class="detail-item">🚪 Tổng: <strong>${c.totalRooms} phòng</strong></span>
+                        <span class="detail-item"><img src="/images/icons/cabin-door.png" class="app-icon" alt=""> Tổng: <strong>${c.totalRooms} phòng</strong></span>
                     </div>
                     <div class="cabin-card-desc">${c.description ? c.description.substring(0, 120) + '...' : '<span style="color:#94a3b8;font-style:italic;">Chưa có mô tả</span>'}</div>
                     <div class="cabin-card-actions">
-                        <button class="btn-sm-action btn-edit-sm" onclick="openEditCabin(${JSON.stringify(c).replace(/"/g, '&quot;')})">✏️ Sửa thông tin</button>
-                        <button class="btn-sm-action btn-delete-sm" onclick="deleteCabin(${c.cabinTypeId})">🗑️ Xóa</button>
+                        <button class="btn-sm-action btn-edit-sm" onclick="openEditCabin(${JSON.stringify(c).replace(/"/g, '&quot;')})"><img src="/images/icons/edit-pencil.png" class="app-icon" alt=""> Sửa thông tin</button>
+                        <button class="btn-sm-action btn-delete-sm" onclick="deleteCabin(${c.cabinTypeId})"><img src="/images/icons/delete-trash.png" class="app-icon" alt=""> Xóa</button>
                     </div>
                 </div>
             </div>
@@ -506,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSchedules(schedules) {
         const tbody = document.getElementById('schedule-list');
         if (!schedules || schedules.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:40px;"><div style="font-size:2rem; margin-bottom:8px;">🗓️</div>Chưa có lịch trình nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:40px;"><div style="margin-bottom:8px;"><img src="/images/icons/departure-calendar.png" class="app-icon-xl" alt=""></div>Chưa có lịch trình nào.</td></tr>`;
             return;
         }
 
@@ -523,8 +524,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:20px; font-size:0.85rem; font-weight:600;">${s.durationLabel || '—'}</span></td>
                 <td>${statusBadge(s.status)}</td>
                 <td style="text-align: right;">
-                    <button class="btn-sm-action btn-edit-sm" onclick="openEditSchedule(${JSON.stringify(s).replace(/"/g, '&quot;')})">✏️ Sửa</button>
-                    <button class="btn-sm-action btn-delete-sm" style="margin-left:6px;" onclick="deleteSchedule(${s.scheduleId})">🗑️ Xóa</button>
+                    <button class="btn-sm-action btn-edit-sm" onclick="openEditSchedule(${JSON.stringify(s).replace(/"/g, '&quot;')})"><img src="/images/icons/edit-pencil.png" class="app-icon" alt=""> Sửa</button>
+                    <button class="btn-sm-action btn-delete-sm" style="margin-left:6px;" onclick="deleteSchedule(${s.scheduleId})"><img src="/images/icons/delete-trash.png" class="app-icon" alt=""> Xóa</button>
                 </td>
             </tr>
         `).join('');

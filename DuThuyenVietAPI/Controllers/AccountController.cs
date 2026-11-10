@@ -101,7 +101,7 @@ public class AccountController : ControllerBase
                 authClaims.Add(new Claim(ClaimTypes.Role, userRole ?? ""));
             }
 
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],

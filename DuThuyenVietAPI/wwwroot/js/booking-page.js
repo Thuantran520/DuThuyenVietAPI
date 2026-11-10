@@ -1,9 +1,16 @@
+// @ts-nocheck
 /* ==========================================================================
    DuThuyenViet - Booking Page Logic
    ========================================================================== */
 
 const API_URL = '/api';
-const getToken = () => localStorage.getItem('auth_token');
+const getToken = () => {
+    if (typeof window.getAuthStatus === 'function') {
+        const auth = window.getAuthStatus();
+        return auth.isLoggedIn ? auth.token : null;
+    }
+    return localStorage.getItem('auth_token');
+};
 const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
@@ -257,7 +264,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         discountPercent: discountPercent
                     };
                     if (promoMsg) {
-                        promoMsg.innerHTML = `<span style="color: #16a34a; font-weight: 600;">✓ Áp dụng mã thành công! Giảm ${discountPercent}%</span>`;
+                        promoMsg.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px; margin-top: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 14px;">
+                                <div id="lottie-promo-applied" style="width: 64px; height: 35px; flex-shrink: 0; border-radius: 6px; overflow: hidden;"></div>
+                                <div>
+                                    <div style="color: #16a34a; font-weight: 700; font-size: 14px;"><img src="/images/icons/check.png" class="app-icon-sm" alt="✓"> Áp dụng thành công!</div>
+                                    <div style="color: #15803d; font-size: 12px;">Được giảm <strong>${discountPercent}%</strong> cho chuyến đi này.</div>
+                                </div>
+                            </div>
+                        `;
+                        if (window.LottieEffects) {
+                            window.LottieEffects.play('lottie-promo-applied', 'special-offer');
+                        }
                     }
                 } else {
                     appliedPromotion = null;
@@ -333,6 +351,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (res.ok) {
                         if (!firstBookingId) firstBookingId = data.bookingId;
+                        if (appliedPromotion && appliedPromotion.code) {
+                            try {
+                                let usedCodes = JSON.parse(localStorage.getItem('used_promotions') || '[]');
+                                usedCodes.push(appliedPromotion.code.toUpperCase());
+                                localStorage.setItem('used_promotions', JSON.stringify([...new Set(usedCodes)]));
+                            } catch {}
+                        }
                     } else {
                         if (window.Popup) {
                             window.Popup.show('Lỗi', data.message || 'Lỗi đặt phòng', 'error');

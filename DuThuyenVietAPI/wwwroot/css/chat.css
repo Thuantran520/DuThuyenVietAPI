@@ -1,0 +1,279 @@
+/* ==========================================================================
+   DuThuyenViet - Live Chat Support Center Stylesheet
+   ========================================================================== */
+
+.chat-app-container {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 200px);
+    min-height: 580px;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    overflow: hidden;
+    margin-top: 16px;
+}
+.chat-sidebar {
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+.chat-sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+.chat-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+.chat-search-input:focus {
+    border-color: #0d9488;
+}
+.chat-filter-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+.chat-filter-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.chat-filter-btn.active {
+    background: #0d9488;
+    color: #ffffff;
+}
+.conversation-list {
+    flex: 1;
+    overflow-y: auto;
+}
+.conversation-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+.conversation-item:hover {
+    background: #f1f5f9;
+}
+.conversation-item.active {
+    background: #e6fffa;
+    border-left: 4px solid #0d9488;
+}
+.conv-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.conv-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #0f172a;
+}
+.conv-time {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.conv-snippet {
+    font-size: 12.5px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+.status-badge-chat {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-open {
+    background: #fef3c7;
+    color: #b45309;
+}
+.badge-staff {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+.badge-resolved {
+    background: #dcfce7;
+    color: #15803d;
+}
+.unread-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 6px;
+    margin-left: 6px;
+}
+.chat-main-pane {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    flex: 1;
+    overflow: hidden;
+}
+.chat-main-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+.chat-messages-container {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.message-bubble {
+    max-width: 72%;
+    padding: 12px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    position: relative;
+    word-break: break-word;
+}
+.message-bubble.customer {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.message-bubble.staff {
+    align-self: flex-end;
+    background: #0d9488;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 8px rgba(13,148,136,0.2);
+}
+.message-bubble.system {
+    align-self: center;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    max-width: 90%;
+    text-align: center;
+}
+.msg-meta {
+    font-size: 10.5px;
+    opacity: 0.75;
+    margin-top: 4px;
+    display: flex;
+    justify-content: flex-end;
+}
+.chat-input-bar {
+    padding: 16px 24px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-shrink: 0;
+}
+.chat-input-field {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 24px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.chat-input-field:focus {
+    border-color: #0d9488;
+}
+.btn-send-msg {
+    background: #0d9488;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(13,148,136,0.25);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.btn-send-msg:hover {
+    background: #0f766e;
+    transform: scale(1.05);
+}
+.btn-resolve-chat {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1.5px solid #86efac;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.btn-resolve-chat:hover {
+    background: #15803d;
+    color: #ffffff;
+}
+.countdown-timer-box {
+    font-size: 12px;
+    color: #b45309;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+@media (max-width: 768px) {
+    .chat-app-container {
+        grid-template-columns: 1fr;
+    }
+    .chat-sidebar {
+        display: none;
+    }
+}
+

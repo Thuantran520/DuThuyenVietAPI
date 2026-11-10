@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * review.js — Module D: Review & Blog
  * Phụ trách: Thành viên D (feature/review-blog)
@@ -50,18 +51,18 @@ window.loadCruiseReviews = async function(cruiseId, page = 1) {
                 if (canEditReply) {
                     replyActions += `<button onclick="window.editStaffReply(${r.reviewId}, ${cruiseId}, '${(r.staffReply || '').replace(/'/g, "\\'").replace(/\n/g, '\\n')}')"
                         style="background:none; border:none; color:#16a34a; cursor:pointer; font-size:0.8rem; font-weight:600; padding:0 6px; opacity:0.8;"
-                        title="Sửa phản hồi">✏️ Sửa</button>`;
+                        title="Sửa phản hồi"><img src="/images/icons/edit-pencil.png" class="app-icon" alt=""> Sửa</button>`;
                 }
                 if (canDeleteReply) {
                     replyActions += `<button onclick="window.deleteStaffReply(${r.reviewId}, ${cruiseId})"
                         style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:0.8rem; font-weight:600; padding:0 6px; opacity:0.8;"
-                        title="Xóa phản hồi">🗑️ Xóa</button>`;
+                        title="Xóa phản hồi"><img src="/images/icons/delete-trash.png" class="app-icon" alt=""> Xóa</button>`;
                 }
 
                 staffReplyHtml = `
                     <div style="margin-top:12px; background:#f0fdf4; border-left:4px solid #22c55e; padding:10px 14px; border-radius:0 8px 8px 0;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <strong style="color:#166534; font-size:0.9rem;">💬 Phản hồi từ Đội ngũ:</strong>
+                            <strong style="color:#166534; font-size:0.9rem;"><img src="/images/icons/review-chat.png" class="app-icon" alt=""> Phản hồi từ Đội ngũ:</strong>
                             <span style="display:flex; gap:2px;">${replyActions}</span>
                         </div>
                         <p style="margin:0; color:#15803d; font-size:0.95rem; line-height:1.5;" id="reply-text-${r.reviewId}">${r.staffReply}</p>
@@ -80,7 +81,7 @@ window.loadCruiseReviews = async function(cruiseId, page = 1) {
 
             // Nút "Trả lời": chỉ hiện khi chưa có reply (thêm mới), hoặc ẩn để dùng nút Sửa trong reply block
             if (isStaff && !r.staffReply) {
-                actionsHtml += `<button onclick="window.replyReview(${r.reviewId}, ${cruiseId})" style="background:none; border:none; color:#10b981; cursor:pointer; font-size:0.85rem; font-weight:600; margin-left:12px;">💬 Trả lời</button>`;
+                actionsHtml += `<button onclick="window.replyReview(${r.reviewId}, ${cruiseId})" style="background:none; border:none; color:#10b981; cursor:pointer; font-size:0.85rem; font-weight:600; margin-left:12px;"><img src="/images/icons/review-chat.png" class="app-icon" alt=""> Trả lời</button>`;
             }
 
             return `
@@ -162,7 +163,7 @@ window.loadReviewForm = async function(cruiseId) {
     // Render form đánh giá với star-rating tương tác
     formWrap.innerHTML = `
         <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #bbf7d0; border-radius:14px; padding:20px 24px;">
-            <h4 style="font-size:1.1rem; font-weight:700; margin-bottom:16px; color:#166534;">✍️ Viết đánh giá của bạn</h4>
+            <h4 style="font-size:1.1rem; font-weight:700; margin-bottom:16px; color:#166534;"><img src="/images/icons/write-review.png" class="app-icon" alt=""> Viết đánh giá của bạn</h4>
 
             <div style="margin-bottom:14px;">
                 <label style="font-weight:600; color:#374151; display:block; margin-bottom:8px;">Điểm đánh giá *</label>
@@ -194,13 +195,13 @@ window.loadReviewForm = async function(cruiseId) {
     const stars = formWrap.querySelectorAll('[data-star]');
     const ratingInput = formWrap.querySelector('#review-rating');
     const starLabel = formWrap.querySelector('#star-label');
-    const labels = ['', 'Rất tệ 😞', 'Tệ 😕', 'Bình thường 😐', 'Tốt 😊', 'Xuất sắc 🤩'];
+    const labels = ['', 'Rất tệ <img src="/images/icons/reaction-bad.png" class="app-icon" alt="">', 'Tệ <img src="/images/icons/reaction-poor.png" class="app-icon" alt="">', 'Bình thường <img src="/images/icons/reaction-neutral.png" class="app-icon" alt="">', 'Tốt <img src="/images/icons/reaction-good.png" class="app-icon" alt="">', 'Xuất sắc <img src="/images/icons/reaction-excellent.png" class="app-icon" alt="">'];
 
     stars.forEach(star => {
         star.addEventListener('mouseenter', () => {
             const val = parseInt(star.getAttribute('data-star'));
             stars.forEach(s => { s.style.color = parseInt(s.getAttribute('data-star')) <= val ? '#f59e0b' : '#d1d5db'; });
-            if (starLabel) starLabel.innerText = labels[val] || '';
+            if (starLabel) starLabel.innerHTML = labels[val] || '';
         });
         star.addEventListener('click', () => {
             const val = parseInt(star.getAttribute('data-star'));
@@ -254,7 +255,7 @@ window.submitReview = async function(cruiseId) {
             const formWrap = document.getElementById('review-form-wrap');
             if (formWrap) formWrap.innerHTML = `
                 <div style="background:#dcfce7; border:1px solid #bbf7d0; border-radius:12px; padding:14px 20px; text-align:center; color:#166534; font-weight:600;">
-                    ✅ Bạn đã gửi đánh giá thành công! Cảm ơn bạn.
+                    <img src="/images/icons/success.png" class="app-icon" alt=""> Bạn đã gửi đánh giá thành công! Cảm ơn bạn.
                 </div>
             `;
             window.loadCruiseReviews(cruiseId, 1);
@@ -307,9 +308,9 @@ window.editReview = function(reviewId, oldRating, oldComment, cruiseId) {
 window.replyReview = function(reviewId, cruiseId) {
     if (!window.Popup) return;
     window.Popup.prompt(
-        '💬 Phản hồi đánh giá',
+        '<img src="/images/icons/review-chat.png" class="app-icon" alt=""> Phản hồi đánh giá',
         'Nhập nội dung phản hồi của nhân viên:',
-        '',
+        'Ví dụ: Cảm ơn quý khách đã tin tưởng và đánh giá du thuyền...',
         async (replyText) => {
             if (!replyText || !replyText.trim()) return;
             const token = localStorage.getItem('auth_token');
@@ -329,7 +330,8 @@ window.replyReview = function(reviewId, cruiseId) {
             } catch(e) {
                 window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
             }
-        }
+        },
+        true // isMultiline
     );
 };
 
@@ -339,9 +341,9 @@ window.replyReview = function(reviewId, cruiseId) {
 window.editStaffReply = function(reviewId, cruiseId, currentReply) {
     if (!window.Popup) return;
     window.Popup.prompt(
-        '✏️ Sửa phản hồi nhân viên',
+        '<img src="/images/icons/edit-pencil.png" class="app-icon" alt=""> Sửa phản hồi nhân viên',
         'Chỉnh sửa nội dung phản hồi:',
-        currentReply,
+        currentReply || '',
         async (newReply) => {
             if (!newReply || !newReply.trim()) return;
             const token = localStorage.getItem('auth_token');
@@ -361,7 +363,8 @@ window.editStaffReply = function(reviewId, cruiseId, currentReply) {
             } catch(e) {
                 window.Popup.show('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
             }
-        }
+        },
+        true // isMultiline
     );
 };
 
@@ -371,7 +374,7 @@ window.editStaffReply = function(reviewId, cruiseId, currentReply) {
 window.deleteStaffReply = function(reviewId, cruiseId) {
     if (!window.Popup) return;
     window.Popup.confirm(
-        '🗑️ Xóa phản hồi nhân viên',
+        '<img src="/images/icons/delete-trash.png" class="app-icon" alt=""> Xóa phản hồi nhân viên',
         'Bạn có chắc chắn muốn xóa phản hồi của nhân viên không? Hành động này không thể hoàn tác.',
         async () => {
             const token = localStorage.getItem('auth_token');
